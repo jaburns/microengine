@@ -4,7 +4,8 @@ version = "0.0.0"
 authors = ["jaburns"]
 
 [dependencies]
-glium = "*"
-image = "*"
-imgui = "*"
-imgui-glium-renderer = "*"
+glium = "0.22.0"
+image = "0.20.0"
+imgui = "0.0.20"
+imgui-glium-renderer = "0.0.20"
+cgmath = "0.16.1"
