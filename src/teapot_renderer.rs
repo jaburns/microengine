@@ -1,7 +1,7 @@
 use glium;
+use glium::Surface;
 use image;
 use std::io::Cursor;
-use glium::{Surface};
 use teapot;
 
 pub struct TeapotRenderer {
@@ -16,12 +16,26 @@ impl TeapotRenderer {
     pub fn new(display: &glium::Display) -> TeapotRenderer {
         let positions = glium::VertexBuffer::new(display, &teapot::VERTICES).unwrap();
         let normals = glium::VertexBuffer::new(display, &teapot::NORMALS).unwrap();
-        let indices = glium::IndexBuffer::new(display, glium::index::PrimitiveType::TrianglesList, &teapot::INDICES).unwrap();
-        let program = glium::Program::from_source(display, include_str!("../res/test.vert"), include_str!("../res/test.frag"), None).unwrap();
+        let indices = glium::IndexBuffer::new(
+            display,
+            glium::index::PrimitiveType::TrianglesList,
+            &teapot::INDICES,
+        ).unwrap();
+        let program = glium::Program::from_source(
+            display,
+            include_str!("../res/test.vert"),
+            include_str!("../res/test.frag"),
+            None,
+        ).unwrap();
 
-        let image = image::load(Cursor::new(&include_bytes!("../res/texture.png")[..]), image::PNG).unwrap().to_rgba();
+        let image = image::load(
+            Cursor::new(&include_bytes!("../res/texture.png")[..]),
+            image::PNG,
+        ).unwrap()
+            .to_rgba();
         let image_dimensions = image.dimensions();
-        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+        let image =
+            glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
         let texture = glium::texture::Texture2d::new(display, image).unwrap();
 
         TeapotRenderer {
@@ -29,7 +43,7 @@ impl TeapotRenderer {
             normals: normals,
             indices: indices,
             program: program,
-            texture: texture
+            texture: texture,
         }
     }
 
@@ -38,10 +52,10 @@ impl TeapotRenderer {
             depth: glium::Depth {
                 test: glium::draw_parameters::DepthTest::IfLess,
                 write: true,
-                .. Default::default()
+                ..Default::default()
             },
             backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
-            .. Default::default()
+            ..Default::default()
         };
 
         let uniforms = uniform! {
@@ -56,6 +70,14 @@ impl TeapotRenderer {
             tex: &self.texture,
         };
 
-        target.draw((&self.positions, &self.normals), &self.indices, &self.program, &uniforms, &params).unwrap();
+        target
+            .draw(
+                (&self.positions, &self.normals),
+                &self.indices,
+                &self.program,
+                &uniforms,
+                &params,
+            )
+            .unwrap();
     }
 }

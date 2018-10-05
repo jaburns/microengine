@@ -1,11 +1,11 @@
 use glium;
+use glium::glutin;
 use imgui;
-use imgui_glium_renderer;
-use std;
 use imgui::*;
-use std::time::Instant;
+use imgui_glium_renderer;
 use imgui_glium_renderer::Renderer;
-use glium::{glutin};
+use std;
+use std::time::Instant;
 
 #[derive(Copy, Clone, PartialEq, Debug, Default)]
 struct MouseState {
@@ -41,11 +41,17 @@ impl ImguiRenderer {
         }
     }
 
-    pub fn draw<F,S>(&mut self, display: &glium::Display, frame: &mut glium::Frame, run_ui: F, ui_state: &mut S)
-    where
-        F: Fn(&Ui, &mut S)
+    pub fn draw<F, S>(
+        &mut self,
+        display: &glium::Display,
+        frame: &mut glium::Frame,
+        run_ui: F,
+        ui_state: &mut S,
+    ) where
+        F: Fn(&Ui, &mut S),
     {
-        self.imgui.set_mouse_pos(self.mouse_state.pos.0 as f32, self.mouse_state.pos.1 as f32);
+        self.imgui
+            .set_mouse_pos(self.mouse_state.pos.0 as f32, self.mouse_state.pos.1 as f32);
         self.imgui.set_mouse_down([
             self.mouse_state.pressed.0,
             self.mouse_state.pressed.1,
@@ -128,9 +134,7 @@ impl ImguiRenderer {
                     Some(Key::X) => self.imgui.set_key(16, pressed),
                     Some(Key::Y) => self.imgui.set_key(17, pressed),
                     Some(Key::Z) => self.imgui.set_key(18, pressed),
-                    Some(Key::LControl) | Some(Key::RControl) => {
-                        self.imgui.set_key_ctrl(pressed)
-                    }
+                    Some(Key::LControl) | Some(Key::RControl) => self.imgui.set_key_ctrl(pressed),
                     Some(Key::LShift) | Some(Key::RShift) => self.imgui.set_key_shift(pressed),
                     Some(Key::LAlt) | Some(Key::RAlt) => self.imgui.set_key_alt(pressed),
                     Some(Key::LWin) | Some(Key::RWin) => self.imgui.set_key_super(pressed),
@@ -138,8 +142,7 @@ impl ImguiRenderer {
                 }
             }
             CursorMoved { position: pos, .. } => {
-                self.mouse_state.pos = pos
-                    .to_physical(display.gl_window().get_hidpi_factor())
+                self.mouse_state.pos = pos.to_physical(display.gl_window().get_hidpi_factor())
                     .to_logical(self.hidpi_factor)
                     .into();
             }
@@ -159,13 +162,12 @@ impl ImguiRenderer {
                 phase: TouchPhase::Moved,
                 ..
             } => {
-                self.mouse_state.wheel = pos
-                    .to_physical(display.gl_window().get_hidpi_factor())
+                self.mouse_state.wheel = pos.to_physical(display.gl_window().get_hidpi_factor())
                     .to_logical(self.hidpi_factor)
                     .y as f32;
             }
             ReceivedCharacter(c) => self.imgui.add_input_character(*c),
-            _ => ()
+            _ => (),
         }
     }
 }

@@ -4,14 +4,14 @@ extern crate image;
 extern crate imgui;
 extern crate imgui_glium_renderer;
 
-mod teapot;
 mod imgui_renderer;
+mod teapot;
 mod teapot_renderer;
 
 use glium::{glutin, Surface};
+use imgui::*;
 use imgui_renderer::ImguiRenderer;
 use teapot_renderer::TeapotRenderer;
-use imgui::*;
 
 #[derive(Copy, Clone)]
 struct Vertex {
@@ -19,7 +19,7 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position);
 
-fn get_perspective_matrix(screen_dimensions: (u32,u32)) -> [[f32; 4]; 4] {
+fn get_perspective_matrix(screen_dimensions: (u32, u32)) -> [[f32; 4]; 4] {
     let (width, height) = screen_dimensions;
     let aspect_ratio = height as f32 / width as f32;
 
@@ -29,10 +29,10 @@ fn get_perspective_matrix(screen_dimensions: (u32,u32)) -> [[f32; 4]; 4] {
     let f = 1.0 / (fov / 2.0).tan();
 
     [
-        [f * aspect_ratio, 0.0,              0.0              , 0.0],
-        [       0.0      ,  f ,              0.0              , 0.0],
-        [       0.0      , 0.0,      (zfar+znear)/(zfar-znear), 1.0],
-        [       0.0      , 0.0, -(2.0*zfar*znear)/(zfar-znear), 0.0],
+        [f * aspect_ratio, 0.0, 0.0, 0.0],
+        [0.0, f, 0.0, 0.0],
+        [0.0, 0.0, (zfar + znear) / (zfar - znear), 1.0],
+        [0.0, 0.0, -(2.0 * zfar * znear) / (zfar - znear), 0.0],
     ]
 }
 
@@ -73,8 +73,8 @@ fn main() {
         }
 
         events_loop.poll_events(|event: glutin::Event| {
-            use glium::glutin::WindowEvent;
             use glium::glutin::Event;
+            use glium::glutin::WindowEvent;
 
             if let Event::WindowEvent { event, .. } = event {
                 if let WindowEvent::CloseRequested = event {
