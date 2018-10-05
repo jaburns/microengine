@@ -14,12 +14,14 @@ struct MouseState {
     wheel: f32,
 }
 
-fn run_ui<'a>(ui: &Ui<'a>) -> bool {
+fn run_ui<'a>(ui: &Ui<'a>, state: &mut f32) -> bool {
     ui.window(im_str!("Hello world"))
         .size((300.0, 100.0), ImGuiCond::FirstUseEver)
         .build(|| {
             ui.text(im_str!("Hello world!"));
             ui.text(im_str!("This...is...imgui-rs!"));
+            SliderFloat::new(ui, im_str!("Slider"), state, 0f32, 10f32).build();
+
             ui.separator();
             let mouse_pos = ui.imgui().mouse_pos();
             ui.text(im_str!(
@@ -38,6 +40,8 @@ pub struct ImguiRenderer {
     hidpi_factor: f64,
     mouse_state: MouseState,
     last_frame: std::time::Instant,
+
+    editor_state: f32,
 }
 
 impl ImguiRenderer {
@@ -56,6 +60,8 @@ impl ImguiRenderer {
             hidpi_factor: hidpi_factor,
             mouse_state: MouseState::default(),
             last_frame: Instant::now(),
+
+            editor_state: 0f32,
         }
     }
 
@@ -107,7 +113,7 @@ impl ImguiRenderer {
         };
 
         let ui = self.imgui.frame(frame_size, delta_s);
-        if !run_ui(&ui) {
+        if !run_ui(&ui, &mut self.editor_state) {
             panic!("Shit, break");
         }
 
