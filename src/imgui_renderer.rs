@@ -14,34 +14,12 @@ struct MouseState {
     wheel: f32,
 }
 
-fn run_ui<'a>(ui: &Ui<'a>, state: &mut f32) -> bool {
-    ui.window(im_str!("Hello world"))
-        .size((300.0, 100.0), ImGuiCond::FirstUseEver)
-        .build(|| {
-            ui.text(im_str!("Hello world!"));
-            ui.text(im_str!("This...is...imgui-rs!"));
-            SliderFloat::new(ui, im_str!("Slider"), state, 0f32, 10f32).build();
-
-            ui.separator();
-            let mouse_pos = ui.imgui().mouse_pos();
-            ui.text(im_str!(
-                "Mouse Position: ({:.1},{:.1})",
-                mouse_pos.0,
-                mouse_pos.1
-            ));
-        });
-
-    true
-}
-
 pub struct ImguiRenderer {
     imgui: imgui::ImGui,
     renderer: imgui_glium_renderer::Renderer,
     hidpi_factor: f64,
     mouse_state: MouseState,
     last_frame: std::time::Instant,
-
-    editor_state: f32,
 }
 
 impl ImguiRenderer {
@@ -60,12 +38,13 @@ impl ImguiRenderer {
             hidpi_factor: hidpi_factor,
             mouse_state: MouseState::default(),
             last_frame: Instant::now(),
-
-            editor_state: 0f32,
         }
     }
 
-    pub fn draw(&mut self, display: &glium::Display, frame: &mut glium::Frame) {
+    pub fn draw<F,S>(&mut self, display: &glium::Display, frame: &mut glium::Frame, run_ui: F, ui_state: &mut S)
+    where
+        F: Fn(&Ui, &mut S)
+    {
         self.imgui.set_mouse_pos(self.mouse_state.pos.0 as f32, self.mouse_state.pos.1 as f32);
         self.imgui.set_mouse_down([
             self.mouse_state.pressed.0,
@@ -113,9 +92,8 @@ impl ImguiRenderer {
         };
 
         let ui = self.imgui.frame(frame_size, delta_s);
-        if !run_ui(&ui, &mut self.editor_state) {
-            panic!("Shit, break");
-        }
+
+        run_ui(&ui, ui_state);
 
         self.renderer.render(frame, ui).expect("Rendering failed");
     }
