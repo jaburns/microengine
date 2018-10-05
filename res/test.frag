@@ -12,4 +12,5 @@ uniform vec3 light;
 void main() {
     float brightness = dot(normalize(v_normal), normalize(light_x));
     color = (0.5 + 0.5 * brightness) * texture(tex, v_tex_coords);
+    color = vec4(1,0.5,0,1)* texture(tex, v_tex_coords);
 }

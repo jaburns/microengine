@@ -63,7 +63,59 @@ fn run_ui<'a>(ui: &Ui<'a>) -> bool {
     true
 }
 
-fn render() {
+struct TeapotRenderer {
+    positions: glium::VertexBuffer<teapot::Vertex>,
+    normals: glium::VertexBuffer<teapot::Normal>,
+    indices: glium::IndexBuffer<u16>,
+    program: glium::Program,
+    texture: glium::Texture2d,
+}
+
+impl TeapotRenderer {
+    pub fn new(display: &glium::Display) -> TeapotRenderer {
+        let positions = glium::VertexBuffer::new(display, &teapot::VERTICES).unwrap();
+        let normals = glium::VertexBuffer::new(display, &teapot::NORMALS).unwrap();
+        let indices = glium::IndexBuffer::new(display, glium::index::PrimitiveType::TrianglesList, &teapot::INDICES).unwrap();
+        let program = glium::Program::from_source(display, include_str!("../res/test.vert"), include_str!("../res/test.frag"), None).unwrap();
+
+        let image = image::load(Cursor::new(&include_bytes!("../res/texture.png")[..]), image::PNG).unwrap().to_rgba();
+        let image_dimensions = image.dimensions();
+        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+        let texture = glium::texture::Texture2d::new(display, image).unwrap();
+
+        TeapotRenderer {
+            positions: positions,
+            normals: normals,
+            indices: indices,
+            program: program,
+            texture: texture
+        }
+    }
+
+    pub fn draw(self: &TeapotRenderer, target: &mut glium::Frame, perspective: [[f32; 4]; 4], t: f32) {
+        let params = glium::DrawParameters {
+            depth: glium::Depth {
+                test: glium::draw_parameters::DepthTest::IfLess,
+                write: true,
+                .. Default::default()
+            },
+            backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+            .. Default::default()
+        };
+
+        let uniforms = uniform! {
+            perspective: perspective,
+            matrix: [
+                [0.01 * t.cos(), 0.0, 0.01 * t.sin(), 0.0],
+                [0.0, 0.01, 0.0, 0.0],
+                [0.01 *-t.sin(), 0.0, 0.01 * t.cos(), 0.0],
+               [0.0, 0.0, 2.0, 1.0f32],
+            ],
+            light: [-1.0, 0.4, 0.9f32],
+            tex: &self.texture,
+        };
+        target.draw((&self.positions, &self.normals), &self.indices, &self.program, &uniforms, &params).unwrap();
+    }
 }
 
 fn main() {
@@ -72,23 +124,15 @@ fn main() {
     let context = glutin::ContextBuilder::new();
     let display = glium::Display::new(window, context, &events_loop).unwrap();
 
-    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
-    let normals = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
-    let indices = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &teapot::INDICES).unwrap();
-    let program = glium::Program::from_source(&display, include_str!("../res/test.vert"), include_str!("../res/test.frag"), None).unwrap();
+    let teapot = TeapotRenderer::new(&display);
 
-    let image = image::load(Cursor::new(&include_bytes!("../res/texture.png")[..]), image::PNG).unwrap().to_rgba();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    let texture = glium::texture::Texture2d::new(&display, image).unwrap();
-
-            let mut imgui = ImGui::init();
-            imgui.set_ini_filename(None);
-            let window = display.gl_window();
-            let hidpi_factor = window.get_hidpi_factor().round();
-            imgui.set_font_global_scale((1.0 / hidpi_factor) as f32);
-            let mut renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
-            configure_keys(&mut imgui);
+    let mut imgui = ImGui::init();
+    imgui.set_ini_filename(None);
+    let window = display.gl_window();
+    let hidpi_factor = window.get_hidpi_factor().round();
+    imgui.set_font_global_scale((1.0 / hidpi_factor) as f32);
+    let mut renderer = Renderer::init(&mut imgui, &display).expect("Failed to initialize renderer");
+    configure_keys(&mut imgui);
 
 
     let params = glium::DrawParameters {
@@ -111,15 +155,6 @@ fn main() {
         if t > 3.14159 {
             t = -3.14159;
         }
-
-
-
-
-
-
-
-
-
 
         events_loop.poll_events(|event| {
             use glium::glutin::ElementState::Pressed;
@@ -165,8 +200,6 @@ fn main() {
                         }
                     }
                     CursorMoved { position: pos, .. } => {
-                        // Rescale position from glutin logical coordinates to our logical
-                        // coordinates
                         mouse_state.pos = pos
                             .to_physical(window.get_hidpi_factor())
                             .to_logical(hidpi_factor)
@@ -255,21 +288,10 @@ fn main() {
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
         let perspective = get_perspective_matrix(target.get_dimensions());
 
-        let uniforms = uniform! {
-            perspective: perspective,
-            matrix: [
-                [0.01 * t.cos(), 0.0, 0.01 * t.sin(), 0.0],
-                [0.0, 0.01, 0.0, 0.0],
-                [0.01 *-t.sin(), 0.0, 0.01 * t.cos(), 0.0],
-               [0.0, 0.0, 2.0, 1.0f32],
-            ],
-            light: [-1.0, 0.4, 0.9f32],
-            tex: &texture,
-        };
-        target.draw((&positions, &normals), &indices, &program, &uniforms, &params).unwrap();
+        teapot.draw(&mut target, perspective, t);
+
         renderer.render(&mut target, ui).expect("Rendering failed");
         target.finish().unwrap();
-
     }
 }
 
