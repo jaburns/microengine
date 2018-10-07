@@ -1,34 +1,48 @@
 #[macro_use]
 extern crate glium;
+extern crate cgmath;
 extern crate image;
 extern crate imgui;
 extern crate imgui_glium_renderer;
-extern crate cgmath;
 
 mod imgui_renderer;
+mod math_ext;
 mod teapot;
 mod teapot_renderer;
 
+use cgmath::Vector3;
 use glium::{glutin, Surface};
 use imgui::*;
 use imgui_renderer::ImguiRenderer;
 use teapot_renderer::TeapotRenderer;
 
-#[derive(Copy, Clone)]
-struct Vertex {
-    position: [f32; 3],
+pub struct EditorState {
+    teapot_pos: Vector3<f32>,
+    teapot_rot: Vector3<f32>,
 }
-implement_vertex!(Vertex, position);
 
-fn run_ui(ui: &Ui, state: &mut (f32,f32,f32)) {
+impl EditorState {
+    pub fn default() -> EditorState {
+        EditorState {
+            teapot_pos: Vector3::new(0.0f32, 0.0f32, 0.0f32),
+            teapot_rot: Vector3::new(0.0f32, 0.0f32, 0.0f32),
+        }
+    }
+}
+
+fn run_ui(ui: &Ui, state: &mut EditorState) {
     ui.window(im_str!("Hello world"))
         .size((300.0, 100.0), ImGuiCond::FirstUseEver)
         .build(|| {
             ui.text(im_str!("Hello world!"));
             ui.text(im_str!("This...is...imgui-rs!"));
-            SliderFloat::new(ui, im_str!("x"), &mut state.0, -10f32, 10f32).build();
-            SliderFloat::new(ui, im_str!("y"), &mut state.1, -10f32, 10f32).build();
-            SliderFloat::new(ui, im_str!("z"), &mut state.2, -10f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("x"), &mut state.teapot_pos.x, -10f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("y"), &mut state.teapot_pos.y, -10f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("z"), &mut state.teapot_pos.z, -10f32, 10f32).build();
+
+            SliderFloat::new(ui, im_str!("rx"), &mut state.teapot_rot.x, -10f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("ry"), &mut state.teapot_rot.y, -10f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("rz"), &mut state.teapot_rot.z, -10f32, 10f32).build();
 
             ui.separator();
             let mouse_pos = ui.imgui().mouse_pos();
@@ -49,15 +63,10 @@ fn main() {
     let teapot = TeapotRenderer::new(&display);
     let mut imgui_renderer = ImguiRenderer::new(&display);
 
-    let mut t  = (0.0f32, 0.0f32, 0.0f32);
     let mut closed = false;
+    let mut state = EditorState::default();
 
     while !closed {
-    //  t.0 += 0.0008;
-    //  if t.0 > 2.0 * 3.14159 {
-    //      t.0 -= 2.0 * 3.14159;
-    //  }
-
         events_loop.poll_events(|event: glutin::Event| {
             use glium::glutin::Event;
             use glium::glutin::WindowEvent;
@@ -72,17 +81,9 @@ fn main() {
 
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
-
-        let (width, height) = target.get_dimensions();
-        let aspect_ratio = width as f32 / height as f32;
-    //  let perspective = cgmath::perspective(cgmath::Rad(3.14159f32 / 3.0f32), aspect_ratio, 0.1f32, 1024.0f32);
-    //  let perspectiveMat = teapot_renderer::matrix4_to_uniform(&perspective);
-
-        let perspective2 = teapot_renderer::get_perspective_matrix(target.get_dimensions());
-
-        teapot.draw(&mut target, &perspective2, t);
-
-        imgui_renderer.draw(&display, &mut target, &run_ui, &mut t);
+        let perspective = math_ext::get_perspective_matrix(target.get_dimensions());
+        teapot.draw(&mut target, &perspective, &state);
+        imgui_renderer.draw(&display, &mut target, &run_ui, &mut state);
         target.finish().unwrap();
     }
 }
