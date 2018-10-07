@@ -3,6 +3,7 @@ extern crate glium;
 extern crate image;
 extern crate imgui;
 extern crate imgui_glium_renderer;
+extern crate cgmath;
 
 mod imgui_renderer;
 mod teapot;
@@ -19,30 +20,15 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position);
 
-fn get_perspective_matrix(screen_dimensions: (u32, u32)) -> [[f32; 4]; 4] {
-    let (width, height) = screen_dimensions;
-    let aspect_ratio = height as f32 / width as f32;
-
-    let fov: f32 = 3.141592 / 3.0;
-    let zfar = 1024.0;
-    let znear = 0.1;
-    let f = 1.0 / (fov / 2.0).tan();
-
-    [
-        [f * aspect_ratio, 0.0, 0.0, 0.0],
-        [0.0, f, 0.0, 0.0],
-        [0.0, 0.0, (zfar + znear) / (zfar - znear), 1.0],
-        [0.0, 0.0, -(2.0 * zfar * znear) / (zfar - znear), 0.0],
-    ]
-}
-
-fn run_ui(ui: &Ui, state: &mut f32) {
+fn run_ui(ui: &Ui, state: &mut (f32,f32,f32)) {
     ui.window(im_str!("Hello world"))
         .size((300.0, 100.0), ImGuiCond::FirstUseEver)
         .build(|| {
             ui.text(im_str!("Hello world!"));
             ui.text(im_str!("This...is...imgui-rs!"));
-            SliderFloat::new(ui, im_str!("Slider"), state, 0f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("x"), &mut state.0, -10f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("y"), &mut state.1, -10f32, 10f32).build();
+            SliderFloat::new(ui, im_str!("z"), &mut state.2, -10f32, 10f32).build();
 
             ui.separator();
             let mouse_pos = ui.imgui().mouse_pos();
@@ -63,14 +49,14 @@ fn main() {
     let teapot = TeapotRenderer::new(&display);
     let mut imgui_renderer = ImguiRenderer::new(&display);
 
-    let mut t: f32 = 0.0;
+    let mut t  = (0.0f32, 0.0f32, 0.0f32);
     let mut closed = false;
 
     while !closed {
-        t += 0.0008;
-        if t > 2.0 * 3.14159 {
-            t -= 2.0 * 3.14159;
-        }
+    //  t.0 += 0.0008;
+    //  if t.0 > 2.0 * 3.14159 {
+    //      t.0 -= 2.0 * 3.14159;
+    //  }
 
         events_loop.poll_events(|event: glutin::Event| {
             use glium::glutin::Event;
@@ -86,8 +72,16 @@ fn main() {
 
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
-        let perspective = get_perspective_matrix(target.get_dimensions());
-        teapot.draw(&mut target, perspective, t);
+
+        let (width, height) = target.get_dimensions();
+        let aspect_ratio = width as f32 / height as f32;
+    //  let perspective = cgmath::perspective(cgmath::Rad(3.14159f32 / 3.0f32), aspect_ratio, 0.1f32, 1024.0f32);
+    //  let perspectiveMat = teapot_renderer::matrix4_to_uniform(&perspective);
+
+        let perspective2 = teapot_renderer::get_perspective_matrix(target.get_dimensions());
+
+        teapot.draw(&mut target, &perspective2, t);
+
         imgui_renderer.draw(&display, &mut target, &run_ui, &mut t);
         target.finish().unwrap();
     }
