@@ -1,14 +1,17 @@
 #[macro_use]
+
 extern crate glium;
 extern crate cgmath;
 extern crate image;
 extern crate imgui;
 extern crate imgui_glium_renderer;
+extern crate anymap;
 
 mod imgui_renderer;
 mod math_ext;
 mod teapot;
 mod teapot_renderer;
+mod ecs;
 
 use cgmath::Vector3;
 use glium::{glutin, Surface};
