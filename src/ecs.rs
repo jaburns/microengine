@@ -253,7 +253,7 @@ impl ECS {
         }
     }
 
-    pub fn new_entity(&mut self) -> Entity {
+    pub fn create_entity(&mut self) -> Entity {
         Entity(self.entity_allocator.allocate())
     }
 
@@ -263,6 +263,13 @@ impl ECS {
 
     pub fn is_entity_valid(&self, entity: Entity) -> bool {
         self.entity_allocator.is_live(entity.0)
+    }
+
+    pub fn set_component_default<T: 'static>(&mut self, entity: Entity) -> &T
+    where
+        T: Default,
+    {
+        self.set_component::<T>(entity, T::default())
     }
 
     pub fn set_component<T: 'static>(&mut self, entity: Entity, value: T) -> &T {
@@ -361,7 +368,7 @@ impl ECS {
 fn ecs_panics_on_destroyed_entity_usage() {
     let mut ecs = ECS::new();
 
-    let e0 = ecs.new_entity();
+    let e0 = ecs.create_entity();
     ecs.set_component(e0, 1.0f32);
     ecs.destroy_entity(e0);
     ecs.get_component::<f32>(e0);
@@ -371,8 +378,8 @@ fn ecs_panics_on_destroyed_entity_usage() {
 fn ecs_find_all_components_works() {
     let mut ecs = ECS::new();
 
-    let e0 = ecs.new_entity();
-    let e1 = ecs.new_entity();
+    let e0 = ecs.create_entity();
+    let e1 = ecs.create_entity();
 
     ecs.set_component(e0, 1.0f32);
     ecs.set_component(e0, 1i32);
@@ -387,7 +394,7 @@ fn ecs_find_all_components_works() {
 fn ecs_remove_component_works() {
     let mut ecs = ECS::new();
 
-    let e0 = ecs.new_entity();
+    let e0 = ecs.create_entity();
     ecs.set_component(e0, 1.0f32);
     assert!(ecs.get_component::<f32>(e0).is_some());
     ecs.remove_component::<f32>(e0);

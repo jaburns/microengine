@@ -1,11 +1,10 @@
-use cgmath::{Matrix4, Rad};
 use glium;
 use glium::Surface;
 use image;
 use math_ext;
-use render_system::EditorState;
 use std::io::Cursor;
 use teapot;
+use transform::Transform;
 
 pub struct TeapotRenderer {
     positions: glium::VertexBuffer<teapot::Vertex>,
@@ -54,7 +53,7 @@ impl TeapotRenderer {
         &self,
         target: &mut glium::Frame,
         perspective: &[[f32; 4]; 4],
-        state: &EditorState,
+        transform: &Transform,
     ) {
         let params = glium::DrawParameters {
             depth: glium::Depth {
@@ -65,15 +64,9 @@ impl TeapotRenderer {
             ..Default::default()
         };
 
-        let model = Matrix4::from_translation(state.teapot_pos)
-            * Matrix4::from_angle_x(Rad(state.teapot_rot.x))
-            * Matrix4::from_angle_y(Rad(state.teapot_rot.y))
-            * Matrix4::from_angle_z(Rad(state.teapot_rot.z))
-            * Matrix4::from_scale(0.01f32);
-
         let uniforms = uniform! {
             perspective: *perspective,
-            matrix: math_ext::matrix4_to_uniform(&model),
+            matrix: math_ext::matrix4_to_uniform(&transform.world_matrix),
             light: [0.05f32, 0.4f32, 0.9f32],
             tex: &self.texture,
         };
