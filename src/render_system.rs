@@ -6,6 +6,7 @@ use imgui_renderer::ImguiRenderer;
 use math_ext;
 use teapot_renderer::TeapotRenderer;
 use transform::Transform;
+use cgmath::*;
 
 fn run_editor(ui: &Ui, ecs: &mut ECS) {
     ui.window(im_str!("Editor"))
@@ -14,10 +15,26 @@ fn run_editor(ui: &Ui, ecs: &mut ECS) {
             let mut i = 0i32;
             for e in ecs.find_all_entities_with_component::<Transform>() {
                 let mut t = ecs.get_component_mut::<Transform>(e).unwrap();
+
+                let mut euler: Euler<Rad<f32>>;
+
                 ui.text(format!("Transform {}", i));
                 SliderFloat::new(ui, im_str!("x{}", i), &mut t.position.x, -10f32, 10f32).build();
                 SliderFloat::new(ui, im_str!("y{}", i), &mut t.position.y, -10f32, 10f32).build();
                 SliderFloat::new(ui, im_str!("z{}", i), &mut t.position.z, -10f32, 20f32).build();
+
+                euler = Euler::<Rad<f32>>::from(t.rotation);
+                SliderFloat::new(ui, im_str!("rx{}", i), &mut euler.x.0, -3.14f32, 3.14f32).build();
+                t.rotation = Quaternion::<f32>::from(euler);
+
+                euler = Euler::<Rad<f32>>::from(t.rotation);
+                SliderFloat::new(ui, im_str!("ry{}", i), &mut euler.y.0, -3.14f32, 3.14f32).build();
+                t.rotation = Quaternion::<f32>::from(euler);
+
+                euler = Euler::<Rad<f32>>::from(t.rotation);
+                SliderFloat::new(ui, im_str!("rz{}", i), &mut euler.z.0, -3.14f32, 3.14f32).build();
+                t.rotation = Quaternion::<f32>::from(euler);
+
                 ui.separator();
                 i += 1;
             }
