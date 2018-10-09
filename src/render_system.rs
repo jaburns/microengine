@@ -16,24 +16,25 @@ fn run_editor(ui: &Ui, ecs: &mut ECS) {
             for e in ecs.find_all_entities_with_component::<Transform>() {
                 let mut t = ecs.get_component_mut::<Transform>(e).unwrap();
 
-                let mut euler: Euler<Rad<f32>>;
+                ui.tree_node(im_str!("Transform {}", i)).build(|| {
+                    let mut euler: Euler<Rad<f32>>;
 
-                ui.text(format!("Transform {}", i));
-                SliderFloat::new(ui, im_str!("x{}", i), &mut t.position.x, -10f32, 10f32).build();
-                SliderFloat::new(ui, im_str!("y{}", i), &mut t.position.y, -10f32, 10f32).build();
-                SliderFloat::new(ui, im_str!("z{}", i), &mut t.position.z, -10f32, 20f32).build();
+                    SliderFloat::new(ui, im_str!("x"), &mut t.position.x, -10f32, 10f32).build();
+                    SliderFloat::new(ui, im_str!("y"), &mut t.position.y, -10f32, 10f32).build();
+                    SliderFloat::new(ui, im_str!("z"), &mut t.position.z, -10f32, 20f32).build();
 
-                euler = Euler::<Rad<f32>>::from(t.rotation);
-                SliderFloat::new(ui, im_str!("rx{}", i), &mut euler.x.0, -3.14f32, 3.14f32).build();
-                t.rotation = Quaternion::<f32>::from(euler);
+                    euler = Euler::<Rad<f32>>::from(t.rotation);
+                    SliderFloat::new(ui, im_str!("rx"), &mut euler.x.0, -3.14f32, 3.14f32).build();
+                    t.rotation = Quaternion::<f32>::from(euler);
 
-                euler = Euler::<Rad<f32>>::from(t.rotation);
-                SliderFloat::new(ui, im_str!("ry{}", i), &mut euler.y.0, -3.14f32, 3.14f32).build();
-                t.rotation = Quaternion::<f32>::from(euler);
+                    euler = Euler::<Rad<f32>>::from(t.rotation);
+                    SliderFloat::new(ui, im_str!("ry"), &mut euler.y.0, -3.14f32/2f32, 3.14f32/2f32).build();
+                    t.rotation = Quaternion::<f32>::from(euler);
 
-                euler = Euler::<Rad<f32>>::from(t.rotation);
-                SliderFloat::new(ui, im_str!("rz{}", i), &mut euler.z.0, -3.14f32, 3.14f32).build();
-                t.rotation = Quaternion::<f32>::from(euler);
+                    euler = Euler::<Rad<f32>>::from(t.rotation);
+                    SliderFloat::new(ui, im_str!("rz"), &mut euler.z.0, -3.14f32, 3.14f32).build();
+                    t.rotation = Quaternion::<f32>::from(euler);
+                });
 
                 ui.separator();
                 i += 1;
@@ -91,9 +92,9 @@ impl RenderSystem {
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
         let perspective = math_ext::get_perspective_matrix(target.get_dimensions());
 
-        {
-            let state = ecs.find_component_mut::<Transform>().unwrap().1;
-            self.teapot_renderer.draw(&mut target, &perspective, state);
+        for e in ecs.find_all_entities_with_component::<Transform>() {
+            let t = ecs.get_component::<Transform>(e).unwrap();
+            self.teapot_renderer.draw(&mut target, &perspective, t);
         }
 
         self.imgui_renderer
