@@ -1,11 +1,11 @@
 use cgmath::Vector3;
+use ecs::ECS;
 use glium;
-use glium::{glutin,Surface};
+use glium::{glutin, Surface};
 use imgui::*;
 use imgui_renderer::ImguiRenderer;
-use teapot_renderer::TeapotRenderer;
-use ecs::ECS;
 use math_ext;
+use teapot_renderer::TeapotRenderer;
 
 pub struct EditorState {
     pub teapot_pos: Vector3<f32>,
@@ -66,7 +66,10 @@ impl RenderSystem {
         let imgui_renderer = ImguiRenderer::new(&display);
 
         RenderSystem {
-            events_loop, display, teapot_renderer, imgui_renderer
+            events_loop,
+            display,
+            teapot_renderer,
+            imgui_renderer,
         }
     }
 
@@ -97,7 +100,8 @@ impl RenderSystem {
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
         let perspective = math_ext::get_perspective_matrix(target.get_dimensions());
         self.teapot_renderer.draw(&mut target, &perspective, state);
-        self.imgui_renderer.draw(&self.display, &mut target, &run_ui, &mut state);
+        self.imgui_renderer
+            .draw(&self.display, &mut target, &run_ui, &mut state);
         target.finish().unwrap();
 
         !closed

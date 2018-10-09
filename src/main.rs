@@ -1,17 +1,17 @@
 #[macro_use]
 extern crate glium;
+extern crate anymap;
 extern crate cgmath;
 extern crate image;
 extern crate imgui;
 extern crate imgui_glium_renderer;
-extern crate anymap;
 
+mod ecs;
 mod imgui_renderer;
 mod math_ext;
+mod render_system;
 mod teapot;
 mod teapot_renderer;
-mod ecs;
-mod render_system;
 
 use ecs::ECS;
 use render_system::RenderSystem;

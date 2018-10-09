@@ -3,9 +3,9 @@ use glium;
 use glium::Surface;
 use image;
 use math_ext;
+use render_system::EditorState;
 use std::io::Cursor;
 use teapot;
-use render_system::EditorState;
 
 pub struct TeapotRenderer {
     positions: glium::VertexBuffer<teapot::Vertex>,
@@ -35,7 +35,7 @@ impl TeapotRenderer {
             Cursor::new(&include_bytes!("../res/texture.png")[..]),
             image::PNG,
         ).unwrap()
-            .to_rgba();
+        .to_rgba();
         let image_dimensions = image.dimensions();
         let image =
             glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
@@ -85,7 +85,6 @@ impl TeapotRenderer {
                 &self.program,
                 &uniforms,
                 &params,
-            )
-            .unwrap();
+            ).unwrap();
     }
 }

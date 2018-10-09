@@ -142,7 +142,8 @@ impl ImguiRenderer {
                 }
             }
             CursorMoved { position: pos, .. } => {
-                self.mouse_state.pos = pos.to_physical(display.gl_window().get_hidpi_factor())
+                self.mouse_state.pos = pos
+                    .to_physical(display.gl_window().get_hidpi_factor())
                     .to_logical(self.hidpi_factor)
                     .into();
             }
@@ -162,7 +163,8 @@ impl ImguiRenderer {
                 phase: TouchPhase::Moved,
                 ..
             } => {
-                self.mouse_state.wheel = pos.to_physical(display.gl_window().get_hidpi_factor())
+                self.mouse_state.wheel = pos
+                    .to_physical(display.gl_window().get_hidpi_factor())
                     .to_logical(self.hidpi_factor)
                     .y as f32;
             }

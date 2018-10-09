@@ -1,6 +1,6 @@
 use anymap::AnyMap;
 
-#[derive(Copy,Clone,Eq,PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 struct GenerationalIndex {
     index: usize,
     generation: usize,
@@ -24,7 +24,7 @@ impl GenerationalIndexAllocator {
         }
     }
 
-    fn allocate(&mut self) -> GenerationalIndex { 
+    fn allocate(&mut self) -> GenerationalIndex {
         match self.free.pop() {
             Some(index) => {
                 self.entries[index].generation += 1;
@@ -32,13 +32,13 @@ impl GenerationalIndexAllocator {
 
                 GenerationalIndex {
                     index,
-                    generation: self.entries[index].generation
+                    generation: self.entries[index].generation,
                 }
-            },
+            }
             None => {
                 self.entries.push(AllocatorEntry {
                     is_live: true,
-                    generation: 0
+                    generation: 0,
                 });
 
                 GenerationalIndex {
@@ -58,10 +58,10 @@ impl GenerationalIndexAllocator {
             false
         }
     }
-    
-    fn is_live(&self, index: GenerationalIndex) -> bool { 
-        index.index < self.entries.len() 
-            && self.entries[index.index].generation == index.generation 
+
+    fn is_live(&self, index: GenerationalIndex) -> bool {
+        index.index < self.entries.len()
+            && self.entries[index.index].generation == index.generation
             && self.entries[index.index].is_live
     }
 }
@@ -107,7 +107,7 @@ impl<T> GenerationalIndexArray<T> {
 
         let prev_gen = match &self.0[index.index] {
             Some(entry) => entry.generation,
-            None => 0
+            None => 0,
         };
 
         if prev_gen > index.generation {
@@ -116,7 +116,7 @@ impl<T> GenerationalIndexArray<T> {
 
         self.0[index.index] = Some(ArrayEntry {
             value,
-            generation: index.generation
+            generation: index.generation,
         });
     }
 
@@ -133,35 +133,41 @@ impl<T> GenerationalIndexArray<T> {
 
         match &self.0[index.index] {
             Some(entry) => if entry.generation == index.generation {
-                    Some(&entry.value)
-                } else {
-                    None
-                },
-            None => None
+                Some(&entry.value)
+            } else {
+                None
+            },
+            None => None,
         }
     }
 
-    fn get_mut(&mut self, index: GenerationalIndex) -> Option<&mut T> { 
+    fn get_mut(&mut self, index: GenerationalIndex) -> Option<&mut T> {
         if index.index >= self.0.len() {
             return None;
         }
 
         match &mut self.0[index.index] {
             Some(entry) => if entry.generation == index.generation {
-                    Some(&mut entry.value)
-                } else {
-                    None
-                },
-            None => None
+                Some(&mut entry.value)
+            } else {
+                None
+            },
+            None => None,
         }
     }
 
-    fn get_all_valid(&self, allocator: &GenerationalIndexAllocator) -> Vec<(GenerationalIndex, &T)> {
+    fn get_all_valid(
+        &self,
+        allocator: &GenerationalIndexAllocator,
+    ) -> Vec<(GenerationalIndex, &T)> {
         let mut result = Vec::new();
 
         for i in 0..self.0.len() {
             if let Some(entry) = &self.0[i] {
-                let index = GenerationalIndex { index: i, generation: entry.generation };
+                let index = GenerationalIndex {
+                    index: i,
+                    generation: entry.generation,
+                };
                 if allocator.is_live(index) {
                     result.push((index, &entry.value));
                 }
@@ -171,10 +177,16 @@ impl<T> GenerationalIndexArray<T> {
         result
     }
 
-    fn get_first_valid(&self, allocator: &GenerationalIndexAllocator) -> Option<(GenerationalIndex, &T)> {
+    fn get_first_valid(
+        &self,
+        allocator: &GenerationalIndexAllocator,
+    ) -> Option<(GenerationalIndex, &T)> {
         for i in 0..self.0.len() {
             if let Some(entry) = &self.0[i] {
-                let index = GenerationalIndex { index: i, generation: entry.generation };
+                let index = GenerationalIndex {
+                    index: i,
+                    generation: entry.generation,
+                };
                 if allocator.is_live(index) {
                     return Some((index, &entry.value));
                 }
@@ -225,7 +237,7 @@ fn generational_index_array_works_with_multi_gen() {
     }
 }
 
-#[derive(Copy,Clone,Eq,PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Entity(GenerationalIndex);
 
 pub struct ECS {
@@ -258,11 +270,18 @@ impl ECS {
             panic!("Attempted to set_component on invalid entity.")
         }
 
-        if !self.entity_components.contains::<GenerationalIndexArray<T>>() {
-            self.entity_components.insert(GenerationalIndexArray::<T>::new());
+        if !self
+            .entity_components
+            .contains::<GenerationalIndexArray<T>>()
+        {
+            self.entity_components
+                .insert(GenerationalIndexArray::<T>::new());
         }
 
-        let map = self.entity_components.get_mut::<GenerationalIndexArray<T>>().unwrap();
+        let map = self
+            .entity_components
+            .get_mut::<GenerationalIndexArray<T>>()
+            .unwrap();
         map.set(entity.0, value);
         map.get(entity.0).unwrap()
     }
@@ -274,7 +293,7 @@ impl ECS {
 
         match self.entity_components.get::<GenerationalIndexArray<T>>() {
             Some(map) => map.get(entity.0),
-            None => None
+            None => None,
         }
     }
 
@@ -283,9 +302,12 @@ impl ECS {
             panic!("Attempted to get_component_mut on invalid entity.")
         }
 
-        match self.entity_components.get_mut::<GenerationalIndexArray<T>>() {
+        match self
+            .entity_components
+            .get_mut::<GenerationalIndexArray<T>>()
+        {
             Some(map) => map.get_mut(entity.0),
-            None => None
+            None => None,
         }
     }
 
@@ -299,31 +321,36 @@ impl ECS {
 
     pub fn find_component<T: 'static>(&self) -> Option<(Entity, &T)> {
         match self.entity_components.get::<GenerationalIndexArray<T>>() {
-            Some(map) => map.get_first_valid(&self.entity_allocator)
+            Some(map) => map
+                .get_first_valid(&self.entity_allocator)
                 .map(|x| (Entity(x.0), x.1)),
-            None => None
+            None => None,
         }
     }
 
     pub fn find_component_mut<T: 'static>(&mut self) -> Option<(Entity, &mut T)> {
         match self.find_component::<T>() {
             Some((entity, _)) => Some((entity, self.get_component_mut(entity).unwrap())),
-            None => None
+            None => None,
         }
     }
 
     pub fn find_all_components<T: 'static>(&self) -> Vec<(Entity, &T)> {
         match self.entity_components.get::<GenerationalIndexArray<T>>() {
-            Some(map) => map.get_all_valid(&self.entity_allocator)
+            Some(map) => map
+                .get_all_valid(&self.entity_allocator)
                 .iter()
                 .map(|x| (Entity(x.0), x.1))
                 .collect(),
-            None => Vec::new()
+            None => Vec::new(),
         }
     }
 
     pub fn remove_component<T: 'static>(&mut self, entity: Entity) {
-        if let Some(map) = self.entity_components.get_mut::<GenerationalIndexArray<T>>() {
+        if let Some(map) = self
+            .entity_components
+            .get_mut::<GenerationalIndexArray<T>>()
+        {
             map.remove(entity.0);
         }
     }
