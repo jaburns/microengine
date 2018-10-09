@@ -1,4 +1,5 @@
 use anymap::AnyMap;
+use std::any::TypeId;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct GenerationalIndex {
@@ -265,13 +266,6 @@ impl ECS {
         self.entity_allocator.is_live(entity.0)
     }
 
-    pub fn set_component_default<T: 'static>(&mut self, entity: Entity) -> &T
-    where
-        T: Default,
-    {
-        self.set_component::<T>(entity, T::default())
-    }
-
     pub fn set_component<T: 'static>(&mut self, entity: Entity, value: T) -> &T {
         if !self.entity_allocator.is_live(entity.0) {
             panic!("Attempted to set_component on invalid entity.")
@@ -289,6 +283,7 @@ impl ECS {
             .entity_components
             .get_mut::<GenerationalIndexArray<T>>()
             .unwrap();
+
         map.set(entity.0, value);
         map.get(entity.0).unwrap()
     }
@@ -342,12 +337,12 @@ impl ECS {
         }
     }
 
-    pub fn find_all_components<T: 'static>(&self) -> Vec<(Entity, &T)> {
+    pub fn find_all_entities_with_component<T: 'static>(&self) -> Vec<Entity> {
         match self.entity_components.get::<GenerationalIndexArray<T>>() {
             Some(map) => map
                 .get_all_valid(&self.entity_allocator)
                 .iter()
-                .map(|x| (Entity(x.0), x.1))
+                .map(|(x, _)| (Entity(*x)))
                 .collect(),
             None => Vec::new(),
         }
@@ -375,7 +370,7 @@ fn ecs_panics_on_destroyed_entity_usage() {
 }
 
 #[test]
-fn ecs_find_all_components_works() {
+fn ecs_find_all_entities_with_component_works() {
     let mut ecs = ECS::new();
 
     let e0 = ecs.create_entity();
@@ -385,7 +380,8 @@ fn ecs_find_all_components_works() {
     ecs.set_component(e0, 1i32);
     ecs.set_component(e1, 2i32);
 
-    for &(e, &c) in ecs.find_all_components::<i32>().iter() {
+    for &e in ecs.find_all_entities_with_component::<i32>().iter() {
+        let c = *ecs.get_component::<i32>(e).unwrap();
         assert!(e == e0 && c == 1i32 || e == e1 && c == 2i32);
     }
 }

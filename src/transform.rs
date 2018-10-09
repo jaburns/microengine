@@ -9,6 +9,15 @@ pub struct Transform {
     pub world_matrix: Matrix4<f32>,
 }
 
+impl Transform {
+    pub fn new(x: f32, y: f32, z: f32, scale: f32) -> Transform {
+        let mut ret = Self::default();
+        ret.position = Vector3::new(x, y, z);
+        ret.scale = Vector3::new(scale, scale, scale);
+        ret
+    }
+}
+
 impl Default for Transform {
     fn default() -> Transform {
         Transform {
@@ -28,13 +37,7 @@ fn compute_local_matrix(t: &Transform) -> Matrix4<f32> {
 }
 
 pub fn transform_system(ecs: &mut ECS) {
-    let entities: Vec<Entity> = ecs
-        .find_all_components::<Transform>()
-        .iter()
-        .map(|(e, _)| *e)
-        .collect();
-
-    for entity in entities {
+    for entity in ecs.find_all_entities_with_component::<Transform>() {
         let mut world_matrix: Matrix4<f32>;
 
         {
@@ -45,7 +48,7 @@ pub fn transform_system(ecs: &mut ECS) {
             loop {
                 if let Some(entity) = parent {
                     let parent_trans = ecs.get_component::<Transform>(entity).unwrap();
-                    world_matrix = world_matrix * compute_local_matrix(parent_trans);
+                    world_matrix = compute_local_matrix(parent_trans) * world_matrix;
                     parent = parent_trans.parent;
                 } else {
                     break;

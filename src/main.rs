@@ -16,7 +16,7 @@ mod transform;
 
 use ecs::ECS;
 use render_system::RenderSystem;
-use transform::transform_system;
+use transform::{transform_system,Transform};
 
 fn main() {
     let mut ecs = ECS::new();
@@ -24,7 +24,13 @@ fn main() {
     let mut closed = false;
 
     let teapot = ecs.create_entity();
-    ecs.set_component(teapot, transform::Transform::default());
+    let mut trans = Transform::new(0f32, 0f32, 2f32, 0.01f32);
+
+    let teaparent = ecs.create_entity();
+    ecs.set_component(teaparent, Transform::default());
+
+    trans.parent = Some(teaparent);
+    ecs.set_component(teapot, trans);
 
     while !closed {
         transform_system(&mut ecs);

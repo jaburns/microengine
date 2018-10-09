@@ -1,4 +1,3 @@
-use cgmath::Vector3;
 use ecs::ECS;
 use glium;
 use glium::{glutin, Surface};
@@ -8,18 +7,20 @@ use math_ext;
 use teapot_renderer::TeapotRenderer;
 use transform::Transform;
 
-fn run_ui(ui: &Ui, state: &mut Transform) {
+fn run_editor(ui: &Ui, ecs: &mut ECS) {
     ui.window(im_str!("Editor"))
-        .size((300.0, 100.0), ImGuiCond::FirstUseEver)
+        .size((300.0, 300.0), ImGuiCond::FirstUseEver)
         .build(|| {
-            ui.text(im_str!("Transform"));
-            SliderFloat::new(ui, im_str!("x"), &mut state.position.x, -10f32, 10f32).build();
-            SliderFloat::new(ui, im_str!("y"), &mut state.position.y, -10f32, 10f32).build();
-            SliderFloat::new(ui, im_str!("z"), &mut state.position.z, -10f32, 20f32).build();
-            ui.separator();
-            SliderFloat::new(ui, im_str!("rx"), &mut state.scale.x, 0f32, 0.1f32).build();
-            SliderFloat::new(ui, im_str!("ry"), &mut state.scale.y, 0f32, 0.1f32).build();
-            SliderFloat::new(ui, im_str!("rz"), &mut state.scale.z, 0f32, 0.1f32).build();
+            let mut i = 0i32;
+            for e in ecs.find_all_entities_with_component::<Transform>() {
+                let mut t = ecs.get_component_mut::<Transform>(e).unwrap();
+                ui.text(format!("Transform {}", i));
+                SliderFloat::new(ui, im_str!("x{}", i), &mut t.position.x, -10f32, 10f32).build();
+                SliderFloat::new(ui, im_str!("y{}", i), &mut t.position.y, -10f32, 10f32).build();
+                SliderFloat::new(ui, im_str!("z{}", i), &mut t.position.z, -10f32, 20f32).build();
+                ui.separator();
+                i += 1;
+            }
         });
 }
 
@@ -69,14 +70,17 @@ impl RenderSystem {
             self.imgui_renderer.handle_event(&self.display, &event);
         }
 
-        let mut state = ecs.find_component_mut::<Transform>().unwrap().1;
-
         let mut target = self.display.draw();
-        target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
+        target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
         let perspective = math_ext::get_perspective_matrix(target.get_dimensions());
-        self.teapot_renderer.draw(&mut target, &perspective, state);
+
+        {
+            let state = ecs.find_component_mut::<Transform>().unwrap().1;
+            self.teapot_renderer.draw(&mut target, &perspective, state);
+        }
+
         self.imgui_renderer
-            .draw(&self.display, &mut target, &run_ui, &mut state);
+            .draw(&self.display, &mut target, &run_editor, ecs);
         target.finish().unwrap();
 
         !closed
