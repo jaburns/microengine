@@ -170,6 +170,19 @@ impl<T> GenerationalIndexArray<T> {
 
         result
     }
+
+    fn get_first_valid(&self, allocator: &GenerationalIndexAllocator) -> Option<(GenerationalIndex, &T)> {
+        for i in 0..self.0.len() {
+            if let Some(entry) = &self.0[i] {
+                let index = GenerationalIndex { index: i, generation: entry.generation };
+                if allocator.is_live(index) {
+                    return Some((index, &entry.value));
+                }
+            }
+        }
+
+        None
+    }
 }
 
 #[test]
@@ -282,6 +295,21 @@ impl ECS {
         }
 
         self.get_component::<T>(entity).is_some()
+    }
+
+    pub fn find_component<T: 'static>(&self) -> Option<(Entity, &T)> {
+        match self.entity_components.get::<GenerationalIndexArray<T>>() {
+            Some(map) => map.get_first_valid(&self.entity_allocator)
+                .map(|x| (Entity(x.0), x.1)),
+            None => None
+        }
+    }
+
+    pub fn find_component_mut<T: 'static>(&mut self) -> Option<(Entity, &mut T)> {
+        match self.find_component::<T>() {
+            Some((entity, _)) => Some((entity, self.get_component_mut(entity).unwrap())),
+            None => None
+        }
     }
 
     pub fn find_all_components<T: 'static>(&self) -> Vec<(Entity, &T)> {

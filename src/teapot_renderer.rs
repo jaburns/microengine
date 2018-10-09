@@ -5,7 +5,7 @@ use image;
 use math_ext;
 use std::io::Cursor;
 use teapot;
-use EditorState;
+use render_system::EditorState;
 
 pub struct TeapotRenderer {
     positions: glium::VertexBuffer<teapot::Vertex>,
