@@ -92,7 +92,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ecs.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\vec.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\minunit.h" />
+    <ClInclude Include="src\vec.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
