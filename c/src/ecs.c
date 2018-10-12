@@ -27,7 +27,7 @@ GenerationalIndexAllocator;
 
 GenerationalIndexAllocator giallocator_new()
 {
-    return (GenerationalIndexAllocator) { vec_new(sizeof(AllocatorEntry)), vec_new(sizeof(uint32_t)) };
+    return (GenerationalIndexAllocator) { vec_make_empty(sizeof(AllocatorEntry)), vec_make_empty(sizeof(uint32_t)) };
 }
 
 GenerationalIndex giallocator_allocate(GenerationalIndexAllocator *gia)
@@ -50,6 +50,15 @@ GenerationalIndex giallocator_allocate(GenerationalIndexAllocator *gia)
     return (GenerationalIndex) { gia->entries.item_count - 1, 0 };
 }
 
+bool giallocator_is_index_live(const GenerationalIndexAllocator *gia, GenerationalIndex index)
+{
+    if (index.index >= gia->entries.item_count) return false;
+
+    AllocatorEntry *entry = vec_get(&gia->entries, index.index);
+    
+    return entry->is_live && entry->generation == index.generation;
+}
+
 void giallocator_deallocate(GenerationalIndexAllocator *gia, GenerationalIndex index)
 {
     if (! giallocator_is_index_live(gia, index)) return;
@@ -61,15 +70,6 @@ void giallocator_deallocate(GenerationalIndexAllocator *gia, GenerationalIndex i
     vec_push(&gia->free_indices, &x);
 }
 
-bool giallocator_is_index_live(GenerationalIndexAllocator *gia, GenerationalIndex index)
-{
-    if (index.index >= gia->entries.item_count) return false;
-
-    AllocatorEntry *entry = vec_get(&gia->entries, index.index);
-    
-    return entry->is_live && entry->generation == index.generation;
-}
-
 typedef struct GenerationalIndexArrayEntry
 {
     bool has_value;
@@ -78,111 +78,140 @@ typedef struct GenerationalIndexArrayEntry
 }
 GenerationalIndexArrayEntry;
 
-
 typedef struct GenerationalIndexArray
 {
     size_t item_size;
-
-    Vec entries; // of (GenerationalIndexArrayEntryHeader + item type)
+    Vec entries; // of (GenerationalIndexArrayEntry + item)
 }
 GenerationalIndexArray;
 
 GenerationalIndexArray giarray_new(size_t item_size)
 {
-    return (GenerationalIndexArray) { item_size, vec_new(sizeof(GenerationalIndexArrayEntry) + item_size) };
+    return (GenerationalIndexArray) { item_size, vec_make_empty(sizeof(GenerationalIndexArrayEntry) + item_size) };
 }
 
-/*
-
-void giarray_set(GenerationalIndexArray *gia, GenerationalIndex index, void *value)
+void giarray_set(GenerationalIndexArray *gia, GenerationalIndex index, const void *value)
 {
-    while (gia->entries.item_count < index.index)
-    {
-        GenerationalIndexArrayEntry empty_header = (GenerationalIndexArrayEntry) { false, 0 };
+    if (gia->entries.item_count <= index.index)
+        vec_resize(&gia->entries, index.index + 1);
 
-
-
-        vec_push()
-        gia->entries
-    }
-
-    while (m_entries.size() <= index.index)
-        m_entries.push_back(std::nullopt);
-
-    uint32_t prev_gen = 0;
-
-    if (auto prev_entry = m_entries[index.index]) 
-        prev_gen = prev_entry->generation;
+    GenerationalIndexArrayEntry* entry = vec_get(&gia->entries, index.index);
+    uint32_t prev_gen = entry->generation;
 
     if (prev_gen > index.generation)
         exit(1);
 
-    m_entries[index.index] = optional<Entry>{{ index.generation, value }};
+    entry->has_value = true;
+    entry->generation = index.generation;
+    memcpy(entry->entry, value, gia->item_size);
 }
 
-/*
+void *giarray_get(GenerationalIndexArray *gia, GenerationalIndex index)
+{
+    if (index.index >= gia->entries.item_count) return NULL;
+
+    GenerationalIndexArrayEntry* entry = vec_get(&gia->entries, index.index);
+
+    return entry->has_value && entry->generation == index.generation
+        ? entry->entry
+        : NULL;
+}
+
 void giarray_remove(GenerationalIndexArray *gia, GenerationalIndex index)
 {
-    if (index.index < m_entries.size())
-        m_entries[index.index] = std::nullopt;
+    if (index.index >= gia->entries.item_count) return;
+
+    GenerationalIndexArrayEntry* entry = vec_get(&gia->entries, index.index);
+    entry->has_value = false;
 }
 
-    void remove(GenerationalIndex index) 
+Vec/*<GenerationalIndex>*/ giarray_get_all_valid_indices(const GenerationalIndexArray *gia, const GenerationalIndexAllocator *allocator)
+{
+    Vec result;
+
+    for (size_t i = 0; i < gia->entries.item_count; ++i)
     {
+        GenerationalIndexArrayEntry* entry = vec_get(&gia->entries, i);
+        if (!entry->has_value) continue;
+
+        GenerationalIndex index = (GenerationalIndex) { entry->generation, i };
+
+        if (giallocator_is_index_live(allocator, index))
+            vec_push(&result, &index);
     }
 
-public:
+    return result;
+}
 
-    T* get(GenerationalIndex index)
-    {
-        if (index.index >= m_entries.size()) return nullptr;
+GenerationalIndex giarray_get_first_valid_index(const GenerationalIndexAllocator *allocator)
+{
+//  for (auto i = 0; i < m_entries.size(); ++i)
+//  {
+//      const auto& entry = m_entries[i];
+//      if (!entry) continue;
 
-        if (auto& entry = m_entries[index.index]) 
-        {
-            if (entry->generation == index.generation)
-                return &entry->value;
-        }
+//      GenerationalIndex index = { i, entry->generation };
+//      
+//      if (allocator.is_live(index))
+//          return std::make_tuple(index, std::ref(entry->value));
+//  }
 
-        return nullptr;
-    }
+//  return std::nullopt;
+}
 
-    const T* get(GenerationalIndex index) const
-    {
-        return const_cast<const T*>(const_cast<GenerationalIndexArray*>(this)->get(index));
-    }
 
-    vector<GenerationalIndex> get_all_valid_indices(const GenerationalIndexAllocator& allocator) const
-    {
-        vector<GenerationalIndex> result;
-        
-        for (auto i = 0; i < m_entries.size(); ++i)
-        {
-            const auto& entry = m_entries[i];
-            if (!entry) continue;
-
-            GenerationalIndex index = { i, entry->generation };
-            
-            if (allocator.is_live(index))
-                result.push_back(index);
-        }
-
-        return result;
-    }
-
-    optional<tuple<GenerationalIndex, reference_wrapper<const T>>> get_first_valid_entry(const GenerationalIndexAllocator& allocator) const
-    {
-        for (auto i = 0; i < m_entries.size(); ++i)
-        {
-            const auto& entry = m_entries[i];
-            if (!entry) continue;
-
-            GenerationalIndex index = { i, entry->generation };
-            
-            if (allocator.is_live(index))
-                return std::make_tuple(index, std::ref(entry->value));
-        }
-
-        return std::nullopt;
-    }
+struct ECS 
+{
+    int inner;
 };
+
+
+#ifdef RUN_TESTS 
+#include "testing.h"
+
+TEST_RESULT ecs_test()
+{
+    /*
+    GenerationalIndexArray<float> floaties;
+    GenerationalIndexAllocator alloc;
+
+    auto j = alloc.allocate();
+    auto i = alloc.allocate();
+
+    floaties.set(i, 2.0f);
+    floaties.set(j, 4.0f);
+    
+    if (auto getty = floaties.get_first_valid_entry(alloc)) {
+        cout << "Got " << std::get<1>(*getty).get();
+    }
+
+    return 0;
 */
+
+    TEST_BEGIN("ECS!!! Vec should push and pop correctly");
+        Vec v = vec_make_empty(sizeof(float));
+
+        const float a = 4.0f;
+        const float b = 8.0f;
+
+        vec_push(&v, &a);
+        vec_push(&v, &a);
+        vec_push(&v, &b);
+
+        float popped;
+        bool didPop;
+
+        didPop = vec_pop(&v, &popped);
+        TEST_ASSERT(didPop && popped == 8.0f);
+        didPop = vec_pop(&v, &popped);
+        TEST_ASSERT(didPop && popped == 4.0f);
+        didPop = vec_pop(&v, &popped);
+        TEST_ASSERT(didPop && popped == 4.0f);
+        didPop = vec_pop(&v, &popped);
+        TEST_ASSERT(!didPop);
+    TEST_END();
+
+    return 0;
+}
+
+#endif

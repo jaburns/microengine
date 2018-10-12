@@ -61,7 +61,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)\external\linmath.h;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
@@ -97,7 +97,8 @@
     <ClCompile Include="src\vec.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\minunit.h" />
+    <ClInclude Include="src\ecs.h" />
+    <ClInclude Include="src\testing.h" />
     <ClInclude Include="src\vec.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
