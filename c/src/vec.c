@@ -53,6 +53,7 @@ void vec_resize(Vec *vec, size_t new_item_count)
 void vec_clear(Vec *vec)
 {
     free(vec->data);
+    vec->data = 0;
     vec->item_count = 0;
 }
 
@@ -65,17 +66,31 @@ void vec_clear_with_callback(Vec *vec, VecCallback cb)
 }
 
 #ifdef RUN_TESTS 
+static int test_clear_callback_calls;
+static uint8_t test_clear_callback_sum;
+
+static void test_clear_callback(void *item)
+{
+    test_clear_callback_calls++;
+    test_clear_callback_sum += *((uint8_t*)item);
+}
+
 TestResult vec_test(void)
 {
-    TEST_BEGIN("Vec push and pop work correctly");
+    TEST_BEGIN("Vec at, push, and pop work correctly");
+
         Vec v = vec_empty(sizeof(float));
 
-        const float a = 4.0f;
-        const float b = 8.0f;
+        float a = 4.0f;
+        float b = 8.0f;
 
         vec_push_copy(&v, &a);
         vec_push_copy(&v, &a);
         vec_push_copy(&v, &b);
+
+        TEST_ASSERT(*(float*)vec_at(&v, 0) == 4.0f);
+        TEST_ASSERT(*(float*)vec_at(&v, 1) == 4.0f);
+        TEST_ASSERT(*(float*)vec_at(&v, 2) == 8.0f);
 
         float popped;
         bool didPop;
@@ -88,10 +103,57 @@ TestResult vec_test(void)
         TEST_ASSERT(didPop && popped == 4.0f);
         didPop = vec_pop(&v, &popped);
         TEST_ASSERT(!didPop);
+
+        TEST_ASSERT(v.item_count == 0);
+        TEST_ASSERT(v.data == 0);
+
     TEST_END();
+    TEST_BEGIN("Vec clear with callback iterates the vec");
 
-    // TODO test vec_resize, vec_at, clear with callback
+        Vec v = vec_empty(sizeof(uint8_t));
 
+        uint8_t a;
+        a = 2; vec_push_copy(&v, &a);
+        a = 4; vec_push_copy(&v, &a);
+        a = 8; vec_push_copy(&v, &a);
+
+        test_clear_callback_calls = 0;
+        test_clear_callback_sum = 0;
+        vec_clear_with_callback(&v, &test_clear_callback);
+
+        TEST_ASSERT(test_clear_callback_calls == 3);
+        TEST_ASSERT(test_clear_callback_sum == 14);
+        TEST_ASSERT(!vec_pop(&v, &a));
+
+        TEST_ASSERT(v.item_count == 0);
+        TEST_ASSERT(v.data == 0);
+
+    TEST_END();
+    TEST_BEGIN("Vec resize larger writes zeroes and smaller removes items");
+
+        Vec v = vec_empty(sizeof(uint8_t));
+
+        uint8_t a;
+        a = 2; vec_push_copy(&v, &a);
+        a = 4; vec_push_copy(&v, &a);
+
+        vec_resize(&v, 4);
+
+        TEST_ASSERT(v.item_count == 4);
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 2) == 0);
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 3) == 0);
+
+        vec_resize(&v, 1);
+
+        TEST_ASSERT(v.item_count == 1);
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 0) == 2);
+
+        vec_resize(&v, 0);
+
+        TEST_ASSERT(v.item_count == 0);
+        TEST_ASSERT(v.data == 0);
+
+    TEST_END();
     return 0;
 }
 #endif

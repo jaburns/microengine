@@ -150,7 +150,7 @@ void giarray_remove(GenerationalIndexArray *gia, GenerationalIndex index)
 
 GenerationalIndex *giarray_get_all_valid_indices_alloc(
     const GenerationalIndexArray *gia, const GenerationalIndexAllocator *allocator, size_t *result_length
-) {
+){
     Vec result = vec_empty(sizeof(GenerationalIndex));
 
     for (size_t i = 0; i < gia->entries.item_count; ++i)
@@ -170,7 +170,7 @@ GenerationalIndex *giarray_get_all_valid_indices_alloc(
 
 Maybe_GenerationalIndex giarray_get_first_valid_index(
     const GenerationalIndexArray *gia, const GenerationalIndexAllocator *allocator
-) {
+){
     for (size_t i = 0; i < gia->entries.item_count; ++i)
     {
         GenerationalIndexArrayEntry* entry = vec_at(&gia->entries, i);
@@ -231,7 +231,7 @@ void ecs_destroy_entity(ECS *ecs, Entity entity)
     giallocator_deallocate(&ecs->allocator, ENTITY_TO_GI(entity));
 }
 
-bool ecs_is_entity_valid(ECS *ecs, Entity entity)
+bool ecs_is_entity_valid(const ECS *ecs, Entity entity)
 {
     return giallocator_is_index_live(&ecs->allocator, ENTITY_TO_GI(entity));
 }
@@ -265,7 +265,7 @@ void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
 }
 
 
-Entity ecs_find_first_entity_with_component(ECS *ecs, const char *component_type)
+Entity ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type)
 {
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
     if (!arr) return;
@@ -276,7 +276,7 @@ Entity ecs_find_first_entity_with_component(ECS *ecs, const char *component_type
     return GI_TO_ENTITY(maybe_index.value);
 }
 
-Entity *ecs_find_all_entities_with_component_alloc(ECS *ecs, const char *component_type, size_t *result_length)
+Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length)
 {
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
     if (!arr) return;

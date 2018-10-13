@@ -11,14 +11,14 @@ extern void ecs_delete(ECS *ecs);
 
 extern Entity ecs_create_entity(ECS *ecs);
 extern void ecs_destroy_entity(ECS *ecs, Entity entity);
-extern bool ecs_is_entity_valid(ECS *ecs, Entity entity);
+extern bool ecs_is_entity_valid(const ECS *ecs, Entity entity);
 
 extern void *ecs_get_component(ECS *ecs, Entity entity, const char *component_type);
 extern void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type, size_t component_size);
 extern void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type);
 
-extern Entity ecs_find_first_entity_with_component(ECS *ecs, const char *component_type);
-extern Entity *ecs_find_all_entities_with_component_alloc(ECS *ecs, const char *component_type, size_t *result_length);
+extern Entity ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type);
+extern Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length);
 
 #define ECS_GET_COMPONENT_DECL(T, ecs_ptr, entity, var_name) \
     T *var_name = ecs_get_component((ecs_ptr), (entity), #T)

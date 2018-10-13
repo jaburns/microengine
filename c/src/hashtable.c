@@ -136,8 +136,8 @@ void hashtable_clear(HashTable *table)
 
 
 #ifdef RUN_TESTS
-static int test_clear_callback_calls = 0;
-static uint32_t test_clear_callback_val = 0;
+static int test_clear_callback_calls;
+static uint32_t test_clear_callback_val;
 
 static void test_clear_callback(void *item)
 {
@@ -148,11 +148,13 @@ static void test_clear_callback(void *item)
 TestResult hashtable_test(void)
 {
     TEST_BEGIN("Hash function behaves as expected");
+    
         TEST_ASSERT(hash_fn("abcd", 1000) == 0x63626164 % 1000);
         TEST_ASSERT(hash_fn("abcde", 1000) == (0x63626564 ^ 0x00006100) % 1000);
-    TEST_END();
 
+    TEST_END();
     TEST_BEGIN("Large HashTable works correctly");
+
         HashTable table = hashtable_empty(0xFFFF, sizeof(uint32_t));
         uint32_t val0 = 45, val1 = 27;
         
@@ -173,9 +175,10 @@ TestResult hashtable_test(void)
         TEST_ASSERT(!hashtable_remove(&table, "first value"));
 
         hashtable_clear(&table);
-    TEST_END();
 
+    TEST_END();
     TEST_BEGIN("Small HashTable handles collisions, and clear callbacks are called");
+
         HashTable table = hashtable_empty(1, sizeof(uint32_t));
         uint32_t val0 = 45, val1 = 27, val2 = 99;
 
@@ -197,6 +200,8 @@ TestResult hashtable_test(void)
 
         TEST_ASSERT(test_clear_callback_calls == 1);
         TEST_ASSERT(test_clear_callback_val == 27);
+
     TEST_END();
+    return 0;
 }
 #endif
