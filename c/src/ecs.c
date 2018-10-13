@@ -187,8 +187,8 @@ Maybe_GenerationalIndex giarray_get_first_valid_index(
 
 
 
-#define ENTITY_TO_GI(entity) ((GenerationalIndex) { (entity) >> 32, (entity) & 0xFFFFFFFF })
-#define GI_TO_ENTITY(gi) ((gi).index | ((gi).generation << 32))
+#define ENTITY_TO_GI(entity) (*(GenerationalIndex*)(&entity))
+#define GI_TO_ENTITY(gi) (*(Entity*)(&gi))
 
 struct ECS 
 {
@@ -280,18 +280,7 @@ Entity *ecs_find_all_entities_with_component_alloc(ECS *ecs, const char *compone
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
     if (!arr) return;
 
-    Vec shit = vec_empty(sizeof(Entity));
-    GenerationalIndex *results = giarray_get_all_valid_indices_alloc(arr, &ecs->allocator, result_length);
-
-    for (size_t i = 0; i < *result_length; ++i)
-    {
-        Entity e = GI_TO_ENTITY(results[i]);
-        vec_push_copy(&shit, &e);
-    }
-
-    free(results);
-
-    return shit.data;
+    return giarray_get_all_valid_indices_alloc(arr, &ecs->allocator, result_length);
 }
 
 
@@ -410,33 +399,28 @@ TestResult ecs_test()
         ECS_ADD_COMPONENT_DECL(float, ecs, e0, set_float0);
         ECS_ADD_COMPONENT_DECL(float, ecs, e1, set_float1);
 
-        ECS_GET_COMPONENT_DECL(float, ecs, e0, get_float);
-        TEST_ASSERT(set_float0 == get_float);
+        ECS_GET_COMPONENT_DECL(float, ecs, e1, get_float);
+        TEST_ASSERT(set_float1 == get_float);
 
         ecs_delete(ecs);
 
     TEST_END();
     TEST_BEGIN("ECS find all entities with component works");
 
-
-    break;
         ECS *ecs = ecs_new();
 
         Entity e0 = ecs_create_entity(ecs);
         Entity e1 = ecs_create_entity(ecs);
         Entity e2 = ecs_create_entity(ecs);
 
-        ECS_ADD_COMPONENT_DECL(float, ecs, e0, floaty0);
-        ECS_ADD_COMPONENT_DECL(float, ecs, e2, floaty2);
-        ECS_ADD_COMPONENT_DECL(uint32_t, ecs, e0, inty0);
-        ECS_ADD_COMPONENT_DECL(uint32_t, ecs, e1, inty1);
-        ECS_ADD_COMPONENT_DECL(uint32_t, ecs, e2, inty2);
+        ECS_ADD_COMPONENT(float, ecs, e0);
+        ECS_ADD_COMPONENT(float, ecs, e2);
+        ECS_ADD_COMPONENT(uint32_t, ecs, e0);
+        ECS_ADD_COMPONENT(uint32_t, ecs, e1);
+        ECS_ADD_COMPONENT(uint32_t, ecs, e2);
 
-        *floaty0 = 1.0f;
-        *floaty2 = 1.5f;
-        *inty0 = 0xBE;
-        *inty1 = 0xEF;
-        *inty2 = 0x12;
+        ECS_GET_COMPONENT_DECL(float, ecs, e0, floaty0);
+        ECS_GET_COMPONENT_DECL(float, ecs, e2, floaty2);
 
         size_t result_count;
         Entity *entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(float, ecs, &result_count);

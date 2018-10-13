@@ -23,6 +23,9 @@ extern Entity *ecs_find_all_entities_with_component_alloc(ECS *ecs, const char *
 #define ECS_GET_COMPONENT_DECL(T, ecs_ptr, entity, var_name) \
     T *var_name = ecs_get_component((ecs_ptr), (entity), #T)
 
+#define ECS_ADD_COMPONENT(T, ecs_ptr, entity) \
+    ecs_add_component_zeroed((ecs_ptr), (entity), #T, sizeof(T))
+
 #define ECS_ADD_COMPONENT_DECL(T, ecs_ptr, entity, var_name) \
     T *var_name = ecs_add_component_zeroed((ecs_ptr), (entity), #T, sizeof(T))
 
