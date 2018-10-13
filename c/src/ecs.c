@@ -216,6 +216,7 @@ void ecs_delete(ECS *ecs)
 
     giallocator_clear(&ecs->allocator);
     hashtable_clear_with_callback(&ecs->component_arrays, ecs_delete_hashtable_cb);
+    free(ecs);
 }
 
 
@@ -369,6 +370,8 @@ TestResult ecs_test()
         TEST_ASSERT(results[0].generation == i0.generation && results[0].index == i0.index);
         TEST_ASSERT(results[1].generation == i2.generation && results[1].index == i2.index);
 
+        free(results);
+
         giarray_clear(&arr);
         giallocator_clear(&alloc);
 
@@ -434,6 +437,7 @@ TestResult ecs_test()
         TEST_ASSERT(entities[1] == e2 && get1 == floaty2);
 
         free(entities);
+
         ecs_delete(ecs);
 
     TEST_END();

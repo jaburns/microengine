@@ -190,6 +190,9 @@ TestResult hashtable_test(void)
         TEST_ASSERT(hashtable_remove(&table, "2"));
         TEST_ASSERT(*(uint32_t*)hashtable_at(&table, "1") == 27);
 
+        test_clear_callback_calls = 0;
+        test_clear_callback_val = 0;
+
         hashtable_clear_with_callback(&table, &test_clear_callback);
 
         TEST_ASSERT(test_clear_callback_calls == 1);
