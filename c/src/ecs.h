@@ -20,13 +20,13 @@ extern void ecs_remove_component(ECS *ecs, Entity entity, const char *component_
 extern Entity ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type);
 extern Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length);
 
-#define ECS_GET_COMPONENT_DECL(T, ecs_ptr, entity, var_name) \
+#define ECS_GET_COMPONENT_DECL(T, var_name, ecs_ptr, entity) \
     T *var_name = ecs_get_component((ecs_ptr), (entity), #T)
 
 #define ECS_ADD_COMPONENT(T, ecs_ptr, entity) \
     ecs_add_component_zeroed((ecs_ptr), (entity), #T, sizeof(T))
 
-#define ECS_ADD_COMPONENT_DECL(T, ecs_ptr, entity, var_name) \
+#define ECS_ADD_COMPONENT_DECL(T, var_name, ecs_ptr, entity) \
     T *var_name = ecs_add_component_zeroed((ecs_ptr), (entity), #T, sizeof(T))
 
 #define ECS_REMOVE_COMPONENT(T, ecs_ptr, entity) \

@@ -26,6 +26,30 @@ void vec_push_copy(Vec *vec, const void *item_ref)
     vec_set_copy(vec, vec->item_count - 1, item_ref);
 }
 
+void vec_insert_copy(Vec *vec, size_t index, const void *item_ref)
+{
+    if (index < vec->item_count)
+    {
+        vec_resize(vec, vec->item_count + 1);
+        memmove(vec_at(vec, index + 1), vec_at(vec, index), (vec->item_count - index - 1) * vec->item_size);
+        vec_set_copy(vec, index, item_ref);
+    }
+    else if (index == vec->item_count)
+    {
+        vec_push_copy(vec, item_ref);
+    }
+}
+
+void vec_remove(Vec *vec, size_t index)
+{
+    if (index >= vec->item_count) return;
+
+    if (index < vec->item_count - 1) 
+        memmove(vec_at(vec, index), vec_at(vec, index + 1), (vec->item_count - 1 - index) * vec->item_size);
+
+    vec_resize(vec, vec->item_count - 1);
+}
+
 bool vec_pop(Vec *vec, void *result)
 {
     if (vec->item_count == 0) return false;
@@ -34,6 +58,15 @@ bool vec_pop(Vec *vec, void *result)
     memcpy(result, vec_at(vec, vec->item_count), vec->item_size);
     vec->data = realloc(vec->data, vec->item_size * vec->item_count);
     return true;
+}
+
+extern Vec vec_clone(Vec *vec)
+{
+    Vec result = vec_empty(vec->item_size);
+    result.item_count = vec->item_count;
+    result.data = malloc(result.item_count * result.item_size);
+    memcpy(result.data, vec->data, result.item_count * result.item_size);
+    return result;
 }
 
 void vec_resize(Vec *vec, size_t new_item_count)
@@ -152,6 +185,66 @@ TestResult vec_test(void)
 
         TEST_ASSERT(v.item_count == 0);
         TEST_ASSERT(v.data == 0);
+
+    TEST_END();
+    TEST_BEGIN("Vec insert and remove behave correctly");
+
+        Vec v = vec_empty(sizeof(uint8_t));
+
+        uint8_t a;
+        a = 0; vec_push_copy(&v, &a);
+        a = 1; vec_push_copy(&v, &a);
+        a = 2; vec_push_copy(&v, &a);
+        a = 3; vec_push_copy(&v, &a);
+
+        a = 10; vec_insert_copy(&v, 1, &a); //[0,10,1,2,3]
+
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 1) == 10);
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 4) == 3);
+        TEST_ASSERT(v.item_count == 5);
+
+        a = 11; vec_insert_copy(&v, 0, &a); //[11,0,10,1,2,3]
+
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 0) == 11);
+
+        a = 4; vec_insert_copy(&v, 6, &a); //[11,0,10,1,2,3,4]
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 6) == 4);
+
+        vec_remove(&v, 1); //[11,10,1,2,3,4]
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 1) == 10);
+
+        vec_remove(&v, 5); //[11,10,1,2,3]
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 4) == 3);
+
+        vec_remove(&v, 0); //[10,1,2,3]
+        TEST_ASSERT(*(uint8_t*)vec_at(&v, 0) == 10);
+        TEST_ASSERT(v.item_count == 4);
+
+        vec_clear(&v);
+
+    TEST_END();
+    TEST_BEGIN("Vec clone behaves correctly");
+
+        Vec v = vec_empty(sizeof(uint8_t));
+
+        uint8_t a;
+        a = 0; vec_push_copy(&v, &a);
+        a = 1; vec_push_copy(&v, &a);
+        a = 2; vec_push_copy(&v, &a);
+        a = 3; vec_push_copy(&v, &a);
+
+        Vec u = vec_clone(&v);
+
+        TEST_ASSERT(u.item_count == v.item_count);
+
+        for (int i = 0; i < u.item_count; ++i)
+        {
+            TEST_ASSERT(vec_at(&v, i) != vec_at(&u, i));
+            TEST_ASSERT(*(uint8_t*)vec_at(&v, i) == *(uint8_t*)vec_at(&v, i));
+        }
+
+        vec_clear(&v);
+        vec_clear(&u);
 
     TEST_END();
     return 0;

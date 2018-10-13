@@ -3,16 +3,19 @@
 #include <stdbool.h>
 #include <SDL.h>
 
-typedef struct InputState
+#include "vec.h"
+
+typedef struct ShellContext ShellContext;
+
+typedef struct ShellInputs
 {
-    int num_keys_down;
-    SDL_Keycode *keys_down;
+    Vec keys_down; // Vec of SDL_Keycode
 }
-InputState;
+ShellInputs;
 
-extern bool shell_open(const char *title, int width, int height);
-extern bool shell_flip_frame_poll_events(void);
-extern void shell_close(void);
+extern ShellContext *shell_new(const char *title, int width, int height);
+extern bool shell_flip_frame_poll_events(ShellContext *context);
+extern void shell_delete(ShellContext *context);
 
-extern InputState *read_input_state(void);
-extern void free_input_state(InputState *state);
+extern ShellInputs *read_input_state_alloc(void);
+extern void free_input_state(ShellInputs *state);

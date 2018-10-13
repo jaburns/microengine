@@ -95,6 +95,7 @@
     <ClCompile Include="src\ecs.c" />
     <ClCompile Include="src\hashtable.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\render_system.c" />
     <ClCompile Include="src\shell.c" />
     <ClCompile Include="src\testing.c" />
     <ClCompile Include="src\vec.c" />
@@ -103,6 +104,7 @@
     <ClInclude Include="src\ecs.h" />
     <ClInclude Include="src\hashtable.h" />
     <ClInclude Include="src\ns_clock.h" />
+    <ClInclude Include="src\render_system.h" />
     <ClInclude Include="src\shell.h" />
     <ClInclude Include="src\testing.h" />
     <ClInclude Include="src\utils.h" />

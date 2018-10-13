@@ -399,10 +399,10 @@ TestResult ecs_test()
         Entity e0 = ecs_create_entity(ecs);
         Entity e1 = ecs_create_entity(ecs);
 
-        ECS_ADD_COMPONENT_DECL(float, ecs, e0, set_float0);
-        ECS_ADD_COMPONENT_DECL(float, ecs, e1, set_float1);
+        ECS_ADD_COMPONENT_DECL(float, set_float0, ecs, e0);
+        ECS_ADD_COMPONENT_DECL(float, set_float1, ecs, e1);
 
-        ECS_GET_COMPONENT_DECL(float, ecs, e1, get_float);
+        ECS_GET_COMPONENT_DECL(float, get_float, ecs, e1);
         TEST_ASSERT(set_float1 == get_float);
 
         ecs_delete(ecs);
@@ -422,16 +422,16 @@ TestResult ecs_test()
         ECS_ADD_COMPONENT(uint32_t, ecs, e1);
         ECS_ADD_COMPONENT(uint32_t, ecs, e2);
 
-        ECS_GET_COMPONENT_DECL(float, ecs, e0, floaty0);
-        ECS_GET_COMPONENT_DECL(float, ecs, e2, floaty2);
+        ECS_GET_COMPONENT_DECL(float, floaty0, ecs, e0);
+        ECS_GET_COMPONENT_DECL(float, floaty2, ecs, e2);
 
         size_t result_count;
         Entity *entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(float, ecs, &result_count);
 
         TEST_ASSERT(result_count == 2);
 
-        ECS_GET_COMPONENT_DECL(float, ecs, entities[0], get0);
-        ECS_GET_COMPONENT_DECL(float, ecs, entities[1], get1);
+        ECS_GET_COMPONENT_DECL(float, get0, ecs, entities[0]);
+        ECS_GET_COMPONENT_DECL(float, get1, ecs, entities[1]);
 
         TEST_ASSERT(entities[0] == e0 && get0 == floaty0);
         TEST_ASSERT(entities[1] == e2 && get1 == floaty2);
@@ -448,12 +448,12 @@ TestResult ecs_test()
         Entity e1 = ecs_create_entity(ecs);
         Entity e2 = ecs_create_entity(ecs);
         
-        ECS_ADD_COMPONENT_DECL(float, ecs, e0, floaty_set);
-        ECS_GET_COMPONENT_DECL(float, ecs, e0, floaty_get);
+        ECS_ADD_COMPONENT_DECL(float, floaty_set, ecs, e0);
+        ECS_GET_COMPONENT_DECL(float, floaty_get, ecs, e0);
         TEST_ASSERT(floaty_get == floaty_set);
 
         ECS_REMOVE_COMPONENT(float, ecs, e0);
-        ECS_GET_COMPONENT_DECL(float, ecs, e0, floaty_get_again);
+        ECS_GET_COMPONENT_DECL(float, floaty_get_again, ecs, e0);
         TEST_ASSERT(!floaty_get_again);
 
         ecs_delete(ecs);
