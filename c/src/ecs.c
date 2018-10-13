@@ -196,15 +196,7 @@ void *get_component(ECS *ecs, Entity entity, const char *component)
 
 
 #ifdef RUN_TESTS 
-
-typedef struct TestArrayElem
-{
-    float x;
-    int16_t y;
-}
-TestArrayElem;
-
-TEST_RESULT ecs_test()
+TestResult ecs_test()
 {
     TEST_BEGIN("GenerationalIndexAllocator works");
 
@@ -230,8 +222,14 @@ TEST_RESULT ecs_test()
         giallocator_clear(&alloc);
 
     TEST_END();
-
     TEST_BEGIN("GenerationalIndexArray works with multiple generations");
+
+        typedef struct TestArrayElem
+        {
+            float x;
+            int16_t y;
+        }
+        TestArrayElem;
 
         GenerationalIndexAllocator alloc = giallocator_empty();
         GenerationalIndexArray arr = giarray_empty(sizeof(TestArrayElem));
@@ -261,8 +259,6 @@ TEST_RESULT ecs_test()
         TEST_ASSERT(val_out2->x == 8.0f && val_out->y == 29);
 
     TEST_END();
-
     return 0;
 }
-
 #endif

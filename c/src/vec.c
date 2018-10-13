@@ -57,11 +57,9 @@ void vec_clear(Vec *vec)
 }
 
 #ifdef RUN_TESTS 
-#include "testing.h"
-
-TEST_RESULT vec_test()
+TestResult vec_test()
 {
-    TEST_BEGIN("Vec should push and pop correctly");
+    TEST_BEGIN("Vec push and pop work correctly");
         Vec v = vec_empty(sizeof(float));
 
         const float a = 4.0f;
@@ -84,7 +82,8 @@ TEST_RESULT vec_test()
         TEST_ASSERT(!didPop);
     TEST_END();
 
+    // TODO test vec_resize and vec_at
+
     return 0;
 }
-
 #endif

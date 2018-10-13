@@ -21,5 +21,5 @@ extern void vec_clear(Vec *vec);
 
 #ifdef RUN_TESTS
 #include "testing.h"
-extern TEST_RESULT vec_test();
+extern TestResult vec_test();
 #endif

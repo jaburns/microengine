@@ -95,6 +95,7 @@
     <ClCompile Include="src\ecs.c" />
     <ClCompile Include="src\hashtable.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\testing.c" />
     <ClCompile Include="src\vec.c" />
   </ItemGroup>
   <ItemGroup>
