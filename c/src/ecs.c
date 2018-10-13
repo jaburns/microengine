@@ -403,11 +403,15 @@ TestResult ecs_test()
     TEST_BEGIN("ECS add component and get component work");
 
         ECS *ecs = ecs_new();
-        Entity e0 = ecs_create_entity(ecs);
 
-        ECS_ADD_COMPONENT_DECL(float, ecs, e0, set_float);
+        Entity e0 = ecs_create_entity(ecs);
+        Entity e1 = ecs_create_entity(ecs);
+
+        ECS_ADD_COMPONENT_DECL(float, ecs, e0, set_float0);
+        ECS_ADD_COMPONENT_DECL(float, ecs, e1, set_float1);
+
         ECS_GET_COMPONENT_DECL(float, ecs, e0, get_float);
-        TEST_ASSERT(set_float == get_float);
+        TEST_ASSERT(set_float0 == get_float);
 
         ecs_delete(ecs);
 
@@ -457,7 +461,6 @@ TestResult ecs_test()
         Entity e2 = ecs_create_entity(ecs);
         
         ECS_ADD_COMPONENT_DECL(float, ecs, e0, floaty_set);
-
         ECS_GET_COMPONENT_DECL(float, ecs, e0, floaty_get);
         TEST_ASSERT(floaty_get == floaty_set);
 
