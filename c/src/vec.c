@@ -19,7 +19,7 @@ void vec_set_copy(Vec *vec, size_t index, const void *item_ref)
     memcpy((uint8_t*)vec->data + vec->item_size * index, item_ref, vec->item_size);
 }
 
-void vec_push(Vec *vec, const void *item_ref)
+void vec_push_copy(Vec *vec, const void *item_ref)
 {
     vec->item_count++;
     vec->data = realloc(vec->data, vec->item_size * vec->item_count);
@@ -56,8 +56,16 @@ void vec_clear(Vec *vec)
     vec->item_count = 0;
 }
 
+void vec_clear_with_callback(Vec *vec, VecCallback cb)
+{
+    for (size_t i = 0; i < vec->item_count; ++i)
+        cb(vec_at(vec, i));
+
+    vec_clear(vec);
+}
+
 #ifdef RUN_TESTS 
-TestResult vec_test()
+TestResult vec_test(void)
 {
     TEST_BEGIN("Vec push and pop work correctly");
         Vec v = vec_empty(sizeof(float));
@@ -65,9 +73,9 @@ TestResult vec_test()
         const float a = 4.0f;
         const float b = 8.0f;
 
-        vec_push(&v, &a);
-        vec_push(&v, &a);
-        vec_push(&v, &b);
+        vec_push_copy(&v, &a);
+        vec_push_copy(&v, &a);
+        vec_push_copy(&v, &b);
 
         float popped;
         bool didPop;
@@ -82,7 +90,7 @@ TestResult vec_test()
         TEST_ASSERT(!didPop);
     TEST_END();
 
-    // TODO test vec_resize and vec_at
+    // TODO test vec_resize, vec_at, clear with callback
 
     return 0;
 }

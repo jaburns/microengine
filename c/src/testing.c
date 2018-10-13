@@ -6,12 +6,12 @@
 #include "ecs.h"
 #include "hashtable.h"
 
-void run_all_tests()
+void run_all_tests(void)
 {
     TEST_RUN(vec_test);
     TEST_RUN(ecs_test);
     TEST_RUN(hashtable_test);
-    printf("\n");
+    printf("\nDone!\n");
 }
 
 #endif

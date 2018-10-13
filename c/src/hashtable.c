@@ -16,7 +16,7 @@ static uint32_t hash_fn(char *string, uint32_t max_len)
     {
         hash ^= (uint8_t)string[i];
         uint8_t rolled_byte = hash >> ((sizeof(hash) - 1) * 8);
-        hash = (hash << 8) ^ rolled_byte;
+        hash = (hash << 8) | rolled_byte;
     }
 
     return hash % max_len;
@@ -35,7 +35,7 @@ void *hashtable_at(HashTable *table, const char *key)
     return NULL;
 }
 
-void hashtable_set_copy(HashTable *table, const char *key, void *item_ref)
+void *hashtable_set_copy(HashTable *table, const char *key, void *item_ref)
 {
     if (!table->table)
         table->table = calloc(table->table_size, sizeof(HashTableEntry*));
@@ -69,6 +69,8 @@ void hashtable_set_copy(HashTable *table, const char *key, void *item_ref)
     }
 
     memcpy(entry->value, item_ref, table->item_size);
+
+    return entry->value;
 }
 
 bool hashtable_remove(HashTable *table, const char *key)
@@ -102,7 +104,9 @@ bool hashtable_remove(HashTable *table, const char *key)
     return false;
 }
 
-void hashtable_clear(HashTable *table)
+static void empty_callback(void *x) {}
+
+void hashtable_clear_with_callback(HashTable *table, HashTableCallback cb)
 {
     if (!table->table) return;
 
@@ -112,6 +116,8 @@ void hashtable_clear(HashTable *table)
 
         while (entry)
         {
+            cb(entry->value);
+
             HashTableEntry *next = entry->next;
             free(entry->key);
             free(entry);
@@ -123,10 +129,23 @@ void hashtable_clear(HashTable *table)
     table->table = NULL;
 }
 
+void hashtable_clear(HashTable *table)
+{
+    hashtable_clear_with_callback(table, &empty_callback);
+}
+
 
 #ifdef RUN_TESTS
-#include "testing.h"
-TestResult hashtable_test()
+static int test_clear_callback_calls = 0;
+static uint32_t test_clear_callback_val = 0;
+
+static void test_clear_callback(void *item)
+{
+    test_clear_callback_calls++;
+    test_clear_callback_val = *((uint32_t*)item);
+}
+
+TestResult hashtable_test(void)
 {
     TEST_BEGIN("Hash function behaves as expected");
         TEST_ASSERT(hash_fn("abcd", 1000) == 0x63626164 % 1000);
@@ -156,7 +175,7 @@ TestResult hashtable_test()
         hashtable_clear(&table);
     TEST_END();
 
-    TEST_BEGIN("Small HashTable handles collisions");
+    TEST_BEGIN("Small HashTable handles collisions, and clear callbacks are called");
         HashTable table = hashtable_empty(1, sizeof(uint32_t));
         uint32_t val0 = 45, val1 = 27, val2 = 99;
 
@@ -171,7 +190,10 @@ TestResult hashtable_test()
         TEST_ASSERT(hashtable_remove(&table, "2"));
         TEST_ASSERT(*(uint32_t*)hashtable_at(&table, "1") == 27);
 
-        hashtable_clear(&table);
+        hashtable_clear_with_callback(&table, &test_clear_callback);
+
+        TEST_ASSERT(test_clear_callback_calls == 1);
+        TEST_ASSERT(test_clear_callback_val == 27);
     TEST_END();
 }
 #endif

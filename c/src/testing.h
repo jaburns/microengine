@@ -6,13 +6,13 @@
 typedef int TestResult;
 
 #define TEST_BEGIN(message) \
-{ \
+do { \
     int asserts__ = 0; \
     printf("  %s : ", message);
 
 #define TEST_END() \
     printf("%d assertions passed\n", asserts__); \
-}
+} while (0)
 
 #define TEST_ASSERT(test) do { \
     if (test) { \
@@ -29,4 +29,4 @@ typedef int TestResult;
     if (result) return result; \
 } while (0)
 
-extern void run_all_tests();
+extern void run_all_tests(void);
