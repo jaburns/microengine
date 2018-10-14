@@ -1,12 +1,5 @@
 #pragma once
 
-#define DECLARE_MAYBE(T) typedef struct Maybe_##T \
-{                                                 \
-    bool has_value;                               \
-    T value;                                      \
-}                                                 \
-Maybe_##T
-
 #define FIND_INDEX_DECL(out_int, arr, len, val) \
 int out_int = -1;                               \
 {                                               \

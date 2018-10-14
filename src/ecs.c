@@ -16,8 +16,6 @@ typedef struct GenerationalIndex
 }
 GenerationalIndex;
 
-DECLARE_MAYBE(GenerationalIndex);
-
 typedef struct AllocatorEntry
 {
     bool is_live;
@@ -168,8 +166,8 @@ GenerationalIndex *giarray_get_all_valid_indices_alloc(
     return result.data;
 }
 
-Maybe_GenerationalIndex giarray_get_first_valid_index(
-    const GenerationalIndexArray *gia, const GenerationalIndexAllocator *allocator
+bool giarray_get_first_valid_index(
+    const GenerationalIndexArray *gia, const GenerationalIndexAllocator *allocator, GenerationalIndex *result
 ){
     for (size_t i = 0; i < gia->entries.item_count; ++i)
     {
@@ -179,10 +177,13 @@ Maybe_GenerationalIndex giarray_get_first_valid_index(
         GenerationalIndex index = (GenerationalIndex) { entry->generation, i };
 
         if (giallocator_is_index_live(allocator, index))
-            return (Maybe_GenerationalIndex) { true, index };
+        {
+            *result = index;
+            return true;
+        }
     }
 
-    return (Maybe_GenerationalIndex) { false };
+    return false;
 }
 
 
@@ -270,10 +271,11 @@ bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
     if (!arr) return false;
 
-    Maybe_GenerationalIndex maybe_index = giarray_get_first_valid_index(arr, &ecs->allocator);
-    if (!maybe_index.has_value) return false;
+    GenerationalIndex index;
+    bool found_index = giarray_get_first_valid_index(arr, &ecs->allocator, &index);
+    if (!found_index) return false;
 
-    *out_entity = GI_TO_ENTITY(maybe_index.value);
+    *out_entity = GI_TO_ENTITY(index);
     return true;
 }
 

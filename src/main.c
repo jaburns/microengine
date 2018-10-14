@@ -9,6 +9,8 @@
 #include "render_system.h"
 #include "components.h"
 
+#include <imgui_impl_sdl_gl3.h>
+
 int main(int argc, char **argv) 
 {
     #ifdef RUN_TESTS
@@ -46,9 +48,13 @@ int main(int argc, char **argv)
         *tp = Teapot_default;
     }
 
+    bool x;
+
     do 
     {
         rendersystem_run(rendersystem, ecs);
+
+        igShowDemoWindow(&x);
     } 
     while (shell_flip_frame_poll_events(ctx));
 

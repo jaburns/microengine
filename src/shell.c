@@ -1,6 +1,7 @@
 #include "shell.h"
 
 #include <string.h>
+#include <imgui_impl_sdl_gl3.h>
 
 #include "gl.h"
 #include "utils.h"
@@ -49,11 +50,11 @@ ShellContext *shell_new(const char *title, int width, int height)
 
     if (glewInitResult != GLEW_OK) goto err;
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_MULTISAMPLE);
-    glFrontFace(GL_CW);
-    glCullFace(GL_BACK);
+    igCreateContext(NULL);
+    ImGuiIO *io = igGetIO();
+    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ImGui_ImplSdlGL3_Init(context->sdl_window, NULL);
+    ImGui_ImplSdlGL3_NewFrame(context->sdl_window);
 
     context->input_state.keys_down = vec_empty(sizeof(SDL_Keycode));
 
@@ -83,7 +84,14 @@ bool shell_flip_frame_poll_events(ShellContext *context)
 {
     bool still_running = true;
 
+    igRender();
+    ImDrawData *ig_draw_data = igGetDrawData();
+    ImGui_ImplSdlGL3_RenderDrawData(ig_draw_data);
+
     SDL_GL_SwapWindow(context->sdl_window);
+
+    ImGui_ImplSdlGL3_NewFrame(context->sdl_window);
+
     SDL_Event event;
 
     while (SDL_PollEvent(&event))
