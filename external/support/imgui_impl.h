@@ -15,7 +15,8 @@
 
 #ifndef __cplusplus
     #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
-    #include <cimgui.h>
+    #define ImNewDummy ImNewDummy { int x; }; static void ImNewDummy__()
+    #include "../cimgui/cimgui.h"
 #endif
 
 #include "../../src/gl.h"

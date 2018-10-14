@@ -62,7 +62,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\imgui_support;$(SolutionDir)\external\cimgui;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.h;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.h;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -80,7 +80,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;NDEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\imgui_support;$(SolutionDir)\external\cimgui;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.h;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.h;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -97,8 +97,8 @@
     <ClCompile Include="external\cimgui\imgui\imgui_demo.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="external\imgui_support\imgui_impl_sdl_gl3.cpp" />
-    <ClCompile Include="external\lodepng\lodepng.cpp" />
+    <ClCompile Include="external\support\imgui_impl.cpp" />
+    <ClCompile Include="external\support\lodepng.c" />
     <ClCompile Include="src\ecs.c" />
     <ClCompile Include="src\hashtable.c" />
     <ClCompile Include="src\main.c" />

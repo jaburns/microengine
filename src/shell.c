@@ -1,7 +1,7 @@
 #include "shell.h"
 
 #include <string.h>
-#include <imgui_impl_sdl_gl3.h>
+#include <imgui_impl.h>
 
 #include "gl.h"
 #include "utils.h"

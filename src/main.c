@@ -9,7 +9,7 @@
 #include "render_system.h"
 #include "components.h"
 
-#include <imgui_impl_sdl_gl3.h>
+#include <imgui_impl.h>
 
 int main(int argc, char **argv) 
 {

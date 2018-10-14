@@ -4,9 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-// #include <lodepng.h>
-// TODO get lodepng
-
+#include <lodepng.h>
 
 static GLchar* read_file(const char *path)
 {
@@ -85,7 +83,6 @@ void resources_delete_shader(ShaderProgramRef ref)
 
 TextureRef resources_load_texture(const char *png_path)
 {
-    /*
     TextureRef ref;
 
     unsigned char *image;
@@ -106,8 +103,6 @@ TextureRef resources_load_texture(const char *png_path)
     free(image);
 
     return ref;
-    */
-    return 0;
 }
 
 void resources_delete_texture(TextureRef ref)
@@ -119,7 +114,6 @@ void resources_delete_texture(TextureRef ref)
 
 CubeMapRef resources_load_cubemap(const char *r, const char *l, const char *t, const char *bo, const char *ba, const char *f)
 {
-    /*
     CubeMapRef ref;
 
     glGenTextures(1, &ref);
@@ -150,8 +144,6 @@ CubeMapRef resources_load_cubemap(const char *r, const char *l, const char *t, c
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     return ref;
-    */
-    return 0;
 }
 
 void resources_delete_cubemap(CubeMapRef ref)

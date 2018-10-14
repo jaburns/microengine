@@ -40,7 +40,7 @@
 #endif
 
 #include "../cimgui/imgui/imgui.h"
-#include "imgui_impl_sdl_gl3.h"
+#include "imgui_impl.h"
 
 // SDL,GL3W
 //#include <SDL.h>
