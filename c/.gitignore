@@ -1,7 +1,0 @@
-/x64
-/*.vcxproj.*
-/external/glew-*
-/external/SDL2-*
-!/external/glew-*.zip
-!/external/SDL2-*.zip
-/*.dll
