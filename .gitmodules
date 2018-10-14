@@ -4,3 +4,6 @@
 [submodule "external/cimgui"]
 	path = external/cimgui
 	url = git@github.com:cimgui/cimgui
+[submodule "external/lodepng"]
+	path = external/lodepng
+	url = git@github.com:lvandeve/lodepng
