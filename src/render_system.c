@@ -70,30 +70,31 @@ void rendersystem_run(RenderSystem *sys, ECS *ecs)
     mat4x4 projection;
     mat4x4_perspective(projection, camera->fov, 1.f, camera->near, camera->far);
 
-//  size_t num_teapots;
-//  Entity *teapots = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(Teapot, ecs, &num_teapots);
-
-//  for (int i = 0; i < num_teapots; ++i)
-//  {
-//      ECS_GET_COMPONENT_DECL(Transform, teapot_transform, ecs, teapots[i]);
-//  }
-
-    mat4x4 view;
-    mat4x4_look_at(view, (vec3){0.f,0.f,2.f}, (vec3){0.f,0.f,0.f}, (vec3){0.f,1.f,0.f});
-
-    mat4x4 model;
-    mat4x4_identity(model);
+    mat4x4 cam_mat, view;
+    Transform_to_matrix(camera_transform, cam_mat);
+    mat4x4_invert(view, cam_mat);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(sys->shader);
-    glUniformMatrix4fv(glGetUniformLocation(sys->shader, "model"), 1, GL_FALSE, model);
     glUniformMatrix4fv(glGetUniformLocation(sys->shader, "view"), 1, GL_FALSE, view);
     glUniformMatrix4fv(glGetUniformLocation(sys->shader, "projection"), 1, GL_FALSE, projection);
 
     glBindVertexArray(sys->vao);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    size_t num_teapots;
+    Entity *teapots = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(Teapot, ecs, &num_teapots);
+
+    for (int i = 0; i < num_teapots; ++i)
+    {
+        ECS_GET_COMPONENT_DECL(Transform, teapot_transform, ecs, teapots[i]);
+
+        mat4x4 model;
+        Transform_to_matrix(teapot_transform, model);
+
+        glUniformMatrix4fv(glGetUniformLocation(sys->shader, "model"), 1, GL_FALSE, model);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+    }
 }
 
 void rendersystem_delete(RenderSystem *sys)

@@ -20,21 +20,30 @@ int main(int argc, char **argv)
     ECS *ecs = ecs_new();
 
     Entity camera = ecs_create_entity(ecs);
-    Entity teapot = ecs_create_entity(ecs);
-
     {
-        ECS_ADD_COMPONENT_DECL(Transform, x, ecs, camera);
-        *x = Transform_default;
-        x->position[2] = 10.f;
-    }{
-        ECS_ADD_COMPONENT_DECL(Camera, x, ecs, camera);
-        *x = Camera_default;
-    }{
-        ECS_ADD_COMPONENT_DECL(Transform, x, ecs, teapot);
-        *x = Transform_default;
-    }{
-        ECS_ADD_COMPONENT_DECL(Teapot, x, ecs, teapot);
-        *x = Teapot_default;
+        ECS_ADD_COMPONENT_DECL(Transform, tr, ecs, camera);
+        *tr = Transform_default;
+        tr->position[1] = 1.f;
+        tr->position[2] = 5.f;
+        ECS_ADD_COMPONENT_DECL(Camera, ca, ecs, camera);
+        *ca = Camera_default;
+    }
+
+    Entity teapot = ecs_create_entity(ecs);
+    {
+        ECS_ADD_COMPONENT_DECL(Transform, tr, ecs, teapot);
+        *tr = Transform_default;
+        ECS_ADD_COMPONENT_DECL(Teapot, tp, ecs, teapot);
+        *tp = Teapot_default;
+    }
+
+    Entity teapot2 = ecs_create_entity(ecs);
+    {
+        ECS_ADD_COMPONENT_DECL(Transform, tr, ecs, teapot2);
+        *tr = Transform_default;
+        tr->position[1] = 1.f;
+        ECS_ADD_COMPONENT_DECL(Teapot, tp, ecs, teapot2);
+        *tp = Teapot_default;
     }
 
     do 

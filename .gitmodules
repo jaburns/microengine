@@ -1,0 +1,6 @@
+[submodule "external/linmath.h"]
+	path = external/linmath.h
+	url = git@github.com:datenwolf/linmath.h
+[submodule "external/cimgui"]
+	path = external/cimgui
+	url = git@github.com:cimgui/cimgui
