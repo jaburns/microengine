@@ -1,11 +1,9 @@
-#pragma once
-
 #include "shell.h"
-#include "utils.h"
 
 #include <string.h>
-#include <GL/glew.h>
-#include <SDL.h>
+
+#include "gl.h"
+#include "utils.h"
 
 struct ShellContext
 {

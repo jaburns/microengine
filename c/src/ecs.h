@@ -17,7 +17,7 @@ extern void *ecs_get_component(ECS *ecs, Entity entity, const char *component_ty
 extern void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type, size_t component_size);
 extern void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type);
 
-extern Entity ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type);
+extern bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type, Entity *out_entity);
 extern Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length);
 
 #define ECS_GET_COMPONENT_DECL(T, var_name, ecs_ptr, entity) \
@@ -32,8 +32,8 @@ extern Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const 
 #define ECS_REMOVE_COMPONENT(T, ecs_ptr, entity) \
     ecs_remove_component((ecs_ptr), (entity), #T)
 
-#define ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(T, ecs_ptr) \
-    ecs_find_first_entity_with_component((ecs_ptr), #T)
+#define ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(T, ecs_ptr, out_entity_ptr) \
+    ecs_find_first_entity_with_component((ecs_ptr), #T, out_entity_ptr)
 
 #define ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(T, ecs_ptr, result_length) \
     ecs_find_all_entities_with_component_alloc((ecs_ptr), #T, (result_length))

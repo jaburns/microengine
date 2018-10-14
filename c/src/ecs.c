@@ -265,15 +265,16 @@ void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
 }
 
 
-Entity ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type)
+bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type, Entity *out_entity)
 {
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
-    if (!arr) return;
+    if (!arr) return false;
 
     Maybe_GenerationalIndex maybe_index = giarray_get_first_valid_index(arr, &ecs->allocator);
-    if (!maybe_index.has_value) return;
+    if (!maybe_index.has_value) return false;
 
-    return GI_TO_ENTITY(maybe_index.value);
+    *out_entity = GI_TO_ENTITY(maybe_index.value);
+    return true;
 }
 
 Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length)
@@ -437,6 +438,29 @@ TestResult ecs_test()
         TEST_ASSERT(entities[1] == e2 && get1 == floaty2);
 
         free(entities);
+
+        ecs_delete(ecs);
+
+    TEST_END();
+    TEST_BEGIN("ECS find first entity with component works");
+
+        ECS *ecs = ecs_new();
+
+        Entity e0 = ecs_create_entity(ecs);
+        Entity e1 = ecs_create_entity(ecs);
+        Entity entity;
+        bool did_find;
+
+        ECS_ADD_COMPONENT(float, ecs, e0);
+        ECS_ADD_COMPONENT(float, ecs, e1);
+        ECS_ADD_COMPONENT(uint32_t, ecs, e1);
+
+        did_find = ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(uint32_t, ecs, &entity);
+        TEST_ASSERT(did_find);
+        TEST_ASSERT(entity == e1);
+
+        did_find = ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(int16_t, ecs, &entity);
+        TEST_ASSERT(!did_find);
 
         ecs_delete(ecs);
 
