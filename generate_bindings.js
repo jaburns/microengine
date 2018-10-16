@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const types = [
     {
         _internal: true,
@@ -41,22 +43,6 @@ const types = [
         },
     },
 ];
-/*
-
-Transform
-vec3 position
-quat rotation
-vec3 scale
-
-Teapot
-float nothing
-
-Camera
-float fov
-float near
-float far
-
-*/
 
 const baseTypeInterop = `
 static void lcb_push_float(lua_State *L, float *v)
@@ -82,7 +68,6 @@ const generateStruct = type => {
     result.push(`${type.name};`);
     return result.join('\n') + '\n';
 };
-
 
 const generateLuaPush = (type, proto) => {
     const result = [`static void lcb_push_${type.name}(lua_State *L, ${type.name} *v)`];
@@ -170,23 +155,20 @@ const bindingProc = types => {
     return result.join('\n') + '\n';
 };
 
-
-
-const header = false;
-
-if (header)
-{
-    console.log(`// Generated
+const generateFile_components_h = () => {
+    const result = [`// Generated
 #pragma once
 #include <linmath.h>
 #include <stdint.h>
-`);
+`];
     for (let i = 0; i < types.length; ++i)
-        console.log(generateStruct(types[i]));
-}
-else
-{
-    console.log(`// Generated
+        result.push(generateStruct(types[i]));
+
+    return result.join('\n');
+};
+
+const generateFile_ecs_lua_interop_c = () => {
+    const result = [`// Generated
 #pragma once
 #include <linmath.h>
 #include <stdint.h>
@@ -204,22 +186,27 @@ void ecs_lua_bind_ecs(ECS *ecs)
 }
 
 ${baseTypeInterop}
-`);
+`];
     for (let i = 0; i < types.length; ++i)
     {
-        console.log(generateLuaPush(types[i], true));
-        console.log(generateLuaPop(types[i], true));
+        result.push(generateLuaPush(types[i], true));
+        result.push(generateLuaPop(types[i], true));
     }
-    console.log('\n');
+    result.push('\n');
     for (let i = 0; i < types.length; ++i)
     {
-        console.log(generateLuaPush(types[i]));
-        console.log(generateLuaPop(types[i]));
+        result.push(generateLuaPush(types[i]));
+        result.push(generateLuaPop(types[i]));
 
         if (!types[i]._internal) {
-            console.log(generateLuaGetComponent(types[i]));
-            console.log(generateLuaSetComponent(types[i]));
+            result.push(generateLuaGetComponent(types[i]));
+            result.push(generateLuaSetComponent(types[i]));
         }
     }
-    console.log(bindingProc(types));
+    result.push(bindingProc(types));
+
+    return result.join('\n');
 }
+
+fs.writeFileSync("src/components.h", generateFile_components_h());
+fs.writeFileSync("src/ecs_lua_interop.h", generateFile_ecs_lua_interop_c());
