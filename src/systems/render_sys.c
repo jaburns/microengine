@@ -1,9 +1,9 @@
-#include "render_system.h"
+#include "render_sys.h"
 
-#include "gl.h"
-#include "components.h"
-#include "components_ext.h"
-#include "resources.h"
+#include "../gl.h"
+#include "../components.h"
+#include "../components_ext.h"
+#include "../resources.h"
 
 static const GLfloat triangle_vertices[] = {
     0.0f,  0.577f, 0.0f,
@@ -25,7 +25,7 @@ struct RenderSystem
     ShaderProgramRef shader;
 };
 
-RenderSystem *rendersystem_new(void)
+RenderSystem *render_sys_new(void)
 {
     RenderSystem *sys = malloc(sizeof(RenderSystem));
 
@@ -60,7 +60,7 @@ RenderSystem *rendersystem_new(void)
     return sys;
 }
 
-void rendersystem_run(RenderSystem *sys, ECS *ecs)
+void render_sys_run(RenderSystem *sys, ECS *ecs)
 {
     Entity camera_entity;
     if (!ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(Camera, ecs, &camera_entity)) return;
@@ -98,7 +98,7 @@ void rendersystem_run(RenderSystem *sys, ECS *ecs)
     }
 }
 
-void rendersystem_delete(RenderSystem *sys)
+void render_sys_delete(RenderSystem *sys)
 {
     if (!sys) return;
 

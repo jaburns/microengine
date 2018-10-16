@@ -6,10 +6,10 @@
 
 #include "ecs.h"
 #include "shell.h"
-#include "render_system.h"
 #include "components.h"
 #include "components_ext.h"
 #include "ecs_lua_interop.h"
+#include "systems/render_sys.h"
 
 #include <lua.h>
 #include <lauxlib.h>

@@ -1,5 +1,24 @@
 const types = [
     {
+        _internal: true,
+        name: "vec3",
+        fields: {
+            x: ["float", '&(*v)[0]'],
+            y: ["float", '&(*v)[1]'],
+            z: ["float", '&(*v)[2]']
+        }
+    },
+    {
+        _internal: true,
+        name: "quat",
+        fields: {
+            x: ["float", '&(*v)[0]'],
+            y: ["float", '&(*v)[1]'],
+            z: ["float", '&(*v)[2]'],
+            w: ["float", '&(*v)[3]'],
+        }
+    },
+    {
         name: "Transform",
         fields: {
             position: "vec3",
@@ -22,77 +41,41 @@ const types = [
         },
     },
 ];
+/*
+
+Transform
+vec3 position
+quat rotation
+vec3 scale
+
+Teapot
+float nothing
+
+Camera
+float fov
+float near
+float far
+
+*/
 
 const baseTypeInterop = `
 static void lcb_push_float(lua_State *L, float *v)
 {
     lua_pushnumber(L, *v);
 }
-
 static void lcb_pop_float(lua_State *L, float *v, int stack_index)
 {
     *v = luaL_checknumber(L, stack_index);
 }
-
-static void lcb_push_vec3(lua_State *L, vec3 *v)
-{
-    lua_newtable(L);
-    lua_pushstring(L, "x"); lua_pushnumber(L, (*v)[0]); lua_settable(L, -3);
-    lua_pushstring(L, "y"); lua_pushnumber(L, (*v)[1]); lua_settable(L, -3);
-    lua_pushstring(L, "z"); lua_pushnumber(L, (*v)[2]); lua_settable(L, -3);
-}
-
-static void lcb_pop_vec3(lua_State *L, vec3 *v, int stack_index)
-{
-    lua_getfield(L, stack_index, "x");
-    (*v)[0] = luaL_checknumber(L, stack_index);
-    lua_pop(L, 1);
-
-    lua_getfield(L, stack_index, "y");
-    (*v)[1] = luaL_checknumber(L, stack_index);
-    lua_pop(L, 1);
-
-    lua_getfield(L, stack_index, "z");
-    (*v)[2] = luaL_checknumber(L, stack_index);
-    lua_pop(L, 1);
-}
-
-
-static void lcb_push_quat(lua_State *L, quat *v)
-{
-    lua_newtable(L);
-    lua_pushstring(L, "x"); lua_pushnumber(L, (*v)[0]); lua_settable(L, -3);
-    lua_pushstring(L, "y"); lua_pushnumber(L, (*v)[1]); lua_settable(L, -3);
-    lua_pushstring(L, "z"); lua_pushnumber(L, (*v)[2]); lua_settable(L, -3);
-    lua_pushstring(L, "w"); lua_pushnumber(L, (*v)[3]); lua_settable(L, -3);
-}
-
-static void lcb_pop_quat(lua_State *L, quat *v, int stack_index)
-{
-    lua_getfield(L, stack_index, "x");
-    (*v)[0] = luaL_checknumber(L, stack_index);
-    lua_pop(L, 1);
-
-    lua_getfield(L, stack_index, "y");
-    (*v)[1] = luaL_checknumber(L, stack_index);
-    lua_pop(L, 1);
-
-    lua_getfield(L, stack_index, "z");
-    (*v)[2] = luaL_checknumber(L, stack_index);
-    lua_pop(L, 1);
-
-    lua_getfield(L, stack_index, "w");
-    (*v)[3] = luaL_checknumber(L, stack_index);
-    lua_pop(L, 1);
-}
 `;
 
-
 const generateStruct = type => {
+    if (type._internal) return '';
+
     const result = [`typedef struct ${type.name}`];
     result.push('{');
 
-    for (var k in type.fields)
+    for (let k in type.fields)
         result.push(`    ${type.fields[k]} ${k};`);
 
     result.push('}');
@@ -107,10 +90,18 @@ const generateLuaPush = (type, proto) => {
     result.push('{');
     result.push('    lua_newtable(L);');
 
-    for (var k in type.fields)
-        result.push(`    lua_pushstring(L, "${k}"); lcb_push_${type.fields[k]}(L, &v->${k}); lua_settable(L, -3);`);
+    for (let k in type.fields) {
+        const fieldRef = Array.isArray(type.fields[k])
+            ? type.fields[k][1]
+            : `&v->${k}`;
 
-    result.push('    return 1;');
+        const fieldType = Array.isArray(type.fields[k])
+            ? type.fields[k][0]
+            : type.fields[k];
+
+        result.push(`    lua_pushstring(L, "${k}"); lcb_push_${fieldType}(L, ${fieldRef}); lua_settable(L, -3);`);
+    }
+
     result.push('}');
     return result.join('\n') + '\n';
 };
@@ -121,13 +112,20 @@ const generateLuaPop = (type, proto) => {
     result.push('{');
     result.push('    luaL_checktype(L, stack_index, LUA_TTABLE);');
 
-    for (var k in type.fields) {
+    for (let k in type.fields) {
+        const fieldRef = Array.isArray(type.fields[k])
+            ? type.fields[k][1]
+            : `&v->${k}`;
+
+        const fieldType = Array.isArray(type.fields[k])
+            ? type.fields[k][0]
+            : type.fields[k];
+
         result.push(`    lua_getfield(L, stack_index, "${k}");`);
-        result.push(`    lcb_pop_${type.fields[k]}(L, &v->${k}, -1);`);
+        result.push(`    lcb_pop_${fieldType}(L, ${fieldRef}, -1);`);
         result.push('    lua_pop(L, 1);');
     }
 
-    result.push('    return 1;');
     result.push('}');
     return result.join('\n') + '\n';
 };
@@ -160,6 +158,8 @@ const bindingProc = types => {
 
     for (let i = 0; i < types.length; ++i)
     {
+        if (types[i]._internal) continue;
+
         result.push(`    lua_pushcfunction(L, lcb_get_component_${types[i].name});`);
         result.push(`    lua_setglobal(L, "get_component_${types[i].name}");`);
         result.push(`    lua_pushcfunction(L, lcb_set_component_${types[i].name});`);
@@ -169,8 +169,6 @@ const bindingProc = types => {
     result.push('}');
     return result.join('\n') + '\n';
 };
-
-
 
 
 
@@ -217,8 +215,11 @@ ${baseTypeInterop}
     {
         console.log(generateLuaPush(types[i]));
         console.log(generateLuaPop(types[i]));
-        console.log(generateLuaGetComponent(types[i]));
-        console.log(generateLuaSetComponent(types[i]));
+
+        if (!types[i]._internal) {
+            console.log(generateLuaGetComponent(types[i]));
+            console.log(generateLuaSetComponent(types[i]));
+        }
     }
     console.log(bindingProc(types));
 }
