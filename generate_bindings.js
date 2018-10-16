@@ -110,6 +110,7 @@ const generateLuaSetComponent = type => {
     result.push('{');
     result.push('    Entity e = (Entity)luaL_checknumber(L, 1);');
     result.push(`    ECS_GET_COMPONENT_DECL(${type.name}, x, s_ecs_lua, e);`);
+    result.push(`    if (!x) x = ECS_ADD_COMPONENT(${type.name}, s_ecs_lua, e);`);
     result.push(`    lcb_pop_${type.name}(L, x, 2);`);
     result.push('    return 1;');
     result.push('}');

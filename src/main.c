@@ -25,6 +25,30 @@ static int l_print (lua_State *L)
     return 1;
 }
 
+static ECS *s_ecs_lua;
+
+static int lcb_create_entity(lua_State *L)
+{
+    Entity ent = ecs_create_entity(s_ecs_lua);
+    lua_pushnumber(L, (double)ent);
+
+    // crashes after here, doesn't return to lua
+}
+
+static int lcb_destroy_entity(lua_State *L)
+{
+    double entity = luaL_checknumber(L, 1);
+    ecs_destroy_entity(s_ecs_lua, (Entity)entity);
+}
+
+void ecs_lua_bind_entity_functions(lua_State *L)
+{
+    lua_pushcfunction(L, lcb_create_entity);
+    lua_setglobal(L, "create_entity");
+    lua_pushcfunction(L, lcb_destroy_entity);
+    lua_setglobal(L, "destroy_entity");
+}
+
 static void run_lua_main_func(lua_State *L, const char *func)
 {
     int error;
@@ -50,33 +74,6 @@ static void run_game()
 
     // TODO move this setup code to Lua
 
-    Entity teapot = ecs_create_entity(ecs);
-    {
-        ECS_ADD_COMPONENT_DECL(Transform, tr, ecs, teapot);
-        *tr = Transform_default;
-        ECS_ADD_COMPONENT_DECL(Teapot, tp, ecs, teapot);
-        *tp = Teapot_default;
-    }
-
-    Entity camera = ecs_create_entity(ecs);
-    {
-        ECS_ADD_COMPONENT_DECL(Transform, tr, ecs, camera);
-        *tr = Transform_default;
-        tr->position[1] = 1.f;
-        tr->position[2] = 5.f;
-        ECS_ADD_COMPONENT_DECL(Camera, ca, ecs, camera);
-        *ca = Camera_default;
-    }
-
-    Entity teapot2 = ecs_create_entity(ecs);
-    {
-        ECS_ADD_COMPONENT_DECL(Transform, tr, ecs, teapot2);
-        *tr = Transform_default;
-        tr->position[1] = 1.f;
-        ECS_ADD_COMPONENT_DECL(Teapot, tp, ecs, teapot2);
-        *tp = Teapot_default;
-    }
-
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
 
@@ -85,6 +82,8 @@ static void run_game()
 
     ecs_lua_bind_ecs(ecs);
     ecs_lua_bind_functions(L);
+    s_ecs_lua = ecs;
+    ecs_lua_bind_entity_functions(L);
 
     run_lua_main_func(L, "start");
 
