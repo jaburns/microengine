@@ -2,6 +2,7 @@
 
 #include "gl.h"
 #include "components.h"
+#include "components_ext.h"
 #include "resources.h"
 
 static const GLfloat triangle_vertices[] = {
