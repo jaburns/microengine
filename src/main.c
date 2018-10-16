@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #ifdef RUN_TESTS
-#include "testing.h"
+    #include "testing.h"
 #endif
 
 #include "ecs.h"
@@ -17,8 +17,6 @@
 #include <string.h>
 
 #include <imgui_impl.h>
-
-/* ----------------------------------- */
 
 static const char *lua_script = ""
     "t = get_component_Transform(0)   \n"
@@ -48,12 +46,13 @@ static void run_lua(void)
     lua_close(L);
 }
 
-
 static void run_game()
 {
     ShellContext *ctx = shell_new("Hello world", 1024, 768);
-    RenderSystem *rendersystem = rendersystem_new();
+    RenderSystem *rendersystem = render_sys_new();
     ECS *ecs = ecs_new();
+
+    // TODO move this setup code to Lua
 
     Entity teapot = ecs_create_entity(ecs);
     {
@@ -82,12 +81,16 @@ static void run_game()
         *tp = Teapot_default;
     }
 
+    // TODO run main.lua::start()
+
     ecs_lua_bind_ecs(ecs);
     run_lua();
 
     do 
     {
-        rendersystem_run(rendersystem, ecs);
+        // TODO run main.lua::update()
+
+        render_sys_run(rendersystem, ecs);
 
         bool x;
         igShowDemoWindow(&x);
@@ -95,12 +98,9 @@ static void run_game()
     while (shell_flip_frame_poll_events(ctx));
 
     ecs_delete(ecs);
-    rendersystem_delete(rendersystem);
+    render_sys_delete(rendersystem);
     shell_delete(ctx);
 }
-
-
-
 
 int main(int argc, char **argv) 
 {
