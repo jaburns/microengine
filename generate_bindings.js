@@ -209,4 +209,4 @@ ${baseTypeInterop}
 }
 
 fs.writeFileSync("src/components.h", generateFile_components_h());
-fs.writeFileSync("src/ecs_lua_interop.h", generateFile_ecs_lua_interop_c());
+fs.writeFileSync("src/ecs_lua_interop.c", generateFile_ecs_lua_interop_c());
