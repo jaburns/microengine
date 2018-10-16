@@ -18,32 +18,28 @@
 
 #include <imgui_impl.h>
 
-static const char *lua_script = ""
-    "t = get_component_Transform(0)   \n"
-    "t.position.z = t.position.z - 1  \n"
-    "set_component_Transform(0, t)    \n"
-    "";
+static int l_print (lua_State *L) 
+{	
+    const char *d = luaL_checkstring(L, 1);
+    printf("L: %s\n", d);
+    return 1;
+}
 
-static void run_lua(void)
+static void run_lua_main_func(lua_State *L, const char *func)
 {
     int error;
-    lua_State *L = luaL_newstate();
-    luaL_openlibs(L);
 
-    ecs_lua_bind_functions(L);
-
-    error = luaL_loadbuffer(L, lua_script, strlen(lua_script), "line")
-        || lua_pcall(L, 0, 0, 0);
+    lua_getglobal(L, "require");
+    lua_pushstring(L, "lua/main");
+    error = lua_pcall(L, 1, 1, 0);
+    lua_getfield(L, -1, func);
+    error = lua_pcall(L, 0, 0, 0);
 
     if (error) 
     {
         printf("%s", lua_tostring(L, -1));
-        lua_pop(L, 1);
+        exit(1);
     }
-    else 
-        printf("Lua success!");
-
-    lua_close(L);
 }
 
 static void run_game()
@@ -81,14 +77,20 @@ static void run_game()
         *tp = Teapot_default;
     }
 
-    // TODO run main.lua::start()
+    lua_State *L = luaL_newstate();
+    luaL_openlibs(L);
+
+    lua_pushcfunction(L, l_print);
+    lua_setglobal(L, "print");
 
     ecs_lua_bind_ecs(ecs);
-    run_lua();
+    ecs_lua_bind_functions(L);
+
+    run_lua_main_func(L, "start");
 
     do 
     {
-        // TODO run main.lua::update()
+        run_lua_main_func(L, "update");
 
         render_sys_run(rendersystem, ecs);
 
@@ -97,6 +99,7 @@ static void run_game()
     } 
     while (shell_flip_frame_poll_events(ctx));
 
+    lua_close(L);
     ecs_delete(ecs);
     render_sys_delete(rendersystem);
     shell_delete(ctx);
@@ -105,7 +108,7 @@ static void run_game()
 int main(int argc, char **argv) 
 {
     #ifdef RUN_TESTS
-        run_all_tests();
+        //run_all_tests();
     #endif
 
     run_game();
