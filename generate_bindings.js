@@ -1,4 +1,5 @@
 const fs = require('fs');
+const componentsJson = require('./src/components.json');
 
 const types = [
     {
@@ -19,30 +20,8 @@ const types = [
             z: ["float", '&(*v)[2]'],
             w: ["float", '&(*v)[3]'],
         }
-    },
-    {
-        name: "Transform",
-        fields: {
-            position: "vec3",
-            rotation: "quat",
-            scale:    "vec3",
-        },
-    },
-    {
-        name: "Teapot",
-        fields: {
-            nothing: "float",
-        },
-    },
-    {
-        name: "Camera",
-        fields: {
-            fov:  "float",
-            near: "float",
-            far:  "float",
-        },
-    },
-];
+    }
+].concat(componentsJson);
 
 const baseTypeInterop = `
 static void lcb_push_float(lua_State *L, float *v)
