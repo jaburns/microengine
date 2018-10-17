@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+# Requires SDL2 v2.0.5: brew install sdl2 | apt install libsdl2-dev
+
+CC='cc'
+CFLAGS='-Iexternal/lodepng -Iexternal/lua -Iexternal/support -Iexternal/linmath.h'
+BIN_FILE='game'
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    LDFLAGS='-lc++ -lSDL2 -framework OpenGL'
+else
+    LDFLAGS='-lstdc++ -lGL -lSDL2 -lSDL2main -lm -lGLEW'
+fi
+
+c_to_obj() {
+    printf 'build/'
+    echo "$1" | sed 's/cp*$/o/;s:/:_:g'
+}
+
+make_cmd() {
+    local obj_file="$(c_to_obj "$1")"
+    $CC $CFLAGS -MM -MT "$obj_file" -c "$1"
+    echo -e "\t$CC $CFLAGS -o $obj_file -c $1"
+}
+
+file_list() {
+    find src -iname '*.c'
+    find external/lua -iname '*.c' | grep -v 'lbitlib.c' | grep -v 'lua.c'
+    echo external/support/imgui_impl.cpp
+    echo external/cimgui/cimgui.cpp
+    echo external/cimgui/imgui/imgui.cpp
+    echo external/cimgui/imgui/imgui_draw.cpp
+    echo external/cimgui/imgui/imgui_demo.cpp
+    echo external/cimgui/imgui/imgui_widgets.cpp
+    echo external/support/lodepng.c
+}
+
+print_makefile() {
+    local all_objs=''
+    for f in $(file_list); do
+        all_objs="$all_objs $(c_to_obj $f)"
+    done
+    echo "$BIN_FILE: $all_objs"
+    echo -e "\t$CC -o $BIN_FILE $all_objs $LDFLAGS"
+
+    for f in $(file_list); do
+        make_cmd "$f"
+    done
+
+    echo '.PHONY: clean run'
+    echo -e "clean:\n\t find . -iname '*.o' | xargs rm && rm -f ./game"
+    echo -e "run: $BIN_FILE \n\t ./$BIN_FILE"
+}
+
+mkdir -p build
+print_makefile > Makefile

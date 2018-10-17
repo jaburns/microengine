@@ -45,10 +45,11 @@ ShellContext *shell_new(const char *title, int width, int height)
 
     if (!context->sdl_gl_context) goto err;
 
-    glewExperimental = GL_TRUE;
-    const GLenum glewInitResult = glewInit();
-
-    if (glewInitResult != GLEW_OK) goto err;
+    #ifndef __APPLE__
+        glewExperimental = GL_TRUE;
+        const GLenum glewInitResult = glewInit();
+        if (glewInitResult != GLEW_OK) goto err;
+    #endif
 
     igCreateContext(NULL);
     ImGuiIO *io = igGetIO();
@@ -100,19 +101,19 @@ bool shell_flip_frame_poll_events(ShellContext *context)
 
         ImGui_ImplSdlGL3_ProcessEvent(&event);
 
-        switch (event.type) 
+        switch (event.type)
         {
             case SDL_QUIT:
                 still_running = false;
                 break;
 
             case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_ESCAPE) 
+                if (event.key.keysym.sym == SDLK_ESCAPE)
                     still_running = false;
                 break;
 
             case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) 
+                if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
                 {
                     context->window_width = event.window.data1;
                     context->window_height = event.window.data2;

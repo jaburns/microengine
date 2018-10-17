@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 Vec vec_empty(size_t item_size)
 {
@@ -44,7 +45,7 @@ void vec_remove(Vec *vec, size_t index)
 {
     if (index >= vec->item_count) return;
 
-    if (index < vec->item_count - 1) 
+    if (index < vec->item_count - 1)
         memmove(vec_at(vec, index), vec_at(vec, index + 1), (vec->item_count - 1 - index) * vec->item_size);
 
     vec_resize(vec, vec->item_count - 1);
@@ -98,7 +99,7 @@ void vec_clear_with_callback(Vec *vec, VecCallback cb)
     vec_clear(vec);
 }
 
-#ifdef RUN_TESTS 
+#ifdef RUN_TESTS
 static int test_clear_callback_calls;
 static uint8_t test_clear_callback_sum;
 

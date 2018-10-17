@@ -8,3 +8,6 @@
 /src/components.h
 /src/ecs_lua_interop.c
 /imgui.ini
+/build
+/Makefile
+/game

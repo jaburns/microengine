@@ -149,7 +149,6 @@ const generateFile_components_h = () => {
 
 const generateFile_ecs_lua_interop_c = () => {
     const result = [`// Generated
-#pragma once
 #include <linmath.h>
 #include <stdint.h>
 #include <lua.h>

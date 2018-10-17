@@ -1,5 +1,7 @@
 #include "render_sys.h"
 
+#include <stdio.h>
+
 #include "../gl.h"
 #include "../components.h"
 #include "../components_ext.h"

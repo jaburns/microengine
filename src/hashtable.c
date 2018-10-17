@@ -12,7 +12,7 @@ static uint32_t hash_fn(char *string, uint32_t max_len)
 {
     uint32_t hash = 0;
 
-    for (int i = strlen(string) - 1; i >= 0; --i) 
+    for (int i = strlen(string) - 1; i >= 0; --i)
     {
         hash ^= (uint8_t)string[i];
         uint8_t rolled_byte = hash >> ((sizeof(hash) - 1) * 8);
@@ -29,7 +29,7 @@ void *hashtable_at(HashTable *table, const char *key)
     size_t bin = hash_fn(key, table->table_size);
 
     for (HashTableEntry *entry = table->table[bin]; entry; entry = entry->next)
-        if (strcmp(key, entry->key) == 0) 
+        if (strcmp(key, entry->key) == 0)
             return entry->value;
 
     return NULL;
@@ -59,7 +59,7 @@ void *hashtable_set_copy(HashTable *table, const char *key, void *item_ref)
     if (! key_match_found)
     {
         entry = malloc(sizeof(HashTableEntry) + table->item_size);
-        entry->key = _strdup(key);
+        entry->key = strdup(key);
         entry->next = NULL;
 
         if (parent)
@@ -84,7 +84,7 @@ bool hashtable_remove(HashTable *table, const char *key)
 
     while (entry)
     {
-        if (strcmp(key, entry->key) == 0) 
+        if (strcmp(key, entry->key) == 0)
         {
             if (parent)
                 parent->next = entry->next;
@@ -148,7 +148,7 @@ static void test_clear_callback(void *item)
 TestResult hashtable_test(void)
 {
     TEST_BEGIN("Hash function behaves as expected");
-    
+
         TEST_ASSERT(hash_fn("abcd", 1000) == 0x63626164 % 1000);
         TEST_ASSERT(hash_fn("abcde", 1000) == (0x63626564 ^ 0x00006100) % 1000);
 
@@ -157,7 +157,7 @@ TestResult hashtable_test(void)
 
         HashTable table = hashtable_empty(0xFFFF, sizeof(uint32_t));
         uint32_t val0 = 45, val1 = 27;
-        
+
         hashtable_set_copy(&table, "zeroth value", &val0);
         hashtable_set_copy(&table, "first value", &val1);
 

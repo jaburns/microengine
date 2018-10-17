@@ -1,8 +1,9 @@
 #pragma once
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
- 
+
 typedef struct Vec
 {
     size_t item_size;

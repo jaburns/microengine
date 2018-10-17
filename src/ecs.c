@@ -9,7 +9,7 @@
 #include "hashtable.h"
 
 
-typedef struct GenerationalIndex 
+typedef struct GenerationalIndex
 {
     uint32_t generation;
     uint32_t index;
@@ -60,7 +60,7 @@ bool giallocator_is_index_live(const GenerationalIndexAllocator *gia, Generation
     if (index.index >= gia->entries.item_count) return false;
 
     AllocatorEntry *entry = vec_at(&gia->entries, index.index);
-    
+
     return entry->is_live && entry->generation == index.generation;
 }
 
@@ -191,7 +191,7 @@ bool giarray_get_first_valid_index(
 #define ENTITY_TO_GI(entity) (*(GenerationalIndex*)(&entity))
 #define GI_TO_ENTITY(gi) (*(Entity*)(&gi))
 
-struct ECS 
+struct ECS
 {
     GenerationalIndexAllocator allocator;
     HashTable component_arrays; // HashTable of GenerationalIndexArray for each component type
@@ -282,14 +282,14 @@ bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_
 Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length)
 {
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
-    if (!arr) return;
+    if (!arr) return NULL;
 
     return giarray_get_all_valid_indices_alloc(arr, &ecs->allocator, result_length);
 }
 
 
 
-#ifdef RUN_TESTS 
+#ifdef RUN_TESTS
 TestResult ecs_test()
 {
     TEST_BEGIN("GenerationalIndexAllocator works");
@@ -353,7 +353,7 @@ TestResult ecs_test()
 
     TEST_END();
     TEST_BEGIN("GenerationalIndexArray find all valid indices works");
-        
+
         GenerationalIndexAllocator alloc = giallocator_empty();
         GenerationalIndexArray arr = giarray_empty(sizeof(float));
         GenerationalIndex i0 = giallocator_allocate(&alloc);
@@ -473,7 +473,7 @@ TestResult ecs_test()
         Entity e0 = ecs_create_entity(ecs);
         Entity e1 = ecs_create_entity(ecs);
         Entity e2 = ecs_create_entity(ecs);
-        
+
         ECS_ADD_COMPONENT_DECL(float, floaty_set, ecs, e0);
         ECS_GET_COMPONENT_DECL(float, floaty_get, ecs, e0);
         TEST_ASSERT(floaty_get == floaty_set);
