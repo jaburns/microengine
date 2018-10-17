@@ -98,6 +98,8 @@ bool shell_flip_frame_poll_events(ShellContext *context)
     {
         update_input_state(&context->input_state, &event);
 
+        ImGui_ImplSdlGL3_ProcessEvent(&event);
+
         switch (event.type) 
         {
             case SDL_QUIT:
@@ -129,6 +131,8 @@ void shell_delete(ShellContext *context)
 
     if (context->sdl_window)
     {
+        ImGui_ImplSdlGL3_Shutdown();
+
         SDL_GL_DeleteContext(context->sdl_gl_context);
         SDL_DestroyWindow(context->sdl_window);
         SDL_Quit();

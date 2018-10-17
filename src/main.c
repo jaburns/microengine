@@ -10,13 +10,12 @@
 #include "components_ext.h"
 #include "ecs_lua_interop.h"
 #include "systems/render_sys.h"
+#include "systems/editor_sys.h"
 
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
 #include <string.h>
-
-#include <imgui_impl.h>
 
 static int l_print (lua_State *L) 
 {	
@@ -66,10 +65,15 @@ static void run_lua_main_func(lua_State *L, const char *func)
     }
 }
 
-static void run_game()
+int main(int argc, char **argv) 
 {
+    #ifdef RUN_TESTS
+        run_all_tests();
+    #endif
+
     ShellContext *ctx = shell_new("Hello world", 1024, 768);
     RenderSystem *rendersystem = render_sys_new();
+    EditorSystem *editorsystem = editor_sys_new();
     ECS *ecs = ecs_new();
 
     lua_State *L = luaL_newstate();
@@ -89,25 +93,16 @@ static void run_game()
     {
         run_lua_main_func(L, "update");
 
+        editor_sys_run(editorsystem, ecs);
         render_sys_run(rendersystem, ecs);
-
-        //igShowDemoWindow(NULL);
     } 
     while (shell_flip_frame_poll_events(ctx));
 
     lua_close(L);
     ecs_delete(ecs);
     render_sys_delete(rendersystem);
+    editor_sys_delete(editorsystem);
     shell_delete(ctx);
-}
-
-int main(int argc, char **argv) 
-{
-    #ifdef RUN_TESTS
-        run_all_tests();
-    #endif
-
-    run_game();
 
     return 0;
 }

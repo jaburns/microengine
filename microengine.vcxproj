@@ -136,6 +136,7 @@
     <ClCompile Include="src\ecs_lua_interop.c" />
     <ClCompile Include="src\hashtable.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\systems\editor_sys.c" />
     <ClCompile Include="src\systems\render_sys.c" />
     <ClCompile Include="src\resources.c" />
     <ClCompile Include="src\shell.c" />
@@ -177,6 +178,7 @@
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\hashtable.h" />
     <ClInclude Include="src\ns_clock.h" />
+    <ClInclude Include="src\systems\editor_sys.h" />
     <ClInclude Include="src\systems\render_sys.h" />
     <ClInclude Include="src\resources.h" />
     <ClInclude Include="src\shell.h" />
