@@ -26,11 +26,12 @@ const types = [
 const baseTypeInterop = `
 static void lcb_push_float(lua_State *L, float *v)
 {
-    lua_pushnumber(L, *v);
+    double vd = (double)(*v);
+    lua_pushnumber(L, vd);
 }
 static void lcb_pop_float(lua_State *L, float *v, int stack_index)
 {
-    *v = luaL_checknumber(L, stack_index);
+    *v = (float)luaL_checknumber(L, stack_index);
 }
 `;
 
