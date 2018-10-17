@@ -1,15 +1,10 @@
 local main = {}
 
-print("Hello from Lua")
+local camera
+local teapot
 
 function main.start()
-    print("Hello from Lua main.start")
-
-    print("Hello from Lua main.end")
     teapot = create_entity()
-
-    print("Hello from Lua main.end")
-
     set_component_Transform(teapot, {
         position={x=0, y=0, z=0},
         rotation={x=0, y=0, z=0, w=1},
@@ -30,18 +25,18 @@ function main.start()
         near = 0.01, 
         far = 1024
     })
-
-    print("Hello from Lua main.end")
-
---  t = get_component_Transform(0)
---  t.position.z = t.position.z - 1
---  set_component_Transform(0, t)
 end
 
 function main.update()
---  t = get_component_Transform(0)
---  t.position.x = math.sin(5 *  os.clock())
---  set_component_Transform(0, t)
+    t = get_component_Transform(teapot)
+    t.position.x = math.sin(5 *  os.clock())
+    set_component_Transform(teapot, t)
+
+    t = get_component_Transform(camera)
+    t.position.z = 5 + 2*math.cos(5 *  os.clock())
+    set_component_Transform(camera, t)
 end
+
+print("Hello from Lua")
 
 return main

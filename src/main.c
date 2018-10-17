@@ -31,14 +31,14 @@ static int lcb_create_entity(lua_State *L)
 {
     Entity ent = ecs_create_entity(s_ecs_lua);
     lua_pushnumber(L, (double)ent);
-
-    // crashes after here, doesn't return to lua
+    return 1;
 }
 
 static int lcb_destroy_entity(lua_State *L)
 {
     double entity = luaL_checknumber(L, 1);
     ecs_destroy_entity(s_ecs_lua, (Entity)entity);
+    return 0;
 }
 
 void ecs_lua_bind_entity_functions(lua_State *L)
@@ -72,8 +72,6 @@ static void run_game()
     RenderSystem *rendersystem = render_sys_new();
     ECS *ecs = ecs_new();
 
-    // TODO move this setup code to Lua
-
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
 
@@ -93,8 +91,7 @@ static void run_game()
 
         render_sys_run(rendersystem, ecs);
 
-        bool x;
-        igShowDemoWindow(&x);
+        //igShowDemoWindow(NULL);
     } 
     while (shell_flip_frame_poll_events(ctx));
 
@@ -107,7 +104,7 @@ static void run_game()
 int main(int argc, char **argv) 
 {
     #ifdef RUN_TESTS
-        //run_all_tests();
+        run_all_tests();
     #endif
 
     run_game();
