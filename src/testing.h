@@ -36,4 +36,4 @@ do { \
     if (result) return result; \
 } while (0)
 
-extern void run_all_tests(void);
+extern int run_all_tests(void);

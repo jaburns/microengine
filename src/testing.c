@@ -6,7 +6,7 @@
 #include "ecs.h"
 #include "ns_clock.h"
 
-void run_all_tests(void)
+int run_all_tests(void)
 {
     uint64_t start = ns_clock();
 

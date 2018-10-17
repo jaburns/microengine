@@ -57,7 +57,12 @@ bool vec_pop(Vec *vec, void *result)
 
     vec->item_count--;
     memcpy(result, vec_at(vec, vec->item_count), vec->item_size);
-    vec->data = realloc(vec->data, vec->item_size * vec->item_count);
+
+    if (vec->item_count > 0)
+        vec->data = realloc(vec->data, vec->item_size * vec->item_count);
+    else
+        vec_clear(vec);
+
     return true;
 }
 
@@ -72,6 +77,12 @@ extern Vec vec_clone(Vec *vec)
 
 void vec_resize(Vec *vec, size_t new_item_count)
 {
+    if (new_item_count == 0)
+    {
+        vec_clear(vec);
+        return;
+    }
+
     size_t additional_item_count = new_item_count > vec->item_count
         ? new_item_count - vec->item_count
         : 0;
