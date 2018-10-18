@@ -188,7 +188,13 @@ bool giarray_get_first_valid_index(
 
 
 
-static GenerationalIndex ENTITY_TO_GI(Entity entity)
+struct ECS
+{
+    GenerationalIndexAllocator allocator;
+    HashTable component_arrays; // HashTable of GenerationalIndexArray for each component type
+};
+
+static GenerationalIndex entity_to_gi(Entity entity)
 {
     return (GenerationalIndex) {
         (entity & 0x0000FFFFFF000000) >> 24,
@@ -196,21 +202,11 @@ static GenerationalIndex ENTITY_TO_GI(Entity entity)
     };
 }
 
-static Entity GI_TO_ENTITY(GenerationalIndex index)
+static Entity gi_to_entity(GenerationalIndex index)
 {
     return ((index.generation << 24) & 0x0000FFFFFF000000)
         |  ( index.index             & 0x0000000000FFFFFF);
 }
-
-#define ENTITY_TO_GI(entity) (*(GenerationalIndex*)(&entity))
-#define GI_TO_ENTITY(gi) (*(Entity*)(&gi))
-
-struct ECS
-{
-    GenerationalIndexAllocator allocator;
-    HashTable component_arrays; // HashTable of GenerationalIndexArray for each component type
-};
-
 
 ECS *ecs_new(void)
 {
@@ -238,24 +234,24 @@ void ecs_delete(ECS *ecs)
 Entity ecs_create_entity(ECS *ecs)
 {
     GenerationalIndex gi = giallocator_allocate(&ecs->allocator);
-    return GI_TO_ENTITY(gi);
+    return gi_to_entity(gi);
 }
 
 void ecs_destroy_entity(ECS *ecs, Entity entity)
 {
-    giallocator_deallocate(&ecs->allocator, ENTITY_TO_GI(entity));
+    giallocator_deallocate(&ecs->allocator, entity_to_gi(entity));
 }
 
 bool ecs_is_entity_valid(const ECS *ecs, Entity entity)
 {
-    return giallocator_is_index_live(&ecs->allocator, ENTITY_TO_GI(entity));
+    return giallocator_is_index_live(&ecs->allocator, entity_to_gi(entity));
 }
 
 
 void *ecs_get_component(ECS *ecs, Entity entity, const char *component_type)
 {
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
-    return arr ? giarray_at(arr, ENTITY_TO_GI(entity)) : NULL;
+    return arr ? giarray_at(arr, entity_to_gi(entity)) : NULL;
 }
 
 void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type, size_t component_size)
@@ -268,7 +264,7 @@ void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_ty
         arr = hashtable_set_copy(&ecs->component_arrays, component_type, &new_arr);
     }
 
-    return giarray_set_copy_or_zeroed(arr, ENTITY_TO_GI(entity), 0);
+    return giarray_set_copy_or_zeroed(arr, entity_to_gi(entity), 0);
 }
 
 void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
@@ -276,7 +272,7 @@ void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
     if (!arr) return;
 
-    giarray_remove(arr, ENTITY_TO_GI(entity));
+    giarray_remove(arr, entity_to_gi(entity));
 }
 
 
@@ -289,7 +285,7 @@ bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_
     bool found_index = giarray_get_first_valid_index(arr, &ecs->allocator, &index);
     if (!found_index) return false;
 
-    *out_entity = GI_TO_ENTITY(index);
+    *out_entity = gi_to_entity(index);
     return true;
 }
 
@@ -301,7 +297,7 @@ Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *c
     GenerationalIndex *result = giarray_get_all_valid_indices_alloc(arr, &ecs->allocator, result_length);
 
     for (int i = 0; i < *result_length; ++i)
-        ((Entity*)result)[i] = GI_TO_ENTITY(result[i]);
+        ((Entity*)result)[i] = gi_to_entity(result[i]);
 
     return (Entity*)result;
 }
@@ -418,11 +414,11 @@ TestResult ecs_test()
 
         {
             GenerationalIndex i = { 29, 119 };
-            GenerationalIndex j = ENTITY_TO_GI(GI_TO_ENTITY(i));
+            GenerationalIndex j = entity_to_gi(gi_to_entity(i));
             TEST_ASSERT(i.index == j.index && i.generation == j.generation);
         } {
             GenerationalIndex i = { 0, 0 };
-            GenerationalIndex j = ENTITY_TO_GI(GI_TO_ENTITY(i));
+            GenerationalIndex j = entity_to_gi(gi_to_entity(i));
             TEST_ASSERT(i.index == j.index && i.generation == j.generation);
         }
 
