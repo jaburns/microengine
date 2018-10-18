@@ -1,6 +1,6 @@
 #include "render_sys.h"
 
-#include <stdio.h>
+#include <stddef.h>
 
 #include "../gl.h"
 #include "../components.h"

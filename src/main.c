@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+#include <string.h>
 
 #ifdef RUN_TESTS
     #include "testing.h"
@@ -11,11 +15,6 @@
 #include "ecs_lua_interop.h"
 #include "systems/render_sys.h"
 #include "systems/editor_sys.h"
-
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-#include <string.h>
 
 static int l_print (lua_State *L)
 {
