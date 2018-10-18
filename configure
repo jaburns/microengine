@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# Requires SDL2 v2.0.5: brew install sdl2 | apt install libsdl2-dev
+# Requires SDL2 and glew: brew install sdl2 glew | apt install libsdl2-dev libglew-dev
 
 CC='cc -g'
 CFLAGS='-DRUN_TESTS -Iexternal/lodepng -Iexternal/lua -Iexternal/support -Iexternal/linmath.h'
