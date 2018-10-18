@@ -17,8 +17,8 @@
 #include <lualib.h>
 #include <string.h>
 
-static int l_print (lua_State *L) 
-{	
+static int l_print (lua_State *L)
+{
     const char *d = luaL_checkstring(L, 1);
     printf("L: %s\n", d);
     return 1;
@@ -58,17 +58,17 @@ static void run_lua_main_func(lua_State *L, const char *func)
     lua_getfield(L, -1, func);
     error = lua_pcall(L, 0, 0, 0);
 
-    if (error) 
+    if (error)
     {
         printf("%s", lua_tostring(L, -1));
         exit(1);
     }
 }
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
     #ifdef RUN_TESTS
-        run_all_tests();
+        if (run_all_tests()) return 1;
     #endif
 
     ShellContext *ctx = shell_new("Hello world", 1024, 768);
@@ -89,13 +89,13 @@ int main(int argc, char **argv)
 
     run_lua_main_func(L, "start");
 
-    do 
+    do
     {
         run_lua_main_func(L, "update");
 
         editor_sys_run(editorsystem, ecs);
         render_sys_run(rendersystem, ecs);
-    } 
+    }
     while (shell_flip_frame_poll_events(ctx));
 
     lua_close(L);

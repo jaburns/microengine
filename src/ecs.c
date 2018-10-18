@@ -188,6 +188,20 @@ bool giarray_get_first_valid_index(
 
 
 
+static GenerationalIndex ENTITY_TO_GI(Entity entity)
+{
+    return (GenerationalIndex) {
+        (entity & 0x0000FFFFFF000000) >> 24,
+        (entity & 0x0000000000FFFFFF)
+    };
+}
+
+static Entity GI_TO_ENTITY(GenerationalIndex index)
+{
+    return ((index.generation << 24) & 0x0000FFFFFF000000)
+        |  ( index.index             & 0x0000000000FFFFFF);
+}
+
 #define ENTITY_TO_GI(entity) (*(GenerationalIndex*)(&entity))
 #define GI_TO_ENTITY(gi) (*(Entity*)(&gi))
 
@@ -284,7 +298,12 @@ Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *c
     GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
     if (!arr) return NULL;
 
-    return giarray_get_all_valid_indices_alloc(arr, &ecs->allocator, result_length);
+    GenerationalIndex *result = giarray_get_all_valid_indices_alloc(arr, &ecs->allocator, result_length);
+
+    for (int i = 0; i < *result_length; ++i)
+        ((Entity*)result)[i] = GI_TO_ENTITY(result[i]);
+
+    return (Entity*)result;
 }
 
 
@@ -393,6 +412,19 @@ TestResult ecs_test()
 
         giarray_clear(&arr);
         giallocator_clear(&alloc);
+
+    TEST_END();
+    TEST_BEGIN("Entity to GenerationalIndex conversion reverses");
+
+        {
+            GenerationalIndex i = { 29, 119 };
+            GenerationalIndex j = ENTITY_TO_GI(GI_TO_ENTITY(i));
+            TEST_ASSERT(i.index == j.index && i.generation == j.generation);
+        } {
+            GenerationalIndex i = { 0, 0 };
+            GenerationalIndex j = ENTITY_TO_GI(GI_TO_ENTITY(i));
+            TEST_ASSERT(i.index == j.index && i.generation == j.generation);
+        }
 
     TEST_END();
     TEST_BEGIN("ECS add component and get component work");

@@ -16,6 +16,7 @@ int run_all_tests(void)
 
     uint64_t end = ns_clock();
     printf("\nDone! Tests completed in %d us.\n", (end - start) / 1000);
+    return 0;
 }
 
 #endif
