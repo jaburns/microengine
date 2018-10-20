@@ -62,7 +62,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.h;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -80,7 +80,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;NDEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.h;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -97,39 +97,40 @@
     <ClCompile Include="external\cimgui\imgui\imgui_demo.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="external\lua\lapi.c" />
-    <ClCompile Include="external\lua\lauxlib.c" />
-    <ClCompile Include="external\lua\lbaselib.c" />
-    <ClCompile Include="external\lua\lcode.c" />
-    <ClCompile Include="external\lua\lcorolib.c" />
-    <ClCompile Include="external\lua\lctype.c" />
-    <ClCompile Include="external\lua\ldblib.c" />
-    <ClCompile Include="external\lua\ldebug.c" />
-    <ClCompile Include="external\lua\ldo.c" />
-    <ClCompile Include="external\lua\ldump.c" />
-    <ClCompile Include="external\lua\lfunc.c" />
-    <ClCompile Include="external\lua\lgc.c" />
-    <ClCompile Include="external\lua\linit.c" />
-    <ClCompile Include="external\lua\liolib.c" />
-    <ClCompile Include="external\lua\llex.c" />
-    <ClCompile Include="external\lua\lmathlib.c" />
-    <ClCompile Include="external\lua\lmem.c" />
-    <ClCompile Include="external\lua\loadlib.c" />
-    <ClCompile Include="external\lua\lobject.c" />
-    <ClCompile Include="external\lua\lopcodes.c" />
-    <ClCompile Include="external\lua\loslib.c" />
-    <ClCompile Include="external\lua\lparser.c" />
-    <ClCompile Include="external\lua\lstate.c" />
-    <ClCompile Include="external\lua\lstring.c" />
-    <ClCompile Include="external\lua\lstrlib.c" />
-    <ClCompile Include="external\lua\ltable.c" />
-    <ClCompile Include="external\lua\ltablib.c" />
-    <ClCompile Include="external\lua\ltests.c" />
-    <ClCompile Include="external\lua\ltm.c" />
-    <ClCompile Include="external\lua\lundump.c" />
-    <ClCompile Include="external\lua\lutf8lib.c" />
-    <ClCompile Include="external\lua\lvm.c" />
-    <ClCompile Include="external\lua\lzio.c" />
+    <ClCompile Include="external\linmath.lua\lua\lapi.c" />
+    <ClCompile Include="external\linmath.lua\lua\lauxlib.c" />
+    <ClCompile Include="external\linmath.lua\lua\lbaselib.c" />
+    <ClCompile Include="external\linmath.lua\lua\lcode.c" />
+    <ClCompile Include="external\linmath.lua\lua\lcorolib.c" />
+    <ClCompile Include="external\linmath.lua\lua\lctype.c" />
+    <ClCompile Include="external\linmath.lua\lua\ldblib.c" />
+    <ClCompile Include="external\linmath.lua\lua\ldebug.c" />
+    <ClCompile Include="external\linmath.lua\lua\ldo.c" />
+    <ClCompile Include="external\linmath.lua\lua\ldump.c" />
+    <ClCompile Include="external\linmath.lua\lua\lfunc.c" />
+    <ClCompile Include="external\linmath.lua\lua\lgc.c" />
+    <ClCompile Include="external\linmath.lua\lua\linit.c" />
+    <ClCompile Include="external\linmath.lua\lua\liolib.c" />
+    <ClCompile Include="external\linmath.lua\lua\llex.c" />
+    <ClCompile Include="external\linmath.lua\lua\lmathlib.c" />
+    <ClCompile Include="external\linmath.lua\lua\lmem.c" />
+    <ClCompile Include="external\linmath.lua\lua\loadlib.c" />
+    <ClCompile Include="external\linmath.lua\lua\lobject.c" />
+    <ClCompile Include="external\linmath.lua\lua\lopcodes.c" />
+    <ClCompile Include="external\linmath.lua\lua\loslib.c" />
+    <ClCompile Include="external\linmath.lua\lua\lparser.c" />
+    <ClCompile Include="external\linmath.lua\lua\lstate.c" />
+    <ClCompile Include="external\linmath.lua\lua\lstring.c" />
+    <ClCompile Include="external\linmath.lua\lua\lstrlib.c" />
+    <ClCompile Include="external\linmath.lua\lua\ltable.c" />
+    <ClCompile Include="external\linmath.lua\lua\ltablib.c" />
+    <ClCompile Include="external\linmath.lua\lua\ltests.c" />
+    <ClCompile Include="external\linmath.lua\lua\ltm.c" />
+    <ClCompile Include="external\linmath.lua\lua\lundump.c" />
+    <ClCompile Include="external\linmath.lua\lua\lutf8lib.c" />
+    <ClCompile Include="external\linmath.lua\lua\lvm.c" />
+    <ClCompile Include="external\linmath.lua\lua\lzio.c" />
+    <ClCompile Include="external\linmath.lua\linmath.lua.c" />
     <ClCompile Include="external\support\imgui_impl.cpp" />
     <ClCompile Include="external\support\lodepng.c" />
     <ClCompile Include="src\ecs.c" />
@@ -144,33 +145,34 @@
     <ClCompile Include="src\vec.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="external\lua\lapi.h" />
-    <ClInclude Include="external\lua\lauxlib.h" />
-    <ClInclude Include="external\lua\lcode.h" />
-    <ClInclude Include="external\lua\lctype.h" />
-    <ClInclude Include="external\lua\ldebug.h" />
-    <ClInclude Include="external\lua\ldo.h" />
-    <ClInclude Include="external\lua\lfunc.h" />
-    <ClInclude Include="external\lua\lgc.h" />
-    <ClInclude Include="external\lua\ljumptab.h" />
-    <ClInclude Include="external\lua\llex.h" />
-    <ClInclude Include="external\lua\llimits.h" />
-    <ClInclude Include="external\lua\lmem.h" />
-    <ClInclude Include="external\lua\lobject.h" />
-    <ClInclude Include="external\lua\lopcodes.h" />
-    <ClInclude Include="external\lua\lparser.h" />
-    <ClInclude Include="external\lua\lprefix.h" />
-    <ClInclude Include="external\lua\lstate.h" />
-    <ClInclude Include="external\lua\lstring.h" />
-    <ClInclude Include="external\lua\ltable.h" />
-    <ClInclude Include="external\lua\ltests.h" />
-    <ClInclude Include="external\lua\ltm.h" />
-    <ClInclude Include="external\lua\lua.h" />
-    <ClInclude Include="external\lua\luaconf.h" />
-    <ClInclude Include="external\lua\lualib.h" />
-    <ClInclude Include="external\lua\lundump.h" />
-    <ClInclude Include="external\lua\lvm.h" />
-    <ClInclude Include="external\lua\lzio.h" />
+    <ClInclude Include="external\linmath.lua\lua\lapi.h" />
+    <ClInclude Include="external\linmath.lua\lua\lauxlib.h" />
+    <ClInclude Include="external\linmath.lua\lua\lcode.h" />
+    <ClInclude Include="external\linmath.lua\lua\lctype.h" />
+    <ClInclude Include="external\linmath.lua\lua\ldebug.h" />
+    <ClInclude Include="external\linmath.lua\lua\ldo.h" />
+    <ClInclude Include="external\linmath.lua\lua\lfunc.h" />
+    <ClInclude Include="external\linmath.lua\lua\lgc.h" />
+    <ClInclude Include="external\linmath.lua\lua\ljumptab.h" />
+    <ClInclude Include="external\linmath.lua\lua\llex.h" />
+    <ClInclude Include="external\linmath.lua\lua\llimits.h" />
+    <ClInclude Include="external\linmath.lua\lua\lmem.h" />
+    <ClInclude Include="external\linmath.lua\lua\lobject.h" />
+    <ClInclude Include="external\linmath.lua\lua\lopcodes.h" />
+    <ClInclude Include="external\linmath.lua\lua\lparser.h" />
+    <ClInclude Include="external\linmath.lua\lua\lprefix.h" />
+    <ClInclude Include="external\linmath.lua\lua\lstate.h" />
+    <ClInclude Include="external\linmath.lua\lua\lstring.h" />
+    <ClInclude Include="external\linmath.lua\lua\ltable.h" />
+    <ClInclude Include="external\linmath.lua\lua\ltests.h" />
+    <ClInclude Include="external\linmath.lua\lua\ltm.h" />
+    <ClInclude Include="external\linmath.lua\lua\lua.h" />
+    <ClInclude Include="external\linmath.lua\lua\luaconf.h" />
+    <ClInclude Include="external\linmath.lua\lua\lualib.h" />
+    <ClInclude Include="external\linmath.lua\lua\lundump.h" />
+    <ClInclude Include="external\linmath.lua\lua\lvm.h" />
+    <ClInclude Include="external\linmath.lua\lua\lzio.h" />
+    <ClInclude Include="external\linmath.lua\linmath.lua.h" />
     <ClInclude Include="src\components.h" />
     <ClInclude Include="src\components_ext.h" />
     <ClInclude Include="src\ecs.h" />

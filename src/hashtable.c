@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+    #define strdup _strdup
+#endif
+
 HashTable hashtable_empty(size_t table_size, size_t item_size)
 {
     return (HashTable) { table_size, item_size, NULL };
