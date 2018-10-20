@@ -1,12 +1,9 @@
-[submodule "external/linmath.h"]
-	path = external/linmath.h
-	url = git@github.com:datenwolf/linmath.h
 [submodule "external/cimgui"]
 	path = external/cimgui
 	url = git@github.com:cimgui/cimgui
 [submodule "external/lodepng"]
 	path = external/lodepng
 	url = git@github.com:lvandeve/lodepng
-[submodule "external/lua"]
-	path = external/lua
-	url = git@github.com:lua/lua
+[submodule "external/linmath.lua"]
+	path = external/linmath.lua
+	url = git@github.com:jaburns/linmath.lua
