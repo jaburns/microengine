@@ -3,6 +3,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 #include <string.h>
+#include <linmath.lua.h>
 
 #ifdef RUN_TESTS
     #include "testing.h"
@@ -12,39 +13,14 @@
 #include "shell.h"
 #include "components.h"
 #include "components_ext.h"
-#include "ecs_lua_interop.h"
 #include "systems/render_sys.h"
 #include "systems/editor_sys.h"
 
 static int l_print (lua_State *L)
 {
     const char *d = luaL_checkstring(L, 1);
-    printf("L: %s\n", d);
+    printf(":: %s\n", d);
     return 1;
-}
-
-static ECS *s_ecs_lua;
-
-static int lcb_create_entity(lua_State *L)
-{
-    Entity ent = ecs_create_entity(s_ecs_lua);
-    lua_pushnumber(L, (double)ent);
-    return 1;
-}
-
-static int lcb_destroy_entity(lua_State *L)
-{
-    double entity = luaL_checknumber(L, 1);
-    ecs_destroy_entity(s_ecs_lua, (Entity)entity);
-    return 0;
-}
-
-void ecs_lua_bind_entity_functions(lua_State *L)
-{
-    lua_pushcfunction(L, lcb_create_entity);
-    lua_setglobal(L, "create_entity");
-    lua_pushcfunction(L, lcb_destroy_entity);
-    lua_setglobal(L, "destroy_entity");
 }
 
 static void run_lua_main_func(lua_State *L, const char *func)
@@ -75,17 +51,18 @@ int main(int argc, char **argv)
     EditorSystem *editorsystem = editor_sys_new();
     ECS *ecs = ecs_new();
 
+    ECS_REGISTER_COMPONENT(Transform, ecs, NULL);
+    ECS_REGISTER_COMPONENT(Teapot, ecs, NULL);
+    ECS_REGISTER_COMPONENT(Camera, ecs, NULL);
+
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
+    lml_load_types(L);
 
     lua_pushcfunction(L, l_print);
     lua_setglobal(L, "print");
 
-    ecs_lua_bind_ecs(ecs);
-    ecs_lua_bind_functions(L);
-    s_ecs_lua = ecs;
-    ecs_lua_bind_entity_functions(L);
-
+    components_init_lua_ecs(L, ecs);
     run_lua_main_func(L, "start");
 
     do

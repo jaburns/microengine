@@ -1,5 +1,12 @@
 #pragma once
 
+#include <stdio.h>
+
+#define PANIC(...) do {  \
+    printf(__VA_ARGS__); \
+    exit(1);             \
+} while (0)
+
 #define FIND_INDEX_DECL(out_int, arr, len, val) \
 int out_int = -1;                               \
 {                                               \

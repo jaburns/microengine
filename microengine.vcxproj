@@ -133,8 +133,8 @@
     <ClCompile Include="external\linmath.lua\linmath.lua.c" />
     <ClCompile Include="external\support\imgui_impl.cpp" />
     <ClCompile Include="external\support\lodepng.c" />
+    <ClCompile Include="src\components.c" />
     <ClCompile Include="src\ecs.c" />
-    <ClCompile Include="src\ecs_lua_interop.c" />
     <ClCompile Include="src\hashtable.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\systems\editor_sys.c" />
@@ -176,7 +176,6 @@
     <ClInclude Include="src\components.h" />
     <ClInclude Include="src\components_ext.h" />
     <ClInclude Include="src\ecs.h" />
-    <ClInclude Include="src\ecs_lua_interop.h" />
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\hashtable.h" />
     <ClInclude Include="src\ns_clock.h" />

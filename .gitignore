@@ -6,7 +6,7 @@
 !/external/SDL2-*.zip
 /*.dll
 /src/components.h
-/src/ecs_lua_interop.c
+/src/components.c
 /imgui.ini
 /build
 /Makefile

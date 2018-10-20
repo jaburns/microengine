@@ -91,6 +91,7 @@ void render_sys_run(RenderSystem *sys, ECS *ecs)
     for (int i = 0; i < num_teapots; ++i)
     {
         ECS_GET_COMPONENT_DECL(Transform, teapot_transform, ecs, teapots[i]);
+        ECS_GET_COMPONENT_DECL(Teapot, teaboi, ecs, teapots[i]);
 
         mat4x4 model;
         Transform_to_matrix(teapot_transform, model);

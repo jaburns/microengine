@@ -96,18 +96,22 @@ GenerationalIndexArrayEntry;
 typedef struct GenerationalIndexArray
 {
     size_t item_size;
+    ComponentDestructor destructor;
     Vec entries; // Vec of (GenerationalIndexArrayEntry + item)
 }
 GenerationalIndexArray;
 
-GenerationalIndexArray giarray_empty(size_t item_size)
+GenerationalIndexArray giarray_empty(size_t item_size, ComponentDestructor destructor)
 {
-    return (GenerationalIndexArray) { item_size, vec_empty(sizeof(GenerationalIndexArrayEntry) + item_size) };
+    return (GenerationalIndexArray) { item_size, destructor, vec_empty(sizeof(GenerationalIndexArrayEntry) + item_size) };
 }
 
 void giarray_clear(GenerationalIndexArray *gia)
 {
-    vec_clear(&gia->entries);
+    if (gia->destructor)
+        vec_clear_with_callback(&gia->entries, gia->destructor);
+    else
+        vec_clear(&gia->entries);
 }
 
 void *giarray_set_copy_or_zeroed(GenerationalIndexArray *gia, GenerationalIndex index, const void *value)
@@ -116,6 +120,10 @@ void *giarray_set_copy_or_zeroed(GenerationalIndexArray *gia, GenerationalIndex 
         vec_resize(&gia->entries, index.index + 1);
 
     GenerationalIndexArrayEntry* entry = vec_at(&gia->entries, index.index);
+
+    if (entry->has_value)
+        gia->destructor(entry->entry);
+
     entry->has_value = true;
     entry->generation = index.generation;
 
@@ -143,6 +151,10 @@ void giarray_remove(GenerationalIndexArray *gia, GenerationalIndex index)
     if (index.index >= gia->entries.item_count) return;
 
     GenerationalIndexArrayEntry* entry = vec_at(&gia->entries, index.index);
+
+    if (entry->has_value)
+        gia->destructor(entry->entry);
+
     entry->has_value = false;
 }
 
@@ -187,15 +199,27 @@ bool giarray_get_first_valid_index(
 }
 
 
+typedef struct ECSComponent
+{
+    size_t size;
+    ComponentDestructor destructor;
+    GenerationalIndexArray components;
+}
+ECSComponent;
 
 struct ECS
 {
     GenerationalIndexAllocator allocator;
-    HashTable component_arrays; // HashTable of GenerationalIndexArray for each component type
+    HashTable components; // of ECSComponent 
 };
 
 static GenerationalIndex entity_to_gi(Entity entity)
 {
+    if (entity == 0)
+        PANIC("Attempted to convert empty entity in to generational index");
+
+    entity -= 1;
+
     return (GenerationalIndex) {
         (entity & 0x0000FFFFFF000000) >> 24,
         (entity & 0x0000000000FFFFFF)
@@ -205,20 +229,20 @@ static GenerationalIndex entity_to_gi(Entity entity)
 static Entity gi_to_entity(GenerationalIndex index)
 {
     return ((index.generation << 24) & 0x0000FFFFFF000000)
-        |  ( index.index             & 0x0000000000FFFFFF);
+        |  ((index.index + 1)        & 0x0000000000FFFFFF);
 }
 
 ECS *ecs_new(void)
 {
     ECS *ecs = malloc(sizeof(ECS));
     ecs->allocator = giallocator_empty();
-    ecs->component_arrays = hashtable_empty(1024, sizeof(GenerationalIndexArray));
+    ecs->components = hashtable_empty(1024, sizeof(ECSComponent));
     return ecs;
 }
 
-static void ecs_delete_hashtable_cb(GenerationalIndexArray *arr)
+static void ecs_delete_hashtable_cb(ECSComponent *comp)
 {
-    giarray_clear(arr);
+    giarray_clear(&comp->components, comp->destructor);
 }
 
 void ecs_delete(ECS *ecs)
@@ -226,7 +250,7 @@ void ecs_delete(ECS *ecs)
     if (!ecs) return;
 
     giallocator_clear(&ecs->allocator);
-    hashtable_clear_with_callback(&ecs->component_arrays, ecs_delete_hashtable_cb);
+    hashtable_clear_with_callback(&ecs->components, ecs_delete_hashtable_cb);
     free(ecs);
 }
 
@@ -248,41 +272,46 @@ bool ecs_is_entity_valid(const ECS *ecs, Entity entity)
 }
 
 
-void *ecs_get_component(ECS *ecs, Entity entity, const char *component_type)
+void ecs_register_component(ECS *ecs, const char *component_type, size_t component_size, ComponentDestructor destructor)
 {
-    GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
-    return arr ? giarray_at(arr, entity_to_gi(entity)) : NULL;
+    if (hashtable_at(&ecs->components, component_type))
+        PANIC("Tried to register the same component twice: '%s'\n", component_type);
+
+    ECSComponent new_component = { component_size, destructor, giarray_empty(component_size, destructor) };
+    hashtable_set_copy(&ecs->components, component_type, &new_component);
 }
 
-void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type, size_t component_size)
+void *ecs_get_component(ECS *ecs, Entity entity, const char *component_type)
 {
-    GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
+    ECSComponent *comp = hashtable_at(&ecs->components, component_type);
+    return comp ? giarray_at(&comp->components, entity_to_gi(entity)) : NULL;
+}
 
-    if (!arr)
-    {
-        GenerationalIndexArray new_arr = giarray_empty(component_size);
-        arr = hashtable_set_copy(&ecs->component_arrays, component_type, &new_arr);
-    }
+void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type)
+{
+    ECSComponent *comp = hashtable_at(&ecs->components, component_type);
+    if (!comp)
+        PANIC("Tried to add unregistered component: '%s'\n", component_type);
 
-    return giarray_set_copy_or_zeroed(arr, entity_to_gi(entity), 0);
+    return giarray_set_copy_or_zeroed(&comp->components, entity_to_gi(entity), 0);
 }
 
 void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
 {
-    GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
-    if (!arr) return;
+    ECSComponent *comp = hashtable_at(&ecs->components, component_type);
+    if (!comp) return;
 
-    giarray_remove(arr, entity_to_gi(entity));
+    giarray_remove(&comp->components, entity_to_gi(entity));
 }
 
 
 bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type, Entity *out_entity)
 {
-    GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
-    if (!arr) return false;
+    ECSComponent *comp = hashtable_at(&ecs->components, component_type);
+    if (!comp) return false;
 
     GenerationalIndex index;
-    bool found_index = giarray_get_first_valid_index(arr, &ecs->allocator, &index);
+    bool found_index = giarray_get_first_valid_index(&comp->components, &ecs->allocator, &index);
     if (!found_index) return false;
 
     *out_entity = gi_to_entity(index);
@@ -291,10 +320,10 @@ bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_
 
 Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length)
 {
-    GenerationalIndexArray *arr = hashtable_at(&ecs->component_arrays, component_type);
-    if (!arr) return NULL;
+    ECSComponent *comp = hashtable_at(&ecs->components, component_type);
+    if (!comp) return NULL;
 
-    GenerationalIndex *result = giarray_get_all_valid_indices_alloc(arr, &ecs->allocator, result_length);
+    GenerationalIndex *result = giarray_get_all_valid_indices_alloc(&comp->components, &ecs->allocator, result_length);
 
     for (int i = 0; i < *result_length; ++i)
         ((Entity*)result)[i] = gi_to_entity(result[i]);
@@ -341,7 +370,7 @@ TestResult ecs_test()
         TestArrayElem;
 
         GenerationalIndexAllocator alloc = giallocator_empty();
-        GenerationalIndexArray arr = giarray_empty(sizeof(TestArrayElem));
+        GenerationalIndexArray arr = giarray_empty(sizeof(TestArrayElem), NULL);
 
         GenerationalIndex i = giallocator_allocate(&alloc);
         TestArrayElem val_in = { 4.0f, 19 };
@@ -363,14 +392,14 @@ TestResult ecs_test()
         TEST_ASSERT(val_out2);
         TEST_ASSERT(val_out2->x == 0.0f && val_out->y == 0);
 
-        giarray_clear(&arr);
+        giarray_clear(&arr, NULL);
         giallocator_clear(&alloc);
 
     TEST_END();
     TEST_BEGIN("GenerationalIndexArray find all valid indices works");
 
         GenerationalIndexAllocator alloc = giallocator_empty();
-        GenerationalIndexArray arr = giarray_empty(sizeof(float));
+        GenerationalIndexArray arr = giarray_empty(sizeof(float), NULL);
         GenerationalIndex i0 = giallocator_allocate(&alloc);
         GenerationalIndex i1 = giallocator_allocate(&alloc);
         GenerationalIndex i2 = giallocator_allocate(&alloc);
@@ -390,14 +419,14 @@ TestResult ecs_test()
 
         free(results);
 
-        giarray_clear(&arr);
+        giarray_clear(&arr, NULL);
         giallocator_clear(&alloc);
 
     TEST_END();
     TEST_BEGIN("GenerationalIndexArray remove element works");
 
         GenerationalIndexAllocator alloc = giallocator_empty();
-        GenerationalIndexArray arr = giarray_empty(sizeof(float));
+        GenerationalIndexArray arr = giarray_empty(sizeof(float), NULL);
         GenerationalIndex i = giallocator_allocate(&alloc);
 
         giarray_set_copy_or_zeroed(&arr, i, 0);
@@ -406,10 +435,11 @@ TestResult ecs_test()
         giarray_remove(&arr, i);
         TEST_ASSERT(!giarray_at(&arr, i));
 
-        giarray_clear(&arr);
+        giarray_clear(&arr, NULL);
         giallocator_clear(&alloc);
 
     TEST_END();
+    // TODO test giarray clear callback and destructor
     TEST_BEGIN("Entity to GenerationalIndex conversion reverses");
 
         {
@@ -430,8 +460,10 @@ TestResult ecs_test()
         Entity e0 = ecs_create_entity(ecs);
         Entity e1 = ecs_create_entity(ecs);
 
-        ECS_ADD_COMPONENT_DECL(float, set_float0, ecs, e0);
-        ECS_ADD_COMPONENT_DECL(float, set_float1, ecs, e1);
+        ECS_REGISTER_COMPONENT(float, ecs, NULL);
+
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, set_float0, ecs, e0);
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, set_float1, ecs, e1);
 
         ECS_GET_COMPONENT_DECL(float, get_float, ecs, e1);
         TEST_ASSERT(set_float1 == get_float);
@@ -447,11 +479,14 @@ TestResult ecs_test()
         Entity e1 = ecs_create_entity(ecs);
         Entity e2 = ecs_create_entity(ecs);
 
-        ECS_ADD_COMPONENT(float, ecs, e0);
-        ECS_ADD_COMPONENT(float, ecs, e2);
-        ECS_ADD_COMPONENT(uint32_t, ecs, e0);
-        ECS_ADD_COMPONENT(uint32_t, ecs, e1);
-        ECS_ADD_COMPONENT(uint32_t, ecs, e2);
+        ECS_REGISTER_COMPONENT(float, ecs, NULL);
+        ECS_REGISTER_COMPONENT(uint32_t, ecs, NULL);
+
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, _0, ecs, e0);
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, _1, ecs, e2);
+        ECS_ADD_COMPONENT_ZEROED_DECL(uint32_t, _2, ecs, e0);
+        ECS_ADD_COMPONENT_ZEROED_DECL(uint32_t, _3, ecs, e1);
+        ECS_ADD_COMPONENT_ZEROED_DECL(uint32_t, _4, ecs, e2);
 
         ECS_GET_COMPONENT_DECL(float, floaty0, ecs, e0);
         ECS_GET_COMPONENT_DECL(float, floaty2, ecs, e2);
@@ -481,9 +516,12 @@ TestResult ecs_test()
         Entity entity;
         bool did_find;
 
-        ECS_ADD_COMPONENT(float, ecs, e0);
-        ECS_ADD_COMPONENT(float, ecs, e1);
-        ECS_ADD_COMPONENT(uint32_t, ecs, e1);
+        ECS_REGISTER_COMPONENT(float, ecs, NULL);
+        ECS_REGISTER_COMPONENT(uint32_t, ecs, NULL);
+
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, _0, ecs, e0);
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, _1, ecs, e1);
+        ECS_ADD_COMPONENT_ZEROED_DECL(uint32_t, _2, ecs, e1);
 
         did_find = ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(uint32_t, ecs, &entity);
         TEST_ASSERT(did_find);
@@ -502,7 +540,9 @@ TestResult ecs_test()
         Entity e1 = ecs_create_entity(ecs);
         Entity e2 = ecs_create_entity(ecs);
 
-        ECS_ADD_COMPONENT_DECL(float, floaty_set, ecs, e0);
+        ECS_REGISTER_COMPONENT(float, ecs, NULL);
+
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, floaty_set, ecs, e0);
         ECS_GET_COMPONENT_DECL(float, floaty_get, ecs, e0);
         TEST_ASSERT(floaty_get == floaty_set);
 
@@ -513,6 +553,10 @@ TestResult ecs_test()
         ecs_delete(ecs);
 
     TEST_END();
+
+    // TODO write tests for and implement component destructor
+
+        
     return 0;
 }
 #endif

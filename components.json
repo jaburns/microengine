@@ -1,17 +1,21 @@
 [{
     "name": "Transform",
+    "default":  "{ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f} }",
     "fields": {
         "position": "vec3"
     ,   "rotation": "quat"
     ,   "scale":    "vec3"
+    ,   "parent":   "Entity"
     }
 },{
     "name": "Teapot",
+    "default":  "{ { {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 1.0f}, {9.0f, 1.0f, 1.0f} } }",
     "fields": {
-        "placeholder": "float"
+        "placeholder": "Transform"
     }
 },{
     "name": "Camera",
+    "default":  "{ 1.5708f, 0.01f, 1000.0f }",
     "fields": {
         "fov":  "float"
     ,   "near": "float"
