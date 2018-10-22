@@ -19,3 +19,5 @@ int out_int = -1;                               \
         }                                       \
     }                                           \
 }
+
+extern char *read_file_alloc(const char *path);

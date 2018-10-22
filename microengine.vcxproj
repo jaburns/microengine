@@ -135,7 +135,6 @@
     <ClCompile Include="external\support\imgui_impl.cpp" />
     <ClCompile Include="external\support\lodepng.c" />
     <ClCompile Include="meta\generate_components.c" />
-    <ClCompile Include="meta\main.c" />
     <ClCompile Include="src\components.c" />
     <ClCompile Include="src\ecs.c" />
     <ClCompile Include="src\hashtable.c" />
@@ -146,6 +145,7 @@
     <ClCompile Include="src\shell.c" />
     <ClCompile Include="src\systems\transform_sys.c" />
     <ClCompile Include="src\testing.c" />
+    <ClCompile Include="src\utils.c" />
     <ClCompile Include="src\vec.c" />
   </ItemGroup>
   <ItemGroup>

@@ -1,36 +1,13 @@
-#define _CRT_SECURE_NO_WARNINGS 1 // for fopen
-
 #include "resources.h"
+#include "utils.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <lodepng.h>
 
-static GLchar* read_file(const char *path)
-{
-    char *buffer = 0;
-    long length;
-    FILE *f = fopen(path, "rb");
-
-    if (! f) {
-        printf("Read file error: %s", path);
-        return NULL;
-    }
-
-    fseek(f, 0, SEEK_END);
-    length = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    buffer = (char*)malloc(length + 1);
-    fread(buffer, 1, length, f);
-    buffer[length] = 0;
-    fclose(f);
-
-    return buffer;
-}
-
 static GLuint shader_compile_from_file(const char *shader_path, GLenum shader_type)
 {
-    const GLchar *const shader_contents = read_file(shader_path);
+    const GLchar *shader_contents = read_file_alloc(shader_path);
 
     GLuint shader = glCreateShader(shader_type);
     glShaderSource(shader, 1, &shader_contents, NULL);
@@ -44,16 +21,10 @@ static GLuint shader_compile_from_file(const char *shader_path, GLenum shader_ty
         char *log = (char*)malloc(maxLength);
         glGetShaderInfoLog(shader, maxLength, &maxLength, log);
 
-        printf("Error in shader: %s\n", shader_path);
-        printf("%s", log);
-
-        free(log);
-        free((void*)shader_contents);
-
-        exit(EXIT_FAILURE);
+        PANIC("Error in shader: %s\n%s\n", shader_path, log);
     }
 
-    free((void*)shader_contents);
+    free(shader_contents);
 
     return shader;
 }
