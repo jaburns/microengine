@@ -11,14 +11,10 @@ function main.start()
     camera = create_entity()
     add_component_Transform(camera)
     add_component_Camera(camera)
-
-    local z = get_component_Teapot(teapot)
-    z.placeholder.scale.x = 123
-    set_component_Teapot(teapot, z)
 end
 
 function main.update()
-    t = get_component_Transform(teapot)
+    local t = get_component_Transform(teapot)
     t.position.x = math.sin(5 *  os.clock())
     set_component_Transform(teapot, t)
 

@@ -4,7 +4,6 @@
 
 #include "../gl.h"
 #include "../components.h"
-#include "../components_ext.h"
 #include "../resources.h"
 
 static const GLfloat triangle_vertices[] = {
@@ -73,9 +72,8 @@ void render_sys_run(RenderSystem *sys, ECS *ecs)
     mat4x4 projection;
     mat4x4_perspective(projection, camera->fov, 1.f, camera->near, camera->far);
 
-    mat4x4 cam_mat, view;
-    Transform_to_matrix(camera_transform, cam_mat);
-    mat4x4_invert(view, cam_mat);
+    mat4x4 view;
+    mat4x4_invert(view, camera_transform->worldMatrix_);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -91,14 +89,13 @@ void render_sys_run(RenderSystem *sys, ECS *ecs)
     for (int i = 0; i < num_teapots; ++i)
     {
         ECS_GET_COMPONENT_DECL(Transform, teapot_transform, ecs, teapots[i]);
-        ECS_GET_COMPONENT_DECL(Teapot, teaboi, ecs, teapots[i]);
+        ECS_GET_COMPONENT_DECL(Teapot, teapot_comp, ecs, teapots[i]);
 
-        mat4x4 model;
-        Transform_to_matrix(teapot_transform, model);
-
-        glUniformMatrix4fv(glGetUniformLocation(sys->shader, "model"), 1, GL_FALSE, model);
+        glUniformMatrix4fv(glGetUniformLocation(sys->shader, "model"), 1, GL_FALSE, teapot_transform->worldMatrix_);
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
+
+    free(teapots);
 }
 
 void render_sys_delete(RenderSystem *sys)

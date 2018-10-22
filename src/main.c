@@ -12,9 +12,9 @@
 #include "ecs.h"
 #include "shell.h"
 #include "components.h"
-#include "components_ext.h"
-#include "systems/render_sys.h"
+#include "systems/transform_sys.h"
 #include "systems/editor_sys.h"
+#include "systems/render_sys.h"
 
 static int l_print (lua_State *L)
 {
@@ -47,13 +47,10 @@ int main(int argc, char **argv)
     #endif
 
     ShellContext *ctx = shell_new("Hello world", 1024, 768);
+    TransformSystem *transformsystem = transform_sys_new();
     RenderSystem *rendersystem = render_sys_new();
     EditorSystem *editorsystem = editor_sys_new();
     ECS *ecs = ecs_new();
-
-    ECS_REGISTER_COMPONENT(Transform, ecs, NULL);
-    ECS_REGISTER_COMPONENT(Teapot, ecs, NULL);
-    ECS_REGISTER_COMPONENT(Camera, ecs, NULL);
 
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
@@ -62,11 +59,13 @@ int main(int argc, char **argv)
     lua_pushcfunction(L, l_print);
     lua_setglobal(L, "print");
 
-    components_init_lua_ecs(L, ecs);
+    components_init(L, ecs);
     run_lua_main_func(L, "start");
 
     do
     {
+        transform_sys_run(transformsystem, ecs);
+
         run_lua_main_func(L, "update");
 
         editor_sys_run(editorsystem, ecs);
@@ -76,6 +75,7 @@ int main(int argc, char **argv)
 
     lua_close(L);
     ecs_delete(ecs);
+    transform_sys_delete(transformsystem);
     render_sys_delete(rendersystem);
     editor_sys_delete(editorsystem);
     shell_delete(ctx);

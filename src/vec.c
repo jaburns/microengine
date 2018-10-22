@@ -102,10 +102,10 @@ void vec_clear(Vec *vec)
     vec->item_count = 0;
 }
 
-void vec_clear_with_callback(Vec *vec, VecCallback cb)
+void vec_clear_with_callback(Vec *vec, void *context, VecCallback cb)
 {
     for (size_t i = 0; i < vec->item_count; ++i)
-        cb(vec_at(vec, i));
+        cb(context, vec_at(vec, i));
 
     vec_clear(vec);
 }
@@ -114,7 +114,7 @@ void vec_clear_with_callback(Vec *vec, VecCallback cb)
 static int test_clear_callback_calls;
 static uint8_t test_clear_callback_sum;
 
-static void test_clear_callback(void *item)
+static void test_clear_callback(void *context, void *item)
 {
     test_clear_callback_calls++;
     test_clear_callback_sum += *((uint8_t*)item);
@@ -164,7 +164,7 @@ TestResult vec_test(void)
 
         test_clear_callback_calls = 0;
         test_clear_callback_sum = 0;
-        vec_clear_with_callback(&v, &test_clear_callback);
+        vec_clear_with_callback(&v, NULL, &test_clear_callback);
 
         TEST_ASSERT(test_clear_callback_calls == 3);
         TEST_ASSERT(test_clear_callback_sum == 14);

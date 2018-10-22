@@ -20,14 +20,15 @@ typedef struct HashTable
 }
 HashTable;
 
-typedef void (*HashTableCallback)(void*);
+// First arg is arbitrary context, second arg is the element operated on
+typedef void (*HashTableCallback)(void*, void*);
 
 extern HashTable hashtable_empty(size_t table_size, size_t item_size);
 extern void *hashtable_at(HashTable *table, const char *key);
 extern void *hashtable_set_copy(HashTable *table, const char *key, void *item_ref);
 extern bool hashtable_remove(HashTable *table, const char *key);
 extern void hashtable_clear(HashTable *table);
-extern void hashtable_clear_with_callback(HashTable *table, HashTableCallback cb);
+extern void hashtable_clear_with_callback(HashTable *table, void *context, HashTableCallback cb);
 
 #ifdef RUN_TESTS
 #include "testing.h"

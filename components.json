@@ -1,11 +1,13 @@
 [{
     "name": "Transform",
-    "default":  "{ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f} }",
+    "default":  "{ {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, 0, {sizeof(Entity),0,0} }",
     "fields": {
-        "position": "vec3"
-    ,   "rotation": "quat"
-    ,   "scale":    "vec3"
-    ,   "parent":   "Entity"
+        "position": "vec3",
+        "rotation": "quat",
+        "scale": "vec3",
+        "parent": "Entity",
+        "children_": [ "Entity" ],
+        "worldMatrix_": "mat4x4"
     }
 },{
     "name": "Teapot",

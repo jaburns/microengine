@@ -108,9 +108,9 @@ bool hashtable_remove(HashTable *table, const char *key)
     return false;
 }
 
-static void empty_callback(void *x) {}
+static void empty_callback(void *c, void *x) {}
 
-void hashtable_clear_with_callback(HashTable *table, HashTableCallback cb)
+void hashtable_clear_with_callback(HashTable *table, void *context, HashTableCallback cb)
 {
     if (!table->table) return;
 
@@ -120,7 +120,7 @@ void hashtable_clear_with_callback(HashTable *table, HashTableCallback cb)
 
         while (entry)
         {
-            cb(entry->value);
+            cb(context, entry->value);
 
             HashTableEntry *next = entry->next;
             free(entry->key);
@@ -135,7 +135,7 @@ void hashtable_clear_with_callback(HashTable *table, HashTableCallback cb)
 
 void hashtable_clear(HashTable *table)
 {
-    hashtable_clear_with_callback(table, &empty_callback);
+    hashtable_clear_with_callback(table, NULL, &empty_callback);
 }
 
 
@@ -143,7 +143,7 @@ void hashtable_clear(HashTable *table)
 static int test_clear_callback_calls;
 static uint32_t test_clear_callback_val;
 
-static void test_clear_callback(void *item)
+static void test_clear_callback(void *context, void *item)
 {
     test_clear_callback_calls++;
     test_clear_callback_val = *((uint32_t*)item);
@@ -200,7 +200,7 @@ TestResult hashtable_test(void)
         test_clear_callback_calls = 0;
         test_clear_callback_val = 0;
 
-        hashtable_clear_with_callback(&table, &test_clear_callback);
+        hashtable_clear_with_callback(&table, NULL, &test_clear_callback);
 
         TEST_ASSERT(test_clear_callback_calls == 1);
         TEST_ASSERT(test_clear_callback_val == 27);

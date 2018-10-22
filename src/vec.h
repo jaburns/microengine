@@ -12,7 +12,8 @@ typedef struct Vec
 }
 Vec;
 
-typedef void (*VecCallback)(void*);
+// First arg is arbitrary context, second arg is the element operated on
+typedef void (*VecCallback)(void*, void*); 
 
 extern Vec vec_empty(size_t item_size);
 
@@ -28,7 +29,7 @@ extern bool vec_pop(Vec *vec, void *result);
 extern Vec vec_clone(Vec *vec);
 extern void vec_resize(Vec *vec, size_t new_item_count);
 extern void vec_clear(Vec *vec);
-extern void vec_clear_with_callback(Vec *vec, VecCallback cb);
+extern void vec_clear_with_callback(Vec *vec, void *context, VecCallback cb);
 
 #ifdef RUN_TESTS
 #include "testing.h"

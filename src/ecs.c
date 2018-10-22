@@ -106,10 +106,16 @@ GenerationalIndexArray giarray_empty(size_t item_size, ComponentDestructor destr
     return (GenerationalIndexArray) { item_size, destructor, vec_empty(sizeof(GenerationalIndexArrayEntry) + item_size) };
 }
 
+static void giarray_clear_callback(GenerationalIndexArray *context, GenerationalIndexArrayEntry *entry)
+{
+    if (entry->has_value)
+        context->destructor(entry->entry);
+}
+
 void giarray_clear(GenerationalIndexArray *gia)
 {
     if (gia->destructor)
-        vec_clear_with_callback(&gia->entries, gia->destructor);
+        vec_clear_with_callback(&gia->entries, gia, giarray_clear_callback);
     else
         vec_clear(&gia->entries);
 }
@@ -121,7 +127,7 @@ void *giarray_set_copy_or_zeroed(GenerationalIndexArray *gia, GenerationalIndex 
 
     GenerationalIndexArrayEntry* entry = vec_at(&gia->entries, index.index);
 
-    if (entry->has_value)
+    if (gia->destructor && entry->has_value)
         gia->destructor(entry->entry);
 
     entry->has_value = true;
@@ -152,7 +158,7 @@ void giarray_remove(GenerationalIndexArray *gia, GenerationalIndex index)
 
     GenerationalIndexArrayEntry* entry = vec_at(&gia->entries, index.index);
 
-    if (entry->has_value)
+    if (gia->destructor && entry->has_value)
         gia->destructor(entry->entry);
 
     entry->has_value = false;
@@ -240,9 +246,9 @@ ECS *ecs_new(void)
     return ecs;
 }
 
-static void ecs_delete_hashtable_cb(ECSComponent *comp)
+static void ecs_delete_hashtable_cb(void *context, ECSComponent *comp)
 {
-    giarray_clear(&comp->components, comp->destructor);
+    giarray_clear(&comp->components);
 }
 
 void ecs_delete(ECS *ecs)
@@ -250,7 +256,7 @@ void ecs_delete(ECS *ecs)
     if (!ecs) return;
 
     giallocator_clear(&ecs->allocator);
-    hashtable_clear_with_callback(&ecs->components, ecs_delete_hashtable_cb);
+    hashtable_clear_with_callback(&ecs->components, NULL, ecs_delete_hashtable_cb);
     free(ecs);
 }
 
@@ -334,6 +340,12 @@ Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *c
 
 
 #ifdef RUN_TESTS
+static int test_destructor_call_count = 0;
+static void test_destructor(void *value)
+{
+    test_destructor_call_count++;
+}
+
 TestResult ecs_test()
 {
     TEST_BEGIN("GenerationalIndexAllocator works");
@@ -370,7 +382,9 @@ TestResult ecs_test()
         TestArrayElem;
 
         GenerationalIndexAllocator alloc = giallocator_empty();
-        GenerationalIndexArray arr = giarray_empty(sizeof(TestArrayElem), NULL);
+        GenerationalIndexArray arr = giarray_empty(sizeof(TestArrayElem), test_destructor);
+
+        test_destructor_call_count = 0;
 
         GenerationalIndex i = giallocator_allocate(&alloc);
         TestArrayElem val_in = { 4.0f, 19 };
@@ -381,11 +395,14 @@ TestResult ecs_test()
         TEST_ASSERT(val_out);
         TEST_ASSERT(val_out != &val_in);
         TEST_ASSERT(val_out->x == 4.0f && val_out->y == 19);
+        TEST_ASSERT(test_destructor_call_count == 0);
 
         giallocator_deallocate(&alloc, i);
 
         GenerationalIndex j = giallocator_allocate(&alloc);
         TestArrayElem *val_out2 = giarray_set_copy_or_zeroed(&arr, j, 0);
+
+        TEST_ASSERT(test_destructor_call_count == 1);
 
         TEST_ASSERT(!giarray_at(&arr, i));
 
@@ -394,6 +411,8 @@ TestResult ecs_test()
 
         giarray_clear(&arr, NULL);
         giallocator_clear(&alloc);
+
+        TEST_ASSERT(test_destructor_call_count == 2);
 
     TEST_END();
     TEST_BEGIN("GenerationalIndexArray find all valid indices works");
@@ -423,11 +442,13 @@ TestResult ecs_test()
         giallocator_clear(&alloc);
 
     TEST_END();
-    TEST_BEGIN("GenerationalIndexArray remove element works");
+    TEST_BEGIN("GenerationalIndexArray remove element works, destructor not called twice");
 
         GenerationalIndexAllocator alloc = giallocator_empty();
-        GenerationalIndexArray arr = giarray_empty(sizeof(float), NULL);
+        GenerationalIndexArray arr = giarray_empty(sizeof(float), test_destructor);
         GenerationalIndex i = giallocator_allocate(&alloc);
+
+        test_destructor_call_count = 0;
 
         giarray_set_copy_or_zeroed(&arr, i, 0);
         TEST_ASSERT(giarray_at(&arr, i));
@@ -435,11 +456,14 @@ TestResult ecs_test()
         giarray_remove(&arr, i);
         TEST_ASSERT(!giarray_at(&arr, i));
 
+        TEST_ASSERT(test_destructor_call_count == 1);
+
         giarray_clear(&arr, NULL);
         giallocator_clear(&alloc);
 
+        TEST_ASSERT(test_destructor_call_count == 1);
+
     TEST_END();
-    // TODO test giarray clear callback and destructor
     TEST_BEGIN("Entity to GenerationalIndex conversion reverses");
 
         {
@@ -553,10 +577,6 @@ TestResult ecs_test()
         ecs_delete(ecs);
 
     TEST_END();
-
-    // TODO write tests for and implement component destructor
-
-        
     return 0;
 }
 #endif

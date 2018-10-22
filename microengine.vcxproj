@@ -141,6 +141,7 @@
     <ClCompile Include="src\systems\render_sys.c" />
     <ClCompile Include="src\resources.c" />
     <ClCompile Include="src\shell.c" />
+    <ClCompile Include="src\systems\transform_sys.c" />
     <ClCompile Include="src\testing.c" />
     <ClCompile Include="src\vec.c" />
   </ItemGroup>
@@ -174,7 +175,6 @@
     <ClInclude Include="external\linmath.lua\lua\lzio.h" />
     <ClInclude Include="external\linmath.lua\linmath.lua.h" />
     <ClInclude Include="src\components.h" />
-    <ClInclude Include="src\components_ext.h" />
     <ClInclude Include="src\ecs.h" />
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\hashtable.h" />
@@ -183,6 +183,7 @@
     <ClInclude Include="src\systems\render_sys.h" />
     <ClInclude Include="src\resources.h" />
     <ClInclude Include="src\shell.h" />
+    <ClInclude Include="src\systems\transform_sys.h" />
     <ClInclude Include="src\testing.h" />
     <ClInclude Include="src\utils.h" />
     <ClInclude Include="src\vec.h" />
