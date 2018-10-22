@@ -2,6 +2,8 @@
 
 #include "utils.h"
 
+#include <stdlib.h>
+
 char *read_file_alloc(const char *path)
 {
     char *buffer = 0;
@@ -16,8 +18,8 @@ char *read_file_alloc(const char *path)
     fseek(f, 0, SEEK_END);
     length = ftell(f);
     fseek(f, 0, SEEK_SET);
-    buffer = (char*)malloc(length + 1);
     fread(buffer, 1, length, f);
+    buffer = malloc(length + 1);
     buffer[length] = 0;
     fclose(f);
 

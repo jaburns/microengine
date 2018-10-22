@@ -1,5 +1,20 @@
 #include <cJSON.h>
 
+#include "../src/utils.h"
+
+
+void generate_components(void)
+{
+    const char *json_file = read_file_alloc("components.json");
+    cJSON *json = cJSON_Parse(json_file);
+
+    cJSON *top = cJSON_GetArrayItem(json, 0);
+    cJSON *hello = cJSON_GetObjectItem(top, "name");
+    printf("Hello: %s", cJSON_GetStringValue(hello));
+
+    cJSON_Delete(json);
+    free(json_file);
+}
 
 
 /*

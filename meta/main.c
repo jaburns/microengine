@@ -4,4 +4,5 @@
 
 int meta_main(int argc, char **argv)
 {
+    generate_components();
 }
