@@ -27,7 +27,7 @@ void editor_sys_run(EditorSystem *sys, ECS *ecs)
         ECS_GET_COMPONENT_DECL(Transform, t, ecs, entities[i]);
 
         igPushIDInt(i);
-        igSliderFloat3("Position", t, -10.0f, 10.0f, NULL, 1.0f);
+        igDragFloat3("Position", t, 0.005f, -INFINITY, INFINITY, NULL, 1.0f);
         igPopID();
     }
 

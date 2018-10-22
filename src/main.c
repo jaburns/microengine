@@ -40,8 +40,13 @@ static void run_lua_main_func(lua_State *L, const char *func)
     }
 }
 
+// TODO create separate meta project
+#include "../meta/main.c"
+
 int main(int argc, char **argv)
 {
+                                                        return meta_main(argc, argv);
+
     #ifdef RUN_TESTS
         if (run_all_tests()) return 1;
     #endif

@@ -62,7 +62,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cJSON;$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -80,7 +80,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;NDEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cJSON;$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -97,6 +97,7 @@
     <ClCompile Include="external\cimgui\imgui\imgui_demo.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="external\cJSON\cJSON.c" />
     <ClCompile Include="external\linmath.lua\lua\lapi.c" />
     <ClCompile Include="external\linmath.lua\lua\lauxlib.c" />
     <ClCompile Include="external\linmath.lua\lua\lbaselib.c" />
@@ -133,6 +134,8 @@
     <ClCompile Include="external\linmath.lua\linmath.lua.c" />
     <ClCompile Include="external\support\imgui_impl.cpp" />
     <ClCompile Include="external\support\lodepng.c" />
+    <ClCompile Include="meta\generate_components.c" />
+    <ClCompile Include="meta\main.c" />
     <ClCompile Include="src\components.c" />
     <ClCompile Include="src\ecs.c" />
     <ClCompile Include="src\hashtable.c" />
@@ -174,11 +177,12 @@
     <ClInclude Include="external\linmath.lua\lua\lvm.h" />
     <ClInclude Include="external\linmath.lua\lua\lzio.h" />
     <ClInclude Include="external\linmath.lua\linmath.lua.h" />
+    <ClInclude Include="meta\generate_components.h" />
     <ClInclude Include="src\components.h" />
     <ClInclude Include="src\ecs.h" />
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\hashtable.h" />
-    <ClInclude Include="src\ns_clock.h" />
+    <ClInclude Include="external\support\ns_clock.h" />
     <ClInclude Include="src\systems\editor_sys.h" />
     <ClInclude Include="src\systems\render_sys.h" />
     <ClInclude Include="src\resources.h" />

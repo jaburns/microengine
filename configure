@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # Requires SDL2 and glew: brew install sdl2 glew | apt install libsdl2-dev libglew-dev
 
 CC='cc -g'
-CFLAGS='-DRUN_TESTS -Iexternal/lodepng -Iexternal/lua -Iexternal/support -Iexternal/linmath.h'
+CFLAGS='-DRUN_TESTS -Iexternal/cJSON -Iexternal/lodepng -Iexternal/linmath.lua/lua -Iexternal/support -Iexternal/linmath.lua'
 BIN_FILE='game'
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -27,13 +27,14 @@ make_cmd() {
 
 file_list() {
     find src -iname '*.c'
-    find external/lua -iname '*.c' | grep -v 'lbitlib.c' | grep -v 'lua.c'
+    find external/linmath.lua/lua -iname '*.c' | grep -v 'lbitlib.c' | grep -v 'lua.c'
     echo external/support/imgui_impl.cpp
     echo external/cimgui/cimgui.cpp
     echo external/cimgui/imgui/imgui.cpp
     echo external/cimgui/imgui/imgui_draw.cpp
     echo external/cimgui/imgui/imgui_demo.cpp
     echo external/cimgui/imgui/imgui_widgets.cpp
+    echo external/cJSON/cJSON.c
     echo external/support/lodepng.c
 }
 

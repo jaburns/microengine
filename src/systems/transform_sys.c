@@ -35,18 +35,18 @@ extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
     {
         ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
         Transform_to_matrix(t, t->worldMatrix_);
-        vec_clear(&t->children_);
-    }
 
-    for (int i = 0; i < num_transforms; ++i)
-    {
-        ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
+        vec_clear(&t->children_);
         Entity parent = t->parent;
 
         while (parent)
         {
-            ECS_GET_COMPONENT_DECL(Transform, p, ecs, transform_entities[parent]);
-            mat4x4_mul(t->worldMatrix_, p->worldMatrix_, t->worldMatrix_);
+            ECS_GET_COMPONENT_DECL(Transform, p, ecs, parent);
+
+            mat4x4 parent_matrix;
+            Transform_to_matrix(p, parent_matrix);
+
+            mat4x4_mul(t->worldMatrix_, parent_matrix, t->worldMatrix_);
 
             vec_push_copy(&p->children_, &transform_entities[i]);
 
