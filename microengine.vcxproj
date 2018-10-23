@@ -134,7 +134,6 @@
     <ClCompile Include="external\linmath.lua\linmath.lua.c" />
     <ClCompile Include="external\support\imgui_impl.cpp" />
     <ClCompile Include="external\support\lodepng.c" />
-    <ClCompile Include="meta\generate_components.c" />
     <ClCompile Include="src\components.c" />
     <ClCompile Include="src\ecs.c" />
     <ClCompile Include="src\hashtable.c" />
@@ -177,7 +176,6 @@
     <ClInclude Include="external\linmath.lua\lua\lvm.h" />
     <ClInclude Include="external\linmath.lua\lua\lzio.h" />
     <ClInclude Include="external\linmath.lua\linmath.lua.h" />
-    <ClInclude Include="meta\generate_components.h" />
     <ClInclude Include="src\components.h" />
     <ClInclude Include="src\ecs.h" />
     <ClInclude Include="src\gl.h" />
