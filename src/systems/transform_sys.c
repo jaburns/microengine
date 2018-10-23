@@ -35,8 +35,12 @@ extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
     {
         ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
         Transform_to_matrix(t, t->worldMatrix_);
-
         vec_clear(&t->children_);
+    }
+
+    for (int i = 0; i < num_transforms; ++i)
+    {
+        ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
         Entity parent = t->parent;
 
         while (parent)

@@ -64,10 +64,9 @@ int main(int argc, char **argv)
 
     do
     {
-        transform_sys_run(transformsystem, ecs);
-
         run_lua_main_func(L, "update");
 
+        transform_sys_run(transformsystem, ecs);
         editor_sys_run(editorsystem, ecs);
         render_sys_run(rendersystem, ecs);
     }

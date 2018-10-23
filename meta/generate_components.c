@@ -28,6 +28,7 @@ const char *COMPONENTS_C_HEADER =
 "\n#include <stdint.h>"
 "\n#include <lauxlib.h>"
 "\n#include <lualib.h>"
+"\n#include <imgui_impl.h>"
 "\n"
 "\nstatic ECS *s_ecs;"
 "\n"
@@ -44,6 +45,15 @@ const char *COMPONENTS_C_HEADER =
 "\n    ecs_destroy_entity(s_ecs, (Entity)entity);"
 "\n    return 0;"
 "\n}"
+"\n"
+"\nstatic void icb_inspect_Entity(const char *label, Entity *v) { igText(\"%s {Entity}\", label); }"
+"\nstatic void icb_inspect_float(const char *label, float *v) { igDragFloat(label, v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_vec2(const char *label, vec2 *v) { igDragFloat2(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_vec3(const char *label, vec3 *v) { igDragFloat3(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_vec4(const char *label, vec4 *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_quat(const char *label, quat *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_mat4x4(const char *label, quat *v) { igText(\"%s {Matrix}\", label); }"
+"\nstatic void icb_inspect_Vec_T(const char *label, void *v) { igText(\"%s {Vec<T>}\", label); }"
 "\n"
 "\nstatic void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }"
 "\nstatic void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
@@ -124,23 +134,6 @@ static void write_default_def(char **output, cJSON *type)
     }
 
     WL(*output, "};\n");
-}
-
-static char *generate_components_h_alloc(cJSON *types)
-{
-    char *output = malloc(1024 * 1024);
-    char *output_start = output;
-
-    W(output, "%s", COMPONENTS_H_HEADER);
-
-    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
-    {
-        cJSON *type = cJSON_GetArrayItem(types, i);
-        write_struct_def(&output, type);
-        write_default_def(&output, type);
-    }
-
-    return output_start;
 }
 
 static void write_vec_push_pop(char **output, const char *typename)
@@ -272,6 +265,41 @@ static void write_set_component(char **output, const char *type_name)
     W(*output, "}");
 }
 
+static void write_inspector(char **output, cJSON *type, bool body_decl)
+{
+    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+
+    W(*output, "%s", body_decl ? "" : "extern ");
+    WL(*output, "void icb_inspect_%s(%s *v)", type_name, type_name);
+
+    if (! body_decl) 
+    {
+        WL(*output, ";\n");
+        return;
+    }
+
+    W(*output, "{");
+
+    cJSON *fields = cJSON_GetObjectItem(type, "fields");
+    for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
+    {
+        cJSON *field = cJSON_GetArrayItem(fields, i);
+        const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")); 
+        const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")); 
+
+        W(*output, "    igPushIDInt(%d);", i);
+
+        if (cJSON_GetObjectItem(field, "vec"))
+            W(*output, "    icb_inspect_Vec_T(\"%s\", NULL);", field_name);
+        else
+            W(*output, "    icb_inspect_%s(\"%s\", &v->%s);", field_type, field_name, field_name);
+
+        W(*output, "    igPopID();");
+    }
+
+    W(*output, "}");
+}
+
 static void write_components_init(char **output, cJSON *types)
 {
     W(*output, "void components_init(lua_State *L, ECS *ecs)");
@@ -299,6 +327,24 @@ static void write_components_init(char **output, cJSON *types)
     W(*output, "}");
 }
 
+static char *generate_components_h_alloc(cJSON *types)
+{
+    char *output = malloc(1024 * 1024);
+    char *output_start = output;
+
+    W(output, "%s", COMPONENTS_H_HEADER);
+
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+        write_struct_def(&output, type);
+        write_default_def(&output, type);
+        write_inspector(&output, type, false);
+    }
+
+    return output_start;
+}
+
 static char *generate_components_c_alloc(cJSON *types)
 {
     char *output = malloc(1024 * 1024);
@@ -321,6 +367,7 @@ static char *generate_components_c_alloc(cJSON *types)
         cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
+        write_inspector(&output, type, true);
         write_lua_push(&output, type, true);
         write_lua_pop(&output, type, true);
         write_add_component(&output, type_name);
