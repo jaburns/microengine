@@ -10,18 +10,25 @@ char *read_file_alloc(const char *path)
     long length;
     FILE *f = fopen(path, "rb");
 
-    if (! f) {
-        printf("Read file error: %s", path);
-        return NULL;
-    }
+    if (! f) PANIC("Read file error: %s", path);
 
     fseek(f, 0, SEEK_END);
     length = ftell(f);
     fseek(f, 0, SEEK_SET);
-    fread(buffer, 1, length, f);
     buffer = malloc(length + 1);
+    fread(buffer, 1, length, f);
     buffer[length] = 0;
     fclose(f);
 
     return buffer;
+}
+
+void write_file(const char *path, const char *contents)
+{
+    FILE *f = fopen(path, "wb");
+
+    if (! f) PANIC("Write file error: %s", path);
+
+    fputs(contents, f);
+    fclose(f);
 }

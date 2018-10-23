@@ -1,111 +1,180 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 #include <cJSON.h>
 
 #include "../src/utils.h"
 
+const char *BASE_TYPES[] = { "float", "vec2", "vec3", "vec4", "mat4x4", "Entity" };
+const size_t NUM_BASE_TYPES = sizeof(BASE_TYPES) / sizeof(char*);
 
-void generate_components(void)
+const char *COMPONENTS_H_HEADER =
+"// Generated"
+"\n#pragma once"
+"\n#include <linmath.h>"
+"\n#include <stdint.h>"
+"\n#include <lua.h>"
+"\n#include \"vec.h\""
+"\n#include \"ecs.h\""
+"\n"
+"\nextern void components_init(lua_State *L, ECS *ecs);";
+
+const char *COMPONENTS_C_HEADER = 
+"// Generated"
+"\n#include \"components.h\""
+"\n#include <linmath.lua.h>"
+"\n#include <stdint.h>"
+"\n#include <lauxlib.h>"
+"\n#include <lualib.h>"
+"\n"
+"\nstatic ECS *s_ecs;"
+"\n"
+"\nstatic int lcb_create_entity(lua_State *L)"
+"\n{"
+"\n    Entity ent = ecs_create_entity(s_ecs);"
+"\n    lua_pushnumber(L, (double)ent);"
+"\n    return 1;"
+"\n}"
+"\n"
+"\nstatic int lcb_destroy_entity(lua_State *L)"
+"\n{"
+"\n    double entity = luaL_checknumber(L, 1);"
+"\n    ecs_destroy_entity(s_ecs, (Entity)entity);"
+"\n    return 0;"
+"\n}"
+"\n"
+"\nstatic void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }"
+"\nstatic void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
+"\nstatic void lcb_push_float(lua_State *L, float *v) { lua_pushnumber(L, (double)(*v)); }"
+"\nstatic void lcb_pop_float(lua_State *L, float *v, int stack_index) { *v = (float)luaL_checknumber(L, stack_index); }"
+"\nstatic void lcb_push_vec2(lua_State *L, vec2 *v) { lml_push_vec2(L, *v); }"
+"\nstatic void lcb_pop_vec2(lua_State *L, vec2 *v, int stack_index) { lml_get_vec2(L, stack_index, *v); }"
+"\nstatic void lcb_push_vec3(lua_State *L, vec3 *v) { lml_push_vec3(L, *v); }"
+"\nstatic void lcb_pop_vec3(lua_State *L, vec3 *v, int stack_index) { lml_get_vec3(L, stack_index, *v); }"
+"\nstatic void lcb_push_vec4(lua_State *L, vec4 *v) { lml_push_vec4(L, *v); }"
+"\nstatic void lcb_pop_vec4(lua_State *L, vec4 *v, int stack_index) { lml_get_vec4(L, stack_index, *v); }"
+"\nstatic void lcb_push_quat(lua_State *L, quat *v) { lml_push_quat(L, *v); }"
+"\nstatic void lcb_pop_quat(lua_State *L, quat *v, int stack_index) { lml_get_quat(L, stack_index, *v); }"
+"\nstatic void lcb_push_mat4x4(lua_State *L, mat4x4 v) { lml_push_mat4x4(L, *v); }"
+"\nstatic void lcb_pop_mat4x4(lua_State *L, mat4x4 *v, int stack_index) { lml_get_mat4x4(L, stack_index, *v); }";
+
+#define W(output, ...) output += sprintf(output, "\n" __VA_ARGS__)
+#define WL(output, ...) output += sprintf(output, __VA_ARGS__)
+
+static void write_struct_def(char **output, cJSON *type)
 {
-    const char *json_file = read_file_alloc("components.json");
-    cJSON *json = cJSON_Parse(json_file);
+    const char *name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+    W(*output, "typedef struct %s", name);
+    W(*output, "{");
 
-    cJSON *top = cJSON_GetArrayItem(json, 0);
-    cJSON *hello = cJSON_GetObjectItem(top, "name");
-    printf("Hello: %s", cJSON_GetStringValue(hello));
-
-    cJSON_Delete(json);
-    free(json_file);
-}
-
-
-/*
-const fs = require('fs');
-const types = require('./components.json');
-
-const baseTypes = ['float', 'vec2', 'vec3', 'vec4', 'mat4x4', 'Entity'];
-
-const staticComponentCode = `
-"static ECS *s_ecs;
-
-"static int lcb_create_entity(lua_State *L)
-"{
-"    Entity ent = ecs_create_entity(s_ecs);
-"    lua_pushnumber(L, (double)ent);
-"    return 1;
-"}
-
-"static int lcb_destroy_entity(lua_State *L)
-"{
-"    double entity = luaL_checknumber(L, 1);
-"    ecs_destroy_entity(s_ecs, (Entity)entity);
-"    return 0;
-"}
-
-"static void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }
-"static void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }
-"static void lcb_push_float(lua_State *L, float *v) { lua_pushnumber(L, (double)(*v)); }
-"static void lcb_pop_float(lua_State *L, float *v, int stack_index) { *v = (float)luaL_checknumber(L, stack_index); }
-"static void lcb_push_vec2(lua_State *L, vec2 *v) { lml_push_vec2(L, *v); }
-"static void lcb_pop_vec2(lua_State *L, vec2 *v, int stack_index) { lml_get_vec2(L, stack_index, *v); }
-"static void lcb_push_vec3(lua_State *L, vec3 *v) { lml_push_vec3(L, *v); }
-"static void lcb_pop_vec3(lua_State *L, vec3 *v, int stack_index) { lml_get_vec3(L, stack_index, *v); }
-"static void lcb_push_vec4(lua_State *L, vec4 *v) { lml_push_vec4(L, *v); }
-"static void lcb_pop_vec4(lua_State *L, vec4 *v, int stack_index) { lml_get_vec4(L, stack_index, *v); }
-"static void lcb_push_quat(lua_State *L, quat *v) { lml_push_quat(L, *v); }
-"static void lcb_pop_quat(lua_State *L, quat *v, int stack_index) { lml_get_quat(L, stack_index, *v); }
-"extern void lcb_push_mat4x4(lua_State *L, mat4x4 v) { lml_push_mat4x4(L, *v); }
-"static void lcb_pop_mat4x4(lua_State *L, mat4x4 *v, int stack_index) { lml_get_mat4x4(L, stack_index, *v); }
-`;
-
-const generateStruct = type => {
-    const result = [`typedef struct ${type.name}`];
-    result.push('{');
-
-    for (let k in type.fields) {
-        if (Array.isArray(type.fields[k])) {
-            result.push(`    Vec ${k}; // of ${type.fields[k][0]}`);
-        } else {
-            result.push(`    ${type.fields[k]} ${k};`);
-        }
-    }
-
-    result.push('}');
-    result.push(`${type.name};`);
-    return result.join('\n') + '\n';
-};
-
-const generateDefault = type =>
-    [`static const ${type.name} ${type.name}_default = ${type.default};`];
-
-const generateVecPushPop = typename => `
-static void lcb_push_Vec_${typename}(lua_State *L, Vec *v) 
-{
-    lua_newtable(L);
-    for (int i = 0; i < v->item_count; ++i)
+    cJSON *fields = cJSON_GetObjectItem(type, "fields");
+    for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
     {
-        lcb_push_${typename}(L, vec_at(v, i));
-        lua_rawseti(L, -2, i + 1);
+        cJSON *field = cJSON_GetArrayItem(fields, i);
+
+        if (cJSON_GetObjectItem(field, "vec"))
+            W(*output, "    Vec %s; // of %s", 
+                cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")),
+                cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"))
+            );
+        else
+            W(*output, "    %s %s;", 
+                cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")),
+                cJSON_GetStringValue(cJSON_GetObjectItem(field, "name"))
+            );
     }
+
+    W(*output, "}");
+    W(*output, "%s;\n", name);
 }
-static void lcb_pop_Vec_${typename}(lua_State *L, Vec *v, int stack_index)
+
+static void write_default_for_field(char **output, cJSON *field)
 {
-    luaL_checktype(L, stack_index, LUA_TTABLE);
-    size_t vec_len = lua_objlen(L, stack_index); 
+    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"));
+    cJSON *default_override_item = cJSON_GetObjectItem(field, "default");
+    cJSON *is_vec = cJSON_GetObjectItem(field, "vec");
 
-    // TODO need to maybe have destructors inside of Vec rather than GenenrationalIndexArray
-    // Lua is going to be manipulating Vecs on components directly.
-    // This will work unless you have vecs of vecs, then memory will leak.
-    vec_resize(v, vec_len);
-
-    for (int i = 0; i < vec_len; ++i)
-    {
-        lua_rawgeti(L, stack_index, i + 1);
-        lcb_pop_${typename}(L, vec_at(v, i), -1);
-        lua_pop(L, 1);
-    }
+    if (default_override_item) WL(*output, "%s", cJSON_GetStringValue(default_override_item));
+    else if (is_vec) WL(*output, "{sizeof(%s),0,0}", type_name);
+    else if (strcmp(type_name, "float") == 0) WL(*output, "0.f");
+    else if (strcmp(type_name, "vec2") == 0) WL(*output, "{0.f,0.f}");
+    else if (strcmp(type_name, "vec3") == 0) WL(*output, "{0.f,0.f,0.f}");
+    else if (strcmp(type_name, "vec4") == 0) WL(*output, "{0.f,0.f,0.f,0.f}");
+    else if (strcmp(type_name, "quat") == 0) WL(*output, "{0.f,0.f,0.f,1.f}");
+    else if (strcmp(type_name, "Entity") == 0) WL(*output, "0");
+    else if (strcmp(type_name, "mat4x4") == 0) 
+        WL(*output, "{{1.f,0.f,0.f,0.f},{0.f,1.f,0.f,0.f},{0.f,0.f,1.f,0.f},{0.f,0.f,0.f,1.f}}");
 }
-`;
 
-const generateLuaPush = (type, proto) => {
+static void write_default_def(char **output, cJSON *type)
+{
+    const char *name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+
+    WL(*output, "static const %s %s_default = {", name, name);
+
+    cJSON *fields = cJSON_GetObjectItem(type, "fields");
+    for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
+    {
+        cJSON *field = cJSON_GetArrayItem(fields, i);
+        write_default_for_field(output, field);
+        if (i < max - 1) WL(*output, ",");
+    }
+
+    WL(*output, "};\n");
+}
+
+static char *generate_components_h_alloc(cJSON *types)
+{
+    char *output = malloc(1024 * 1024);
+    char *output_start = output;
+
+    W(output, "%s", COMPONENTS_H_HEADER);
+
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+        write_struct_def(&output, type);
+        write_default_def(&output, type);
+    }
+
+    return output_start;
+}
+
+static void write_vec_push_pop(char **output, const char *typename)
+{
+    W(*output, "static void lcb_push_Vec_%s(lua_State *L, Vec *v)", typename);
+    W(*output, "{");
+    W(*output, "    lua_newtable(L);");
+    W(*output, "    for (int i = 0; i < v->item_count; ++i)");
+    W(*output, "    {");
+    W(*output, "        lcb_push_%s(L, vec_at(v, i));", typename);
+    W(*output, "        lua_rawseti(L, -2, i + 1);");
+    W(*output, "    }");
+    W(*output, "}");
+    W(*output, "static void lcb_pop_Vec_%s(lua_State *L, Vec *v, int stack_index)", typename);
+    W(*output, "{");
+    W(*output, "    luaL_checktype(L, stack_index, LUA_TTABLE);");
+    W(*output, "    size_t vec_len = lua_objlen(L, stack_index); ");
+    W(*output, "");
+    W(*output, "    // TODO need to maybe have destructors inside of Vec rather than GenenrationalIndexArray");
+    W(*output, "    // Lua is going to be manipulating Vecs on components directly.");
+    W(*output, "    // This will work unless you have vecs of vecs, then memory will leak.");
+    W(*output, "    vec_resize(v, vec_len);");
+    W(*output, "");
+    W(*output, "    for (int i = 0; i < vec_len; ++i)");
+    W(*output, "    {");
+    W(*output, "        lua_rawgeti(L, stack_index, i + 1);");
+    W(*output, "        lcb_pop_%s(L, vec_at(v, i), -1);", typename);
+    W(*output, "        lua_pop(L, 1);");
+    W(*output, "    }");
+    W(*output, "}");
+}
+
+static void write_lua_push(char **output, const char *typename, bool with_body)
+{
+    /*
     const result = [`static void lcb_push_${type.name}(lua_State *L, ${type.name} *v)`];
     if (proto) return result[0] + ';';
     result.push('{');
@@ -120,9 +189,12 @@ const generateLuaPush = (type, proto) => {
     result.push('}');
 
     return result.join('\n') + '\n';
-};
+    */
+}
 
-const generateLuaPop = (type, proto) => {
+static void write_lua_pop(char **output, const char *typename, bool with_body)
+{
+    /*
     const result = [`static void lcb_pop_${type.name}(lua_State *L, ${type.name} *v, int stack_index)`]
     if (proto) return result[0] + ';';
     result.push('{');
@@ -139,31 +211,12 @@ const generateLuaPop = (type, proto) => {
     result.push('}');
 
     return result.join('\n') + '\n';
-};
+    */
+}
 
-const generateLuaGetComponent = type => {
-    const result = [`static int lcb_get_component_${type.name}(lua_State *L)`];
-    result.push('{');
-    result.push('    Entity e = (Entity)luaL_checknumber(L, 1);');
-    result.push(`    ECS_GET_COMPONENT_DECL(${type.name}, x, s_ecs, e);`);
-    result.push(`    lcb_push_${type.name}(L, x);`);
-    result.push('    return 1;');
-    result.push('}');
-    return result.join('\n') + '\n';
-};
-
-const generateLuaSetComponent = type => {
-    const result = [`static int lcb_set_component_${type.name}(lua_State *L)`];
-    result.push('{');
-    result.push('    Entity e = (Entity)luaL_checknumber(L, 1);');
-    result.push(`    ECS_GET_COMPONENT_DECL(${type.name}, x, s_ecs, e);`);
-    result.push(`    lcb_pop_${type.name}(L, x, 2);`);
-    result.push('    return 0;');
-    result.push('}');
-    return result.join('\n') + '\n';
-};
-
-const generateLuaAddComponent = type => {
+static void write_add_component(char **output, const char *typename)
+{
+    /*
     const result = [`static int lcb_add_component_${type.name}(lua_State *L)`];
     result.push('{');
     result.push('    Entity e = (Entity)luaL_checknumber(L, 1);');
@@ -176,9 +229,40 @@ const generateLuaAddComponent = type => {
     result.push('    return 1;');
     result.push('}');
     return result.join('\n') + '\n';
-};
+    */
+}
 
-const generateInit = types => {
+static void write_get_component(char **output, const char *typename)
+{
+    /*
+    const result = [`static int lcb_get_component_${type.name}(lua_State *L)`];
+    result.push('{');
+    result.push('    Entity e = (Entity)luaL_checknumber(L, 1);');
+    result.push(`    ECS_GET_COMPONENT_DECL(${type.name}, x, s_ecs, e);`);
+    result.push(`    lcb_push_${type.name}(L, x);`);
+    result.push('    return 1;');
+    result.push('}');
+    return result.join('\n') + '\n';
+    */
+}
+
+static void write_set_component(char **output, const char *typename)
+{
+    /*
+    const result = [`static int lcb_set_component_${type.name}(lua_State *L)`];
+    result.push('{');
+    result.push('    Entity e = (Entity)luaL_checknumber(L, 1);');
+    result.push(`    ECS_GET_COMPONENT_DECL(${type.name}, x, s_ecs, e);`);
+    result.push(`    lcb_pop_${type.name}(L, x, 2);`);
+    result.push('    return 0;');
+    result.push('}');
+    return result.join('\n') + '\n';
+    */
+}
+
+static void write_components_init(char **output, cJSON *types)
+{
+    /*
     const result = ['void components_init(lua_State *L, ECS *ecs)']
     result.push('{');
     result.push('    s_ecs = ecs;');
@@ -201,61 +285,56 @@ const generateInit = types => {
 
     result.push('}');
     return result.join('\n') + '\n';
-};
-
-const generateFile_components_h = () => {
-    const result = [`// Generated
-#pragma once
-#include <linmath.h>
-#include <stdint.h>
-#include <lua.h>
-#include "vec.h"
-#include "ecs.h"
-
-extern void components_init(lua_State *L, ECS *ecs);
-`];
-    for (let i = 0; i < types.length; ++i)
-        result.push(generateStruct(types[i]));
-
-    for (let i = 0; i < types.length; ++i)
-        result.push(generateDefault(types[i]));
-
-    return result.join('\n');
-};
-
-const generateFile_components_c = () => {
-    const result = [`// Generated
-#include "components.h"
-#include <linmath.lua.h>
-#include <stdint.h>
-#include <lauxlib.h>
-#include <lualib.h>
-
-${staticComponentCode}
-`];
-    for (let i = 0; i < types.length; ++i)
-    {
-        result.push(generateLuaPush(types[i], true));
-        result.push(generateLuaPop(types[i], true));
-    }
-
-    baseTypes.forEach(t => result.push(generateVecPushPop(t)));
-
-    result.push('\n');
-    for (let i = 0; i < types.length; ++i)
-    {
-        result.push(generateLuaPush(types[i]));
-        result.push(generateLuaPop(types[i]));
-        result.push(generateLuaAddComponent(types[i]));
-        result.push(generateLuaGetComponent(types[i]));
-        result.push(generateLuaSetComponent(types[i]));
-        result.push(generateVecPushPop(types[i].name));
-    }
-    result.push(generateInit(types));
-
-    return result.join('\n');
+    */
 }
 
-fs.writeFileSync("src/components.h", generateFile_components_h());
-fs.writeFileSync("src/components.c", generateFile_components_c());
-*/
+static char *generate_components_c_alloc(cJSON *types)
+{
+    char *output = malloc(1024 * 1024);
+    char *output_start = output;
+
+    W(output, "%s", COMPONENTS_C_HEADER);
+
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+        write_lua_push(&output, type, false);
+        write_lua_pop(&output, type, false);
+    }
+
+    for (int i = 0; i < NUM_BASE_TYPES; ++i)
+        write_vec_push_pop(&output, BASE_TYPES[i]);
+
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+
+        write_lua_push(&output, type, true);
+        write_lua_pop(&output, type, true);
+        write_add_component(&output, type);
+        write_get_component(&output, type);
+        write_set_component(&output, type);
+        write_vec_push_pop(&output, cJSON_GetStringValue(cJSON_GetObjectItem(type, "name")));
+    }
+
+    write_components_init(&output, types);
+
+    return output_start;
+}
+
+void generate_components(void)
+{
+    const char *json_file = read_file_alloc("components2.json");
+    cJSON *json = cJSON_Parse(json_file);
+
+    const char *components_h = generate_components_h_alloc(json);
+    write_file("src/components.h", components_h);
+    free(components_h);
+
+    const char *components_c = generate_components_c_alloc(json);
+    write_file("src/components2.c", components_c);
+    free(components_c);
+
+    cJSON_Delete(json);
+    free(json_file);
+}

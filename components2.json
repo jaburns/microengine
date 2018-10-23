@@ -1,0 +1,23 @@
+[{
+    "name": "Transform",
+    "fields": [
+        { "name": "position", "type": "vec3" },
+        { "name": "rotation", "type": "quat" },
+        { "name": "scale", "type": "vec3", "default": "{1.f,1.f,1.f}" },
+        { "name": "parent", "type": "Entity" },
+        { "name": "children_", "type": "Entity", "vec": true },
+        { "name": "worldMatrix_", "type": "mat4x4" }
+    ]
+},{
+    "name": "Teapot",
+    "fields": [
+        { "name": "placeholder", "type": "float" }
+    ]
+},{
+    "name": "Camera",
+    "fields": [
+        { "name": "fov", "type": "float", "default": "1.5708f" },
+        { "name": "near", "type": "float", "default": "0.01f" },
+        { "name": "far", "type": "float", "default":"1000.0f" }
+    ]
+}]

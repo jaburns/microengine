@@ -21,3 +21,4 @@ int out_int = -1;                               \
 }
 
 extern char *read_file_alloc(const char *path);
+extern void write_file(const char *path, const char *contents);
