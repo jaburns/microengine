@@ -51,7 +51,7 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void icb_inspect_vec2(const char *label, vec2 *v) { igDragFloat2(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
 "\nstatic void icb_inspect_vec3(const char *label, vec3 *v) { igDragFloat3(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
 "\nstatic void icb_inspect_vec4(const char *label, vec4 *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
-"\nstatic void icb_inspect_quat(const char *label, quat *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_quat(const char *label, quat *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); quat_norm(*v, *v); }"
 "\nstatic void icb_inspect_mat4x4(const char *label, quat *v) { igText(\"%s {Matrix}\", label); }"
 "\nstatic void icb_inspect_Vec_T(const char *label, void *v) { igText(\"%s {Vec<T>}\", label); }"
 "\n"
@@ -170,6 +170,7 @@ static void write_lua_push(char **output, cJSON *type, bool with_body)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
+    // TODO this code for maybe writing a prototype is in like 5 places.
     W(*output, "static void lcb_push_%s(lua_State *L, %s *v)", type_name, type_name);
 
     if (! with_body) 
@@ -300,6 +301,31 @@ static void write_inspector(char **output, cJSON *type, bool body_decl)
     W(*output, "}");
 }
 
+static void write_inspect_all(char **output, cJSON *types, bool body_decl)
+{
+    W(*output, "%s", body_decl ? "" : "extern ");
+    WL(*output, "void icb_inspect_all(Entity e)");
+
+    if (! body_decl) 
+    {
+        WL(*output, ";\n");
+        return;
+    }
+
+    W(*output, "{");
+
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+        const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+
+        W(*output, "    { ECS_GET_COMPONENT_DECL(%s, v, s_ecs, e);", type_name);
+        W(*output, "    if (v) { icb_inspect_%s(v); igSeparator(); } }", type_name);
+    }
+
+    W(*output, "}");
+}
+
 static void write_components_init(char **output, cJSON *types)
 {
     W(*output, "void components_init(lua_State *L, ECS *ecs)");
@@ -342,6 +368,8 @@ static char *generate_components_h_alloc(cJSON *types)
         write_inspector(&output, type, false);
     }
 
+    write_inspect_all(&output, types, false);
+
     return output_start;
 }
 
@@ -376,6 +404,7 @@ static char *generate_components_c_alloc(cJSON *types)
         write_vec_push_pop(&output, type_name);
     }
 
+    write_inspect_all(&output, types, true);
     write_components_init(&output, types);
 
     return output_start;
