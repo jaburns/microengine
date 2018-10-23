@@ -4,9 +4,9 @@
         { "name": "position", "type": "vec3" },
         { "name": "rotation", "type": "quat" },
         { "name": "scale", "type": "vec3", "default": "{1.f,1.f,1.f}" },
-        { "name": "parent", "type": "Entity" },
-        { "name": "children_", "type": "Entity", "vec": true },
-        { "name": "worldMatrix_", "type": "mat4x4" }
+        { "name": "parent", "type": "Entity", "hideInInspector": true },
+        { "name": "children_", "type": "Entity", "vec": true, "hideInInspector": true },
+        { "name": "worldMatrix_", "type": "mat4x4", "hideInInspector": true }
     ]
 },{
     "name": "Teapot",

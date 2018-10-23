@@ -7,28 +7,33 @@
 
 struct EditorSystem
 {
-    bool inspector_open;
     Entity inspecting_entity;
 };
 
 EditorSystem *editor_sys_new(void)
 {
     EditorSystem *sys = malloc(sizeof(EditorSystem));
-    sys->inspector_open = false;
     sys->inspecting_entity = 0;
     return sys;
 }
 
 static void inspect_transform_tree(EditorSystem *sys, ECS *ecs, Entity parent_entity, Transform *parent)
 {
-    if (igTreeNodePtr(parent, "Entity"))
-    {
-        if (igButton("Inspect", (ImVec2) { 0.f, 0.f })) 
-        {
-            sys->inspecting_entity = parent_entity;
-            sys->inspector_open = true;
-        }
+    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
+    if (sys->inspecting_entity == parent_entity)
+        node_flags |= ImGuiTreeNodeFlags_Selected;
+
+    if (parent->children_.item_count == 0)
+        node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    bool node_open = igTreeNodeExPtr(parent, node_flags, "Entity");
+
+    if (igIsItemClicked(0))
+        sys->inspecting_entity = parent_entity;
+
+    if (parent->children_.item_count > 0 && node_open)
+    {
         for (int i = 0; i < parent->children_.item_count; ++i)
         {
             Entity e = *(Entity*)vec_at(&parent->children_, i);
@@ -38,7 +43,6 @@ static void inspect_transform_tree(EditorSystem *sys, ECS *ecs, Entity parent_en
 
         igTreePop();
     }
-
 }
 
 void editor_sys_run(EditorSystem *sys, ECS *ecs)
@@ -58,11 +62,14 @@ void editor_sys_run(EditorSystem *sys, ECS *ecs)
 
     igEnd();
 
-    if (sys->inspector_open)
+    if (sys->inspecting_entity)
     {
-        igBegin("Inspector", &sys->inspector_open, 0);
+        bool keep_open = true;
+        igBegin("Inspector", &keep_open, 0);
         icb_inspect_all(sys->inspecting_entity);
         igEnd();
+
+        if (!keep_open) sys->inspecting_entity = 0;
     }
 
     free(entities);

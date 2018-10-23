@@ -21,15 +21,13 @@ function main.start()
 end
 
 function main.update()
- --   local t = get_component_Transform(teapot)
- --   t.position.x = math.sin(5 *  os.clock())
- --   set_component_Transform(teapot, t)
+    local t = get_component_Transform(teapot)
+    t.position.x = math.sin(5 *  os.clock())
+    set_component_Transform(teapot, t)
 
---  t = get_component_Transform(camera)
---  t.position.z = 5 + 2*math.cos(5 *  os.clock())
---  set_component_Transform(camera, t)
+    t = get_component_Transform(camera)
+    t.position.z = 5 + 2*math.cos(5 *  os.clock())
+    set_component_Transform(camera, t)
 end
-
-print("Hello from Lua")
 
 return main

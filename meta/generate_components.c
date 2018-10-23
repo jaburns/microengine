@@ -285,6 +285,9 @@ static void write_inspector(char **output, cJSON *type, bool body_decl)
     for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
     {
         cJSON *field = cJSON_GetArrayItem(fields, i);
+
+        if (cJSON_GetObjectItem(field, "hideInInspector")) continue;
+
         const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")); 
         const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")); 
 
@@ -319,8 +322,11 @@ static void write_inspect_all(char **output, cJSON *types, bool body_decl)
         cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-        W(*output, "    { ECS_GET_COMPONENT_DECL(%s, v, s_ecs, e);", type_name);
-        W(*output, "    if (v) { icb_inspect_%s(v); igSeparator(); } }", type_name);
+        W(*output, "    {");
+        W(*output, "        ECS_GET_COMPONENT_DECL(%s, v, s_ecs, e);", type_name);
+        W(*output, "        if (v && igCollapsingHeader(\"%s\", 0))", type_name);
+        W(*output, "            icb_inspect_%s(v);", type_name);
+        W(*output, "    }");
     }
 
     W(*output, "}");
