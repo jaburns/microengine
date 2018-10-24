@@ -11,7 +11,7 @@
 },{
     "name": "Teapot",
     "fields": [
-        { "name": "placeholder", "type": "float" }
+        { "name": "label", "type": "string" }
     ]
 },{
     "name": "Camera",

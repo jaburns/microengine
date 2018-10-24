@@ -7,7 +7,7 @@
 
 #include "../src/utils.h"
 
-const char *BASE_TYPES[] = { "float", "vec2", "vec3", "vec4", "mat4x4", "Entity" };
+const char *BASE_TYPES[] = { "float", "vec2", "vec3", "vec4", "mat4x4", "Entity", "string" };
 const size_t NUM_BASE_TYPES = sizeof(BASE_TYPES) / sizeof(char*);
 
 const char *COMPONENTS_H_HEADER =
@@ -23,12 +23,17 @@ const char *COMPONENTS_H_HEADER =
 
 const char *COMPONENTS_C_HEADER = 
 "// Generated"
+"\n#define _CRT_SECURE_NO_WARNINGS 1"
 "\n#include \"components.h\""
 "\n#include <linmath.lua.h>"
 "\n#include <stdint.h>"
 "\n#include <lauxlib.h>"
 "\n#include <lualib.h>"
 "\n#include <imgui_impl.h>"
+"\n#include <string.h>"
+"\n#ifdef _MSC_VER"
+"\n#define strdup _strdup"
+"\n#endif"
 "\n"
 "\nstatic ECS *s_ecs;"
 "\n"
@@ -55,8 +60,21 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void icb_inspect_mat4x4(const char *label, quat *v) { igText(\"%s {Matrix}\", label); }"
 "\nstatic void icb_inspect_Vec_T(const char *label, void *v) { igText(\"%s {Vec<T>}\", label); }"
 "\n"
-"\nstatic void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }"
-"\nstatic void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
+"\nstatic void icb_inspect_string(const char *label, char **v)"
+"\n{"
+"\n    if (!*v) { *v = malloc(1); (*v)[0] = 0; }"
+"\n    char buf[1024] = \"\";"
+"\n    buf[1023] = 0;"
+"\n    strncpy(buf, *v, 1023);"
+"\n    igInputText(label, buf, 1024, ImGuiInputTextFlags_CharsNoBlank, NULL, NULL);"
+"\n    if (strcmp(buf, *v) == 0) return;"
+"\n    free(*v);"
+"\n    int len = strlen(buf);"
+"\n    *v = malloc(len + 1);"
+"\n    strncpy(*v, buf, len);"
+"\n    (*v)[len] = 0;"
+"\n}"
+"\n"
 "\nstatic void lcb_push_float(lua_State *L, float *v) { lua_pushnumber(L, (double)(*v)); }"
 "\nstatic void lcb_pop_float(lua_State *L, float *v, int stack_index) { *v = (float)luaL_checknumber(L, stack_index); }"
 "\nstatic void lcb_push_vec2(lua_State *L, vec2 *v) { lml_push_vec2(L, *v); }"
@@ -69,6 +87,10 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void lcb_pop_quat(lua_State *L, quat *v, int stack_index) { lml_get_quat(L, stack_index, *v); }"
 "\nstatic void lcb_push_mat4x4(lua_State *L, mat4x4 v) { lml_push_mat4x4(L, *v); }"
 "\nstatic void lcb_pop_mat4x4(lua_State *L, mat4x4 *v, int stack_index) { lml_get_mat4x4(L, stack_index, *v); }"
+"\nstatic void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }"
+"\nstatic void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
+"\nstatic void lcb_push_string(lua_State *L, char **v) { lua_pushstring(L, *v ? *v : \"\"); }"
+"\nstatic void lcb_pop_string(lua_State *L, char **v, int stack_index) { *v = strdup(luaL_checkstring(L, stack_index)); }"
 "\n";
 
 #define W(output, ...) output += sprintf(output, "\n" __VA_ARGS__)
@@ -84,17 +106,15 @@ static void write_struct_def(char **output, cJSON *type)
     for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
     {
         cJSON *field = cJSON_GetArrayItem(fields, i);
+        const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name"));
+        const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"));
 
         if (cJSON_GetObjectItem(field, "vec"))
-            W(*output, "    Vec %s; // of %s", 
-                cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")),
-                cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"))
-            );
+            W(*output, "    Vec %s; // of %s", field_name, field_type);
+        else if (strcmp("string", field_type) == 0)
+            W(*output, "    char *%s;", field_name);
         else
-            W(*output, "    %s %s;", 
-                cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")),
-                cJSON_GetStringValue(cJSON_GetObjectItem(field, "name"))
-            );
+            W(*output, "    %s %s;", field_type, field_name);
     }
 
     W(*output, "}");
@@ -115,6 +135,7 @@ static void write_default_for_field(char **output, cJSON *field)
     else if (strcmp(type_name, "vec4") == 0) WL(*output, "{0.f,0.f,0.f,0.f}");
     else if (strcmp(type_name, "quat") == 0) WL(*output, "{0.f,0.f,0.f,1.f}");
     else if (strcmp(type_name, "Entity") == 0) WL(*output, "0");
+    else if (strcmp(type_name, "string") == 0) WL(*output, "0");
     else if (strcmp(type_name, "mat4x4") == 0) 
         WL(*output, "{{1.f,0.f,0.f,0.f},{0.f,1.f,0.f,0.f},{0.f,0.f,1.f,0.f},{0.f,0.f,0.f,1.f}}");
 }
@@ -265,6 +286,18 @@ static void write_set_component(char **output, const char *type_name)
     W(*output, "    return 0;");
     W(*output, "}");
 }
+
+static void write_destructor(char **output, cJSON *type)
+{
+    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+
+    W(*output, "static int destructor_%s(%s *v)", type_name, type_name);
+    W(*output, "{");
+    // TODO implement destructors
+    W(*output, "}");
+}
+
+// TODO generate ser/de functions
 
 static void write_inspector(char **output, cJSON *type, bool body_decl)
 {
