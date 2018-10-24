@@ -317,21 +317,13 @@ static void write_destructor(char **output, cJSON *type)
 }
 
 // TODO generate ser/de functions
-// TODO do we really need publicly accessible inspectors for every individual component? probably no
-static void write_inspector(char **output, cJSON *type, bool body_decl)
+
+static void write_inspector(char **output, cJSON *type)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-    W(*output, "%s", body_decl ? "" : "extern ");
-    WL(*output, "void icb_inspect_%s(%s *v)", type_name, type_name);
-
-    if (! body_decl) 
-    {
-        WL(*output, ";\n");
-        return;
-    }
-
-    W(*output, "{");
+    WL(*output, "static void icb_inspect_%s(%s *v)", type_name, type_name);
+    WL(*output, "{");
 
     cJSON *fields = cJSON_GetObjectItem(type, "fields");
     for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
@@ -359,7 +351,7 @@ static void write_inspector(char **output, cJSON *type, bool body_decl)
 static void write_inspect_all(char **output, cJSON *types, bool body_decl)
 {
     W(*output, "%s", body_decl ? "" : "extern ");
-    WL(*output, "void icb_inspect_all(Entity e)");
+    WL(*output, "void components_inspect_entity(Entity e)");
 
     if (! body_decl) 
     {
@@ -423,7 +415,6 @@ static char *generate_components_h_alloc(cJSON *types)
         cJSON *type = cJSON_GetArrayItem(types, i);
         write_struct_def(&output, type);
         write_default_def(&output, type);
-        write_inspector(&output, type, false);
     }
 
     write_inspect_all(&output, types, false);

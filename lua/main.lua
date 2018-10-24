@@ -8,15 +8,20 @@ function main.start()
     teapot = create_entity()
     local teapot_parent = create_entity()
 
-    add_component_Transform(teapot_parent)
+    local tpt = add_component_Transform(teapot_parent)
+    tpt.name = "Top Dog"
+    --set_component_Transform(teapot_parent, tpt)
     add_component_Teapot(teapot_parent)
 
     local tt = add_component_Transform(teapot)
+    tt.name = "Child"
     tt.parent = teapot_parent
     set_component_Transform(teapot, tt)
     add_component_Teapot(teapot)
 
-    add_component_Transform(camera)
+    local ct = add_component_Transform(camera)
+    ct.name = "Main Camera"
+    set_component_Transform(camera, ct)
     add_component_Camera(camera)
 end
 

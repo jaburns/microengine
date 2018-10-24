@@ -1,5 +1,6 @@
 #include "editor_sys.h"
 
+#include <string.h>
 #include <imgui_impl.h>
 
 #include "../ecs.h"
@@ -27,7 +28,8 @@ static void inspect_transform_tree(EditorSystem *sys, ECS *ecs, Entity parent_en
     if (parent->children_.item_count == 0)
         node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    bool node_open = igTreeNodeExPtr(parent, node_flags, "Entity");
+    const char *name = parent->name && strlen(parent->name) ? parent->name : "(entity)";
+    bool node_open = igTreeNodeExPtr(parent, node_flags, name);
 
     if (igIsItemClicked(0))
         sys->inspecting_entity = parent_entity;
@@ -66,7 +68,7 @@ void editor_sys_run(EditorSystem *sys, ECS *ecs)
     {
         bool keep_open = true;
         igBegin("Inspector", &keep_open, 0);
-        icb_inspect_all(sys->inspecting_entity);
+        components_inspect_entity(sys->inspecting_entity);
         igEnd();
 
         if (!keep_open) sys->inspecting_entity = 0;
