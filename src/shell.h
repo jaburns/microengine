@@ -14,6 +14,7 @@ ShellInputs;
 
 extern ShellContext *shell_new(const char *title, int width, int height);
 extern bool shell_flip_frame_poll_events(ShellContext *context);
+extern float shell_get_aspect(ShellContext *context);
 extern void shell_delete(ShellContext *context);
 
 extern ShellInputs *read_input_state_alloc(ShellContext *context);

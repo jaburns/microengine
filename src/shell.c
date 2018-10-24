@@ -81,6 +81,11 @@ static void update_input_state(ShellInputs *state, const SDL_Event *event)
         vec_remove(&state->keys_down, index);
 }
 
+float shell_get_aspect(ShellContext *context)
+{
+    return (float)context->window_width / (float)context->window_height;
+}
+
 bool shell_flip_frame_poll_events(ShellContext *context)
 {
     bool still_running = true;

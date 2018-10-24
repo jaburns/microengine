@@ -61,7 +61,7 @@ RenderSystem *render_sys_new(void)
     return sys;
 }
 
-void render_sys_run(RenderSystem *sys, ECS *ecs)
+void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
 {
     Entity camera_entity;
     if (!ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(Camera, ecs, &camera_entity)) return;
@@ -70,7 +70,7 @@ void render_sys_run(RenderSystem *sys, ECS *ecs)
     ECS_GET_COMPONENT_DECL(Transform, camera_transform, ecs, camera_entity);
 
     mat4x4 projection;
-    mat4x4_perspective(projection, camera->fov, 1.f, camera->near, camera->far);
+    mat4x4_perspective(projection, camera->fov, aspect_ratio, camera->near, camera->far);
 
     mat4x4 view;
     mat4x4_invert(view, camera_transform->worldMatrix_);

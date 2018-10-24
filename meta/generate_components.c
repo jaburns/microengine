@@ -7,7 +7,7 @@
 
 #include "../src/utils.h"
 
-const char *BASE_TYPES[] = { "float", "vec2", "vec3", "vec4", "mat4x4", "Entity", "string" };
+const char *BASE_TYPES[] = { "float", "vec2", "vec3", "vec4", "quat", "mat4x4", "Entity", "string" };
 const size_t NUM_BASE_TYPES = sizeof(BASE_TYPES) / sizeof(char*);
 
 const char *COMPONENTS_H_HEADER =
@@ -85,7 +85,7 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void lcb_pop_vec4(lua_State *L, vec4 *v, int stack_index) { lml_get_vec4(L, stack_index, *v); }"
 "\nstatic void lcb_push_quat(lua_State *L, quat *v) { lml_push_quat(L, *v); }"
 "\nstatic void lcb_pop_quat(lua_State *L, quat *v, int stack_index) { lml_get_quat(L, stack_index, *v); }"
-"\nstatic void lcb_push_mat4x4(lua_State *L, mat4x4 v) { lml_push_mat4x4(L, *v); }"
+"\nstatic void lcb_push_mat4x4(lua_State *L, mat4x4 *v) { lml_push_mat4x4(L, *v); }"
 "\nstatic void lcb_pop_mat4x4(lua_State *L, mat4x4 *v, int stack_index) { lml_get_mat4x4(L, stack_index, *v); }"
 "\nstatic void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }"
 "\nstatic void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
@@ -173,9 +173,7 @@ static void write_vec_push_pop(char **output, const char *typename)
     W(*output, "    luaL_checktype(L, stack_index, LUA_TTABLE);");
     W(*output, "    size_t vec_len = lua_objlen(L, stack_index); ");
     W(*output, "");
-    // TODO need to maybe have destructors inside of Vec rather than GenenrationalIndexArray
-    // Lua is going to be manipulating Vecs on components directly.
-    // This will work unless you have vecs of vecs, then memory will leak.
+    // TODO This vec_resize should actually call destructor on all the elements, clear it, and then resize
     W(*output, "    vec_resize(v, vec_len);");
     W(*output, "");
     W(*output, "    for (int i = 0; i < vec_len; ++i)");
@@ -187,19 +185,11 @@ static void write_vec_push_pop(char **output, const char *typename)
     W(*output, "}");
 }
 
-static void write_lua_push(char **output, cJSON *type, bool with_body)
+static void write_lua_push(char **output, cJSON *type)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-    // TODO this code for maybe writing a prototype is in like 5 places.
     W(*output, "static void lcb_push_%s(lua_State *L, %s *v)", type_name, type_name);
-
-    if (! with_body) 
-    {
-        WL(*output, ";\n");
-        return;
-    }
-
     W(*output, "{");
     W(*output, "    lua_newtable(L);");
 
@@ -219,18 +209,11 @@ static void write_lua_push(char **output, cJSON *type, bool with_body)
     W(*output, "}");
 }
 
-static void write_lua_pop(char **output, cJSON *type, bool with_body)
+static void write_lua_pop(char **output, cJSON *type)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
     W(*output, "static void lcb_pop_%s(lua_State *L, %s *v, int stack_index)", type_name, type_name);
-
-    if (! with_body) 
-    {
-        WL(*output, ";\n");
-        return;
-    }
-
     W(*output, "{");
     W(*output, "    luaL_checktype(L, stack_index, LUA_TTABLE);");
 
@@ -287,18 +270,54 @@ static void write_set_component(char **output, const char *type_name)
     W(*output, "}");
 }
 
+static bool is_type_basic(const char *type_name)
+{
+    for (int i = 0; i < NUM_BASE_TYPES; ++i)
+        if (strcmp(type_name, BASE_TYPES[i]) == 0) 
+            return true;
+
+    return false;
+}
+
 static void write_destructor(char **output, cJSON *type)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-    W(*output, "static int destructor_%s(%s *v)", type_name, type_name);
+    W(*output, "static void destruct_%s(%s *v)", type_name, type_name);
     W(*output, "{");
-    // TODO implement destructors
+
+    cJSON *fields = cJSON_GetObjectItem(type, "fields");
+    for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
+    {
+        cJSON *field = cJSON_GetArrayItem(fields, i);
+        const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")); 
+        const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")); 
+        bool type_basic = is_type_basic(field_type);
+
+        if (strcmp("string", field_type) == 0)
+        {
+            W(*output, "    free(v->%s);", field_name);
+            W(*output, "    v->%s = 0;", field_name);
+        }
+        else if (cJSON_GetObjectItem(field, "vec")) 
+        {
+            if (!type_basic)
+            {
+                W(*output, "    for (int i = 0; i < v->%s.item_count; ++i)", field_name);
+                W(*output, "        destruct_%s(vec_at(&v->%s, i));", field_type, field_name);
+            }
+            W(*output, "    vec_clear(&v->%s);", field_name);
+        }
+        else if (!type_basic)
+        {
+            W(*output, "    destruct_%s(&v->%s);", field_type, field_name);
+        }
+    }
     W(*output, "}");
 }
 
 // TODO generate ser/de functions
-
+// TODO do we really need publicly accessible inspectors for every individual component? probably no
 static void write_inspector(char **output, cJSON *type, bool body_decl)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
@@ -382,7 +401,7 @@ static void write_components_init(char **output, cJSON *types)
         W(*output, "    lua_setglobal(L, \"set_component_%s\");", type_name);
         W(*output, "    lua_pushcfunction(L, lcb_add_component_%s);", type_name);
         W(*output, "    lua_setglobal(L, \"add_component_%s\");", type_name);
-        W(*output, "    ECS_REGISTER_COMPONENT(%s, ecs, NULL);", type_name);
+        W(*output, "    ECS_REGISTER_COMPONENT(%s, ecs, destruct_%s);", type_name, type_name);
     }
     
     W(*output, "    lua_pushcfunction(L, lcb_create_entity);");
@@ -419,13 +438,6 @@ static char *generate_components_c_alloc(cJSON *types)
 
     W(output, "%s", COMPONENTS_C_HEADER);
 
-    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
-    {
-        cJSON *type = cJSON_GetArrayItem(types, i);
-        write_lua_push(&output, type, false);
-        write_lua_pop(&output, type, false);
-    }
-
     for (int i = 0; i < NUM_BASE_TYPES; ++i)
         write_vec_push_pop(&output, BASE_TYPES[i]);
 
@@ -435,12 +447,13 @@ static char *generate_components_c_alloc(cJSON *types)
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
         write_inspector(&output, type, true);
-        write_lua_push(&output, type, true);
-        write_lua_pop(&output, type, true);
+        write_lua_push(&output, type);
+        write_lua_pop(&output, type);
         write_add_component(&output, type_name);
         write_get_component(&output, type_name);
         write_set_component(&output, type_name);
         write_vec_push_pop(&output, type_name);
+        write_destructor(&output, type);
     }
 
     write_inspect_all(&output, types, true);

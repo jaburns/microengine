@@ -1,6 +1,7 @@
 [{
     "name": "Transform",
     "fields": [
+        { "name": "name", "type": "string" },
         { "name": "position", "type": "vec3" },
         { "name": "rotation", "type": "quat" },
         { "name": "scale", "type": "vec3", "default": "{1.f,1.f,1.f}" },
@@ -11,7 +12,7 @@
 },{
     "name": "Teapot",
     "fields": [
-        { "name": "label", "type": "string" }
+        { "name": "placeholder", "type": "float" }
     ]
 },{
     "name": "Camera",

@@ -92,7 +92,7 @@ void vec_resize(Vec *vec, size_t new_item_count)
     vec->data = realloc(vec->data, vec->item_size * vec->item_count);
 
     if (additional_item_count > 0)
-        memset((uint8_t*)vec->data + old_item_count * vec->item_size, 0, additional_item_count);
+        memset((uint8_t*)vec->data + old_item_count * vec->item_size, 0, additional_item_count * vec->item_size);
 }
 
 void vec_clear(Vec *vec)
