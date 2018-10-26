@@ -75,7 +75,7 @@ void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
     ECS_GET_COMPONENT_DECL(Transform, camera_transform, ecs, camera_entity);
 
     mat4x4 projection;
-    mat4x4_perspective(projection, camera->fov, aspect_ratio, camera->near, camera->far);
+    mat4x4_perspective(projection, camera->fov, aspect_ratio, camera->near, camera->far, true);
 
     mat4x4 view;
     mat4x4_invert(view, camera_transform->worldMatrix_);

@@ -119,15 +119,11 @@ static void write_struct_def(char **output, cJSON *type)
     W(*output, "%s;\n", name);
 }
 
-static void write_default_for_field(char **output, cJSON *field)
+static void write_default_for_type(char **output, const char *type_name)
 {
-    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"));
-    cJSON *default_override_item = cJSON_GetObjectItem(field, "default");
-    cJSON *is_vec = cJSON_GetObjectItem(field, "vec");
+    // TODO need to query top-level json object here to get the fields of user types for defaulting
 
-    if (default_override_item) WL(*output, "%s", cJSON_GetStringValue(default_override_item));
-    else if (is_vec) WL(*output, "{sizeof(%s),0,0}", type_name);
-    else if (strcmp(type_name, "float") == 0) WL(*output, "0.f");
+    if (strcmp(type_name, "float") == 0) WL(*output, "0.f");
     else if (strcmp(type_name, "vec2") == 0) WL(*output, "{0.f,0.f}");
     else if (strcmp(type_name, "vec3") == 0) WL(*output, "{0.f,0.f,0.f}");
     else if (strcmp(type_name, "vec4") == 0) WL(*output, "{0.f,0.f,0.f,0.f}");
@@ -136,6 +132,20 @@ static void write_default_for_field(char **output, cJSON *field)
     else if (strcmp(type_name, "string") == 0) WL(*output, "0");
     else if (strcmp(type_name, "mat4x4") == 0) 
         WL(*output, "{{1.f,0.f,0.f,0.f},{0.f,1.f,0.f,0.f},{0.f,0.f,1.f,0.f},{0.f,0.f,0.f,1.f}}");
+}
+
+static void write_default_for_field(char **output, cJSON *field)
+{
+    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"));
+    cJSON *default_override_item = cJSON_GetObjectItem(field, "default");
+    cJSON *is_vec = cJSON_GetObjectItem(field, "vec");
+
+    if (default_override_item) 
+        WL(*output, "%s", cJSON_GetStringValue(default_override_item));
+    else if (is_vec) 
+        WL(*output, "{sizeof(%s),0,0}", type_name);
+    else 
+        write_default_for_type(output, type_name);
 }
 
 static void write_default_def(char **output, cJSON *type)

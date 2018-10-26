@@ -10,6 +10,17 @@
         { "name": "worldMatrix_", "type": "mat4x4", "hideInInspector": true }
     ]
 },{
+    "name": "Resource",
+    "fields": [
+        { "name": "path", "type": "string" }
+    ]
+},{
+    "name": "MeshRenderer",
+    "fields": [
+        { "name": "mesh", "type": "Resource" },
+        { "name": "materials", "type": "Resource", "vec": true }
+    ]
+},{
     "name": "Teapot",
     "fields": [
         { "name": "placeholder", "type": "float" }
