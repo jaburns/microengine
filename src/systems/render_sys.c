@@ -4,26 +4,28 @@
 
 #include "../gl.h"
 #include "../components.h"
-#include "../resources.h"
+#include "../resources/shader.h"
+#include "../resources/mesh.h"
 
-static const GLfloat triangle_vertices[] = {
-    0.0f,  0.577f, 0.0f,
-    0.5f, -0.289f, 0.0f,
-   -0.5f, -0.289f, 0.0f,
-};
-
-static const GLfloat triangle_colors[] = {
-    1.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 1.0f,
-};
+// static const GLfloat triangle_vertices[] = {
+//     0.0f,  0.577f, 0.0f,
+//     0.5f, -0.289f, 0.0f,
+//    -0.5f, -0.289f, 0.0f,
+// };
+// 
+// static const GLfloat triangle_colors[] = {
+//     1.0f, 0.0f, 0.0f,
+//     0.0f, 1.0f, 0.0f,
+//     0.0f, 0.0f, 1.0f,
+// };
 
 struct RenderSystem
 {
     GLuint vao;
     GLuint position_buffer;
     GLuint color_buffer;
-    ShaderProgramRef shader;
+    Shader *shader;
+    Mesh *mesh;
 };
 
 RenderSystem *render_sys_new(void)
@@ -37,26 +39,29 @@ RenderSystem *render_sys_new(void)
     glCullFace(GL_BACK);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-    sys->shader = resources_load_shader("resources/shaders/colors.vert", "resources/shaders/colors.frag");
+    sys->shader = shader_load("resources/shaders/colors.glsl");
+    sys->mesh = mesh_load("resources/mario.umesh");
+
+    GLuint shader_handle = shader_get_handle(sys->shader);
 
     glGenVertexArrays(1, &sys->vao);
     glBindVertexArray(sys->vao);
 
     glGenBuffers(1, &sys->position_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, sys->position_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertices), &triangle_vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sys->mesh->num_vertices*sizeof(vec3), sys->mesh->vertices, GL_STATIC_DRAW);
 
-    const GLint position_prop = glGetAttribLocation(sys->shader, "position");
+    const GLint position_prop = glGetAttribLocation(shader_handle, "position");
     glEnableVertexAttribArray(position_prop);
-    glVertexAttribPointer(position_prop, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, NULL);
+    glVertexAttribPointer(position_prop, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), NULL);
 
     glGenBuffers(1, &sys->color_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, sys->color_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_colors), &triangle_colors, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sys->mesh->num_vertices*sizeof(vec3), sys->mesh->normals, GL_STATIC_DRAW);
 
-    const GLint color_prop = glGetAttribLocation(sys->shader, "color");
+    const GLint color_prop = glGetAttribLocation(shader_handle, "normal");
     glEnableVertexAttribArray(color_prop);
-    glVertexAttribPointer(color_prop, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, NULL);
+    glVertexAttribPointer(color_prop, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), NULL);
 
     return sys;
 }
@@ -77,9 +82,10 @@ void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(sys->shader);
-    glUniformMatrix4fv(glGetUniformLocation(sys->shader, "view"), 1, GL_FALSE, view);
-    glUniformMatrix4fv(glGetUniformLocation(sys->shader, "projection"), 1, GL_FALSE, projection);
+    GLuint shader_handle = shader_get_handle(sys->shader);
+    glUseProgram(shader_handle);
+    glUniformMatrix4fv(glGetUniformLocation(shader_handle, "view"), 1, GL_FALSE, view);
+    glUniformMatrix4fv(glGetUniformLocation(shader_handle, "projection"), 1, GL_FALSE, projection);
 
     glBindVertexArray(sys->vao);
 
@@ -91,8 +97,11 @@ void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
         ECS_GET_COMPONENT_DECL(Transform, teapot_transform, ecs, teapots[i]);
         ECS_GET_COMPONENT_DECL(Teapot, teapot_comp, ecs, teapots[i]);
 
-        glUniformMatrix4fv(glGetUniformLocation(sys->shader, "model"), 1, GL_FALSE, teapot_transform->worldMatrix_);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glUniformMatrix4fv(glGetUniformLocation(shader_handle, "model"), 1, GL_FALSE, teapot_transform->worldMatrix_);
+        //glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        for (int i = 0; i < sys->mesh->num_submeshes; ++i)
+            glDrawElements(GL_TRIANGLES, sys->mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, sys->mesh->submeshes[i].indices);
     }
 
     free(teapots);
@@ -108,7 +117,10 @@ void render_sys_delete(RenderSystem *sys)
     glDeleteBuffers(1, &sys->color_buffer);
     glDeleteVertexArrays(1, &sys->vao);
 
-    resources_delete_shader(sys->shader);
+    shader_delete(sys->shader);
+    sys->shader = NULL;
+    mesh_delete(sys->mesh);
+    sys->mesh = NULL;
 
     free(sys);
 }

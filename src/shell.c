@@ -73,7 +73,7 @@ err:
 static void update_input_state(ShellInputs *state, const SDL_Event *event)
 {
     const SDL_Keycode key = event->key.keysym.sym;
-    FIND_INDEX_DECL(index, (SDL_Keycode*)state->keys_down.data, state->keys_down.item_count, key);
+    UTILS_FIND_INDEX_DECL(index, (SDL_Keycode*)state->keys_down.data, state->keys_down.item_count, key);
 
     if (index < 0 && event->type == SDL_KEYDOWN)
         vec_push_copy(&state->keys_down, &key);

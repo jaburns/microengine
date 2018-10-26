@@ -11,8 +11,7 @@ const char *BASE_TYPES[] = { "float", "vec2", "vec3", "vec4", "quat", "mat4x4", 
 const size_t NUM_BASE_TYPES = sizeof(BASE_TYPES) / sizeof(char*);
 
 const char *COMPONENTS_H_HEADER =
-"// Generated"
-"\n#pragma once"
+  "#pragma once"
 "\n#include <linmath.h>"
 "\n#include <stdint.h>"
 "\n#include <lua.h>"
@@ -22,8 +21,7 @@ const char *COMPONENTS_H_HEADER =
 "\nextern void components_init(lua_State *L, ECS *ecs);";
 
 const char *COMPONENTS_C_HEADER = 
-"// Generated"
-"\n#define _CRT_SECURE_NO_WARNINGS 1"
+  "#define _CRT_SECURE_NO_WARNINGS 1"
 "\n#include \"components.h\""
 "\n#include <linmath.lua.h>"
 "\n#include <stdint.h>"
@@ -93,7 +91,7 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void lcb_pop_string(lua_State *L, char **v, int stack_index) { *v = strdup(luaL_checkstring(L, stack_index)); }"
 "\n";
 
-#define W(output, ...) output += sprintf(output, "\n" __VA_ARGS__)
+#define W(output, ...) output += sprintf(output, "\n/*generated*/" __VA_ARGS__)
 #define WL(output, ...) output += sprintf(output, __VA_ARGS__)
 
 static void write_struct_def(char **output, cJSON *type)
@@ -455,19 +453,19 @@ static char *generate_components_c_alloc(cJSON *types)
 
 void generate_components(void)
 {
-    const char *json_file = read_file_alloc("components.json");
+    const char *json_file = utils_read_file_alloc("components.json", NULL);
     cJSON *json = cJSON_Parse(json_file);
+    free(json_file);
 
     const char *components_h = generate_components_h_alloc(json);
-    write_file("src/components.h", components_h);
+    utils_write_string_file("src/components.h", components_h);
     free(components_h);
 
     const char *components_c = generate_components_c_alloc(json);
-    write_file("src/components.c", components_c);
+    utils_write_string_file("src/components.c", components_c);
     free(components_c);
 
     cJSON_Delete(json);
-    free(json_file);
 
     getchar();
 }

@@ -18,7 +18,7 @@
     "name": "Camera",
     "fields": [
         { "name": "fov", "type": "float", "default": "1.5708f" },
-        { "name": "near", "type": "float", "default": "0.01f" },
-        { "name": "far", "type": "float", "default":"1000.0f" }
+        { "name": "near", "type": "float", "default": "1.0f" },
+        { "name": "far", "type": "float", "default":"100.0f" }
     ]
 }]
