@@ -119,10 +119,10 @@ static void write_struct_def(char **output, cJSON *type)
     W(*output, "%s;\n", name);
 }
 
-static void write_default_for_type(char **output, const char *type_name)
-{
-    // TODO need to query top-level json object here to get the fields of user types for defaulting
+static void write_default_for_type(char **output, cJSON *types, cJSON *type);
 
+static void write_default_for_type_name(char **output, cJSON *types, const char *type_name)
+{
     if (strcmp(type_name, "float") == 0) WL(*output, "0.f");
     else if (strcmp(type_name, "vec2") == 0) WL(*output, "{0.f,0.f}");
     else if (strcmp(type_name, "vec3") == 0) WL(*output, "{0.f,0.f,0.f}");
@@ -132,9 +132,21 @@ static void write_default_for_type(char **output, const char *type_name)
     else if (strcmp(type_name, "string") == 0) WL(*output, "0");
     else if (strcmp(type_name, "mat4x4") == 0) 
         WL(*output, "{{1.f,0.f,0.f,0.f},{0.f,1.f,0.f,0.f},{0.f,0.f,1.f,0.f},{0.f,0.f,0.f,1.f}}");
+
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *iter_type = cJSON_GetArrayItem(types, i);
+        const char *iter_type_name = cJSON_GetStringValue(cJSON_GetObjectItem(iter_type, "name"));
+
+        if (strcmp(iter_type_name, type_name) == 0)
+        {
+            write_default_for_type(output, types, iter_type);
+            break;
+        }
+    }
 }
 
-static void write_default_for_field(char **output, cJSON *field)
+static void write_default_for_field(char **output, cJSON *types, cJSON *field)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"));
     cJSON *default_override_item = cJSON_GetObjectItem(field, "default");
@@ -145,24 +157,31 @@ static void write_default_for_field(char **output, cJSON *field)
     else if (is_vec) 
         WL(*output, "{sizeof(%s),0,0}", type_name);
     else 
-        write_default_for_type(output, type_name);
+        write_default_for_type_name(output, types, type_name);
 }
 
-static void write_default_def(char **output, cJSON *type)
+static void write_default_for_type(char **output, cJSON *types, cJSON *type)
 {
-    const char *name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
-
-    WL(*output, "static const %s %s_default = {", name, name);
+    WL(*output, "{");
 
     cJSON *fields = cJSON_GetObjectItem(type, "fields");
     for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
     {
         cJSON *field = cJSON_GetArrayItem(fields, i);
-        write_default_for_field(output, field);
+        write_default_for_field(output, types, field);
         if (i < max - 1) WL(*output, ",");
     }
 
-    WL(*output, "};\n");
+    WL(*output, "}");
+}
+
+static void write_default_def(char **output, cJSON *types, cJSON *type)
+{
+    const char *name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+
+    WL(*output, "static const %s %s_default = ", name, name);
+    write_default_for_type(output, types, type);
+    WL(*output, ";\n");
 }
 
 static void write_vec_push_pop(char **output, const char *typename)
@@ -422,7 +441,7 @@ static char *generate_components_h_alloc(cJSON *types)
     {
         cJSON *type = cJSON_GetArrayItem(types, i);
         write_struct_def(&output, type);
-        write_default_def(&output, type);
+        write_default_def(&output, types, type);
     }
 
     write_inspect_all(&output, types, false);
