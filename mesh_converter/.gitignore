@@ -1,0 +1,8 @@
+/Library
+/Temp
+/UnityPackageManager
+*.sln
+*.csproj
+/Assets/Level
+/Assets/Level.meta
+
