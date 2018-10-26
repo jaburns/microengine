@@ -64,6 +64,7 @@
       <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)\external\cJSON;$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -82,6 +83,7 @@
       <PreprocessorDefinitions>RUN_TESTS;NDEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)\external\cJSON;$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,8 +137,9 @@
     <ClCompile Include="external\support\imgui_impl.cpp" />
     <ClCompile Include="external\support\lodepng.c" />
     <ClCompile Include="src\components.c" />
-    <ClCompile Include="src\ecs.c" />
-    <ClCompile Include="src\hashtable.c" />
+    <ClCompile Include="src\containers\hashcache.c" />
+    <ClCompile Include="src\containers\ecs.c" />
+    <ClCompile Include="src\containers\hashtable.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\resources\mesh.c" />
     <ClCompile Include="src\resources\shader.c" />
@@ -147,7 +150,7 @@
     <ClCompile Include="src\systems\transform_sys.c" />
     <ClCompile Include="src\testing.c" />
     <ClCompile Include="src\utils.c" />
-    <ClCompile Include="src\vec.c" />
+    <ClCompile Include="src\containers\vec.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\linmath.lua\lua\lapi.h" />
@@ -179,9 +182,10 @@
     <ClInclude Include="external\linmath.lua\lua\lzio.h" />
     <ClInclude Include="external\linmath.lua\linmath.lua.h" />
     <ClInclude Include="src\components.h" />
-    <ClInclude Include="src\ecs.h" />
+    <ClInclude Include="src\containers\hashcache.h" />
+    <ClInclude Include="src\containers\ecs.h" />
     <ClInclude Include="src\gl.h" />
-    <ClInclude Include="src\hashtable.h" />
+    <ClInclude Include="src\containers\hashtable.h" />
     <ClInclude Include="external\support\ns_clock.h" />
     <ClInclude Include="src\resources\mesh.h" />
     <ClInclude Include="src\resources\shader.h" />
@@ -192,7 +196,7 @@
     <ClInclude Include="src\systems\transform_sys.h" />
     <ClInclude Include="src\testing.h" />
     <ClInclude Include="src\utils.h" />
-    <ClInclude Include="src\vec.h" />
+    <ClInclude Include="src\containers\vec.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

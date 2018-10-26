@@ -15,8 +15,8 @@ const char *COMPONENTS_H_HEADER =
 "\n#include <linmath.h>"
 "\n#include <stdint.h>"
 "\n#include <lua.h>"
-"\n#include \"vec.h\""
-"\n#include \"ecs.h\""
+"\n#include \"containers/vec.h\""
+"\n#include \"containers/ecs.h\""
 "\n"
 "\nextern void components_init(lua_State *L, ECS *ecs);";
 

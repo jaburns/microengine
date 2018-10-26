@@ -1,10 +1,11 @@
 #ifdef RUN_TESTS
 #include "testing.h"
 
-#include "vec.h"
-#include "hashtable.h"
-#include "ecs.h"
-#include "ns_clock.h"
+#include <ns_clock.h>
+
+#include "containers/vec.h"
+#include "containers/hashtable.h"
+#include "containers/ecs.h"
 
 int run_all_tests(void)
 {

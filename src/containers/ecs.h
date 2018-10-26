@@ -46,6 +46,6 @@ extern Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const 
     ecs_find_all_entities_with_component_alloc((ecs_ptr), #T, (result_length))
 
 #ifdef RUN_TESTS
-#include "testing.h"
+#include "../testing.h"
 extern TestResult ecs_test(void);
 #endif

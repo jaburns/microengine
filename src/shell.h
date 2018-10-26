@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "vec.h"
+#include "containers/vec.h"
 
 typedef struct ShellContext ShellContext;
 

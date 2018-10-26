@@ -31,6 +31,6 @@ extern void hashtable_clear(HashTable *table);
 extern void hashtable_clear_with_callback(HashTable *table, void *context, HashTableCallback cb);
 
 #ifdef RUN_TESTS
-#include "testing.h"
+#include "../testing.h"
 extern TestResult hashtable_test(void);
 #endif

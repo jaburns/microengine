@@ -32,6 +32,6 @@ extern void vec_clear(Vec *vec);
 extern void vec_clear_with_callback(Vec *vec, void *context, VecCallback cb);
 
 #ifdef RUN_TESTS
-#include "testing.h"
+#include "../testing.h"
 extern TestResult vec_test(void);
 #endif

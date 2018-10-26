@@ -3,7 +3,7 @@
 #include <string.h>
 #include <imgui_impl.h>
 
-#include "../ecs.h"
+#include "../containers/ecs.h"
 #include "../components.h"
 
 struct EditorSystem

@@ -9,9 +9,9 @@
     #include "testing.h"
 #endif
 
-#include "ecs.h"
 #include "shell.h"
 #include "components.h"
+#include "containers/ecs.h"
 #include "systems/transform_sys.h"
 #include "systems/editor_sys.h"
 #include "systems/render_sys.h"

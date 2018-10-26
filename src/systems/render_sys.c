@@ -40,7 +40,7 @@ RenderSystem *render_sys_new(void)
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     sys->shader = shader_load("resources/shaders/colors.glsl");
-    sys->mesh = mesh_load("resources/mario.umesh");
+    sys->mesh = mesh_load("resources/models/mario.umesh");
 
     GLuint shader_handle = shader_get_handle(sys->shader);
 

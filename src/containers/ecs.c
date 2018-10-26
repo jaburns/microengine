@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "utils.h"
+#include "../utils.h"
 #include "vec.h"
 #include "hashtable.h"
 
