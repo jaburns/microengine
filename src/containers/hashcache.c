@@ -37,7 +37,7 @@ HashCache *hashcache_new( void )
 {
     HashCache *hc = malloc( sizeof( HashCache ) );
     hc->types = hashtable_empty( 64, sizeof( HashCacheType ) );
-    hc->resources = hashtable_empty( 1024, sizeof( void* ) );
+    hc->resources = hashtable_empty( 1024, sizeof( HashCacheResource ) );
     return hc;
 }
 
