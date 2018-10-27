@@ -7,18 +7,6 @@
 #include "../resources/shader.h"
 #include "../resources/mesh.h"
 
-// static const GLfloat triangle_vertices[] = {
-//     0.0f,  0.577f, 0.0f,
-//     0.5f, -0.289f, 0.0f,
-//    -0.5f, -0.289f, 0.0f,
-// };
-// 
-// static const GLfloat triangle_colors[] = {
-//     1.0f, 0.0f, 0.0f,
-//     0.0f, 1.0f, 0.0f,
-//     0.0f, 0.0f, 1.0f,
-// };
-
 struct RenderSystem
 {
     GLuint vao;
@@ -28,7 +16,7 @@ struct RenderSystem
     Mesh *mesh;
 };
 
-RenderSystem *render_sys_new(void)
+RenderSystem *render_sys_new( HashCache *resources )
 {
     RenderSystem *sys = malloc(sizeof(RenderSystem));
 
@@ -39,8 +27,8 @@ RenderSystem *render_sys_new(void)
     glCullFace(GL_BACK);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-    sys->shader = shader_load("resources/shaders/colors.glsl");
-    sys->mesh = mesh_load("resources/models/m64_bob.umesh");
+    sys->shader = hashcache_load(resources, "shaders/colors.glsl");
+    sys->mesh = hashcache_load(resources, "models/m64_bob.umesh");
 
     GLuint shader_handle = shader_get_handle(sys->shader);
 
@@ -115,11 +103,6 @@ void render_sys_delete(RenderSystem *sys)
     glDeleteBuffers(1, &sys->position_buffer);
     glDeleteBuffers(1, &sys->color_buffer);
     glDeleteVertexArrays(1, &sys->vao);
-
-    shader_delete(sys->shader);
-    sys->shader = NULL;
-    mesh_delete(sys->mesh);
-    sys->mesh = NULL;
 
     free(sys);
 }

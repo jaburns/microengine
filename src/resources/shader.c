@@ -22,7 +22,7 @@ static GLuint shader_compile_from_file( const char *shader_path, GLenum shader_t
         : "#version 410\n#define FRAGMENT\n#define v2f in \n";
 
     size_t shader_contents_length;
-    const GLchar *shader_contents = utils_read_file_alloc( shader_path, &shader_contents_length );
+    const GLchar *shader_contents = utils_read_file_alloc( "resources/", shader_path, &shader_contents_length );
 
     const GLchar *shader_strings[2] = { shader_define, shader_contents };
     GLint shader_string_lengths[2] = { 46, (GLint)shader_contents_length };
@@ -67,7 +67,7 @@ Shader *shader_load( const char *path )
     return result;;
 }
 
-void shader_delete(Shader *shader)
+void shader_delete( Shader *shader )
 {
     if( !shader || shader->handle == 0 ) return;
 

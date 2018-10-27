@@ -20,5 +20,5 @@ int out_int = -1;                                     \
     }                                                 \
 }
 
-extern char *utils_read_file_alloc(const char *path, int *file_length);
+extern char *utils_read_file_alloc(const char *path_prefix, const char *path, int *file_length);
 extern void utils_write_string_file(const char *path, const char *contents);

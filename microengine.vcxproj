@@ -141,6 +141,7 @@
     <ClCompile Include="src\containers\ecs.c" />
     <ClCompile Include="src\containers\hashtable.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\resources\material.c" />
     <ClCompile Include="src\resources\mesh.c" />
     <ClCompile Include="src\resources\shader.c" />
     <ClCompile Include="src\resources\texture.c" />
@@ -187,6 +188,7 @@
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\containers\hashtable.h" />
     <ClInclude Include="external\support\ns_clock.h" />
+    <ClInclude Include="src\resources\material.h" />
     <ClInclude Include="src\resources\mesh.h" />
     <ClInclude Include="src\resources\shader.h" />
     <ClInclude Include="src\resources\texture.h" />

@@ -81,7 +81,7 @@ void hashcache_destruct_all( HashCache *hc )
     hashtable_clear_with_callback( &hc->resources, NULL, hashcache_clear_callback );
 }
 
-HashCache hashcache_delete( HashCache *hc )
+void hashcache_delete( HashCache *hc )
 {
     if( !hc ) return;
 

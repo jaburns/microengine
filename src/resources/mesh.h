@@ -23,5 +23,5 @@ struct Mesh
 
 typedef struct Mesh Mesh;
 
-extern Mesh *mesh_load(const char *path);
-extern void mesh_delete(Mesh *mesh);
+extern Mesh *mesh_load( const char *path );
+extern void mesh_delete( Mesh *mesh );

@@ -482,7 +482,7 @@ static char *generate_components_c_alloc(cJSON *types)
 
 void generate_components(void)
 {
-    const char *json_file = utils_read_file_alloc("components.json", NULL);
+    const char *json_file = utils_read_file_alloc("", "components.json", NULL);
     cJSON *json = cJSON_Parse(json_file);
     free(json_file);
 

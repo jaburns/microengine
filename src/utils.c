@@ -2,35 +2,41 @@
 
 #include "utils.h"
 
+#include <string.h>
 #include <stdlib.h>
 
-char *utils_read_file_alloc(const char *path, size_t *file_length)
+char *utils_read_file_alloc( const char *path_prefix, const char *path, int *file_length )
 {
+    char path_str[1024];
+
+    strcpy( path_str, path_prefix );
+    strcat( path_str, path );
+
     size_t length;
     char *buffer = 0;
-    FILE *f = fopen(path, "rb");
+    FILE *f = fopen( path_str, "rb" );
 
-    if (! f) PANIC("Read file error: %s", path);
+    if( !f ) PANIC( "Read file error: %s", path_str );
 
-    fseek(f, 0, SEEK_END);
-    length = (size_t)ftell(f);
-    rewind(f);
-    buffer = malloc(length + 1);
-    fread(buffer, 1, length, f);
+    fseek( f, 0, SEEK_END );
+    length = (size_t)ftell( f );
+    rewind( f );
+    buffer = malloc( length + 1 );
+    fread( buffer, 1, length, f );
     buffer[length] = 0;
-    fclose(f);
+    fclose( f );
 
-    if (file_length) *file_length = length;
+    if( file_length ) *file_length = length;
 
     return buffer;
 }
 
-void utils_write_string_file(const char *path, const char *contents)
+void utils_write_string_file( const char *path, const char *contents )
 {
-    FILE *f = fopen(path, "wb");
+    FILE *f = fopen( path, "wb" );
 
-    if (! f) PANIC("Write file error: %s", path);
+    if( !f ) PANIC( "Write file error: %s", path );
 
-    fputs(contents, f);
-    fclose(f);
+    fputs( contents, f );
+    fclose( f );
 }
