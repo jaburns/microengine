@@ -1,6 +1,9 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include "texture.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 struct Texture
 {
@@ -14,10 +17,13 @@ GLuint texture_get_handle(const Texture *texture)
 
 Texture *texture_load(const char *png_path)
 {
+    char path[1024] = "resources/";
+    strcat( path, png_path );
+
     GLuint ref;
     unsigned char *image;
     unsigned int width, height;
-    unsigned int error = lodepng_decode32_file(&image, &width, &height, png_path);
+    unsigned int error = lodepng_decode32_file(&image, &width, &height, path);
 
     if (error != 0) {
         printf("PNG Error: %s", lodepng_error_text(error));

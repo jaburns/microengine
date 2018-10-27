@@ -10,15 +10,10 @@
         { "name": "worldMatrix_", "type": "mat4x4", "hideInInspector": true }
     ]
 },{
-    "name": "Resource",
-    "fields": [
-        { "name": "path", "type": "string" }
-    ]
-},{
     "name": "MeshRenderer",
     "fields": [
-        { "name": "mesh", "type": "Resource" },
-        { "name": "materials", "type": "Resource", "vec": true }
+        { "name": "mesh", "type": "string" },
+        { "name": "material", "type": "string" }
     ]
 },{
     "name": "Teapot",
@@ -28,8 +23,9 @@
 },{
     "name": "Camera",
     "fields": [
+        { "name": "selected", "type": "bool" },
         { "name": "fov", "type": "float", "default": "1.5708f" },
         { "name": "near", "type": "float", "default": "1.0f" },
-        { "name": "far", "type": "float", "default":"100.0f" }
+        { "name": "far", "type": "float", "default":"500.0f" }
     ]
 }]

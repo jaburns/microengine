@@ -7,7 +7,7 @@
 
 #include "../src/utils.h"
 
-const char *BASE_TYPES[] = { "float", "vec2", "vec3", "vec4", "quat", "mat4x4", "Entity", "string" };
+const char *BASE_TYPES[] = { "float", "bool", "vec2", "vec3", "vec4", "quat", "mat4x4", "Entity", "string" };
 const size_t NUM_BASE_TYPES = sizeof(BASE_TYPES) / sizeof(char*);
 
 const char *COMPONENTS_H_HEADER =
@@ -25,6 +25,7 @@ const char *COMPONENTS_C_HEADER =
 "\n#include \"components.h\""
 "\n#include <linmath.lua.h>"
 "\n#include <stdint.h>"
+"\n#include <stdbool.h>"
 "\n#include <lauxlib.h>"
 "\n#include <lualib.h>"
 "\n#include <imgui_impl.h>"
@@ -51,6 +52,7 @@ const char *COMPONENTS_C_HEADER =
 "\n"
 "\nstatic void icb_inspect_Entity(const char *label, Entity *v) { igText(\"%s {Entity}\", label); }"
 "\nstatic void icb_inspect_float(const char *label, float *v) { igDragFloat(label, v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_bool(const char *label, bool *v) { igCheckbox(label, v); }"
 "\nstatic void icb_inspect_vec2(const char *label, vec2 *v) { igDragFloat2(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
 "\nstatic void icb_inspect_vec3(const char *label, vec3 *v) { igDragFloat3(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
 "\nstatic void icb_inspect_vec4(const char *label, vec4 *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
@@ -75,6 +77,8 @@ const char *COMPONENTS_C_HEADER =
 "\n"
 "\nstatic void lcb_push_float(lua_State *L, float *v) { lua_pushnumber(L, (double)(*v)); }"
 "\nstatic void lcb_pop_float(lua_State *L, float *v, int stack_index) { *v = (float)luaL_checknumber(L, stack_index); }"
+"\nstatic void lcb_push_bool(lua_State *L, bool *v) { lua_pushboolean(L, *v); }"
+"\nstatic void lcb_pop_bool(lua_State *L, bool *v, int stack_index) { *v = (bool)lua_toboolean(L, stack_index); }"
 "\nstatic void lcb_push_vec2(lua_State *L, vec2 *v) { lml_push_vec2(L, *v); }"
 "\nstatic void lcb_pop_vec2(lua_State *L, vec2 *v, int stack_index) { lml_get_vec2(L, stack_index, *v); }"
 "\nstatic void lcb_push_vec3(lua_State *L, vec3 *v) { lml_push_vec3(L, *v); }"
@@ -124,6 +128,7 @@ static void write_default_for_type(char **output, cJSON *types, cJSON *type);
 static void write_default_for_type_name(char **output, cJSON *types, const char *type_name)
 {
     if (strcmp(type_name, "float") == 0) WL(*output, "0.f");
+    else if (strcmp(type_name, "bool") == 0) WL(*output, "0");
     else if (strcmp(type_name, "vec2") == 0) WL(*output, "{0.f,0.f}");
     else if (strcmp(type_name, "vec3") == 0) WL(*output, "{0.f,0.f,0.f}");
     else if (strcmp(type_name, "vec4") == 0) WL(*output, "{0.f,0.f,0.f,0.f}");
@@ -146,18 +151,18 @@ static void write_default_for_type_name(char **output, cJSON *types, const char 
     }
 }
 
-static void write_default_for_field(char **output, cJSON *types, cJSON *field)
+static void write_default_for_field( char **output, cJSON *types, cJSON *field )
 {
-    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type"));
-    cJSON *default_override_item = cJSON_GetObjectItem(field, "default");
-    cJSON *is_vec = cJSON_GetObjectItem(field, "vec");
+    const char *type_name = cJSON_GetStringValue( cJSON_GetObjectItem( field, "type" ) );
+    cJSON *default_override_item = cJSON_GetObjectItem( field, "default" );
+    cJSON *is_vec = cJSON_GetObjectItem( field, "vec" );
 
-    if (default_override_item) 
-        WL(*output, "%s", cJSON_GetStringValue(default_override_item));
-    else if (is_vec) 
-        WL(*output, "{sizeof(%s),0,0}", type_name);
+    if( default_override_item ) 
+        WL( *output, "%s", cJSON_GetStringValue( default_override_item ) );
+    else if( is_vec ) 
+        WL( *output, "{sizeof(%s),0,0}", strcmp( "string", type_name ) == 0 ? "char*" : type_name );
     else 
-        write_default_for_type_name(output, types, type_name);
+        write_default_for_type_name( output, types, type_name );
 }
 
 static void write_default_for_type(char **output, cJSON *types, cJSON *type)
@@ -306,41 +311,47 @@ static bool is_type_basic(const char *type_name)
     return false;
 }
 
-static void write_destructor(char **output, cJSON *type)
+static void write_destructor( char **output, cJSON *type )
 {
-    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+    const char *type_name = cJSON_GetStringValue( cJSON_GetObjectItem( type, "name" ) );
 
-    W(*output, "static void destruct_%s(%s *v)", type_name, type_name);
-    W(*output, "{");
+    W( *output, "static void destruct_%s( %s *v )", type_name, type_name );
+    W( *output, "{" );
 
-    cJSON *fields = cJSON_GetObjectItem(type, "fields");
-    for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
+    cJSON *fields = cJSON_GetObjectItem( type, "fields" );
+    for( int i = 0, max = cJSON_GetArraySize( fields ); i < max; ++i )
     {
-        cJSON *field = cJSON_GetArrayItem(fields, i);
-        const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")); 
-        const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")); 
-        bool type_basic = is_type_basic(field_type);
+        cJSON *field = cJSON_GetArrayItem( fields, i );
+        const char *field_name = cJSON_GetStringValue( cJSON_GetObjectItem( field, "name" ) ); 
+        const char *field_type = cJSON_GetStringValue( cJSON_GetObjectItem( field, "type" ) ); 
+        bool type_basic = is_type_basic( field_type );
+        bool type_string = strcmp( "string", field_type ) == 0;
 
-        if (strcmp("string", field_type) == 0)
+        if( cJSON_GetObjectItem( field, "vec" ) ) 
         {
-            W(*output, "    free(v->%s);", field_name);
-            W(*output, "    v->%s = 0;", field_name);
-        }
-        else if (cJSON_GetObjectItem(field, "vec")) 
-        {
-            if (!type_basic)
+            if( !type_basic )
             {
-                W(*output, "    for (int i = 0; i < v->%s.item_count; ++i)", field_name);
-                W(*output, "        destruct_%s(vec_at(&v->%s, i));", field_type, field_name);
+                W( *output, "    for ( int i = 0; i < v->%s.item_count; ++i )", field_name );
+                W( *output, "        destruct_%s( vec_at( &v->%s, i ) );", field_type, field_name );
             }
-            W(*output, "    vec_clear(&v->%s);", field_name);
+            else if( type_string )
+            {
+                W( *output, "    for ( int i = 0; i < v->%s.item_count; ++i )", field_name );
+                W( *output, "        free( *(char**)vec_at( &v->%s, i ) );", field_name );
+            }
+            W( *output, "    vec_clear( &v->%s );", field_name );
         }
-        else if (!type_basic)
+        else if( type_string )
         {
-            W(*output, "    destruct_%s(&v->%s);", field_type, field_name);
+            W( *output, "    free( v->%s );", field_name );
+            W( *output, "    v->%s = 0;", field_name );
+        }
+        else if( !type_basic )
+        {
+            W( *output, "    destruct_%s( &v->%s );", field_type, field_name );
         }
     }
-    W(*output, "}");
+    W( *output, "}" );
 }
 
 // TODO generate ser/de functions

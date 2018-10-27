@@ -3,19 +3,21 @@
 v2f vec3 v_normal;
 v2f vec2 v_tex_coords;
 
-uniform mat4 perspective;
-uniform mat4 matrix;
+uniform mat4 view;
+uniform mat4 projection;
+uniform mat4 model;
 uniform sampler2D tex;
 
 #ifdef VERTEX
 
     in vec3 position;
     in vec3 normal;
+    in vec2 uv;
 
     void main() {
-        v_normal = transpose(inverse(mat3(matrix))) * normal;
-        v_tex_coords = vec2(position.x * 0.01, position.y * 0.01);
-        gl_Position = perspective * matrix * vec4(position, 1.0);
+        v_normal = inverse(mat3(model)) * normal;
+        v_tex_coords = uv;
+        gl_Position = projection * view * model * vec4(position, 1.0f);
     }
 
 #endif
@@ -27,7 +29,7 @@ uniform sampler2D tex;
 
     void main() {
         float brightness = dot(normalize(v_normal), normalize(light_x));
-        color = (0.5 + 0.5 * brightness) * texture(tex, v_tex_coords);
+        color = (0.75 + 0.25 * brightness) * texture(tex, v_tex_coords);
     }
 
 #endif

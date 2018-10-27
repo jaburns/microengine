@@ -86,7 +86,7 @@ int main( int argc, char **argv )
 
         transform_sys_run( transformsystem, ecs );
         editor_sys_run( editorsystem, ecs );
-        render_sys_run( rendersystem, ecs, shell_get_aspect( ctx ) );
+        render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ) );
     }
     while( shell_flip_frame_poll_events( ctx ) );
 

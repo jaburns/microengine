@@ -5,6 +5,7 @@
 #include "../gl.h"
 #include "../components.h"
 #include "../resources/shader.h"
+#include "../resources/material.h"
 #include "../resources/mesh.h"
 
 struct RenderSystem
@@ -12,8 +13,10 @@ struct RenderSystem
     GLuint vao;
     GLuint position_buffer;
     GLuint color_buffer;
-    Shader *shader;
+    GLuint uv_buffer;
+
     Mesh *mesh;
+    Material *material;
 };
 
 RenderSystem *render_sys_new( HashCache *resources )
@@ -27,13 +30,15 @@ RenderSystem *render_sys_new( HashCache *resources )
     glCullFace(GL_BACK);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-    sys->shader = hashcache_load(resources, "shaders/colors.glsl");
     sys->mesh = hashcache_load(resources, "models/m64_bob.umesh");
+    sys->material = hashcache_load(resources, "materials/m64_bob.umat");
+    Shader *shader = hashcache_load(resources, sys->material->shader);
 
-    GLuint shader_handle = shader_get_handle(sys->shader);
+    GLuint shader_handle = shader_get_handle(shader);
 
     glGenVertexArrays(1, &sys->vao);
     glBindVertexArray(sys->vao);
+
 
     glGenBuffers(1, &sys->position_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, sys->position_buffer);
@@ -43,6 +48,8 @@ RenderSystem *render_sys_new( HashCache *resources )
     glEnableVertexAttribArray(position_prop);
     glVertexAttribPointer(position_prop, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), NULL);
 
+
+
     glGenBuffers(1, &sys->color_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, sys->color_buffer);
     glBufferData(GL_ARRAY_BUFFER, sys->mesh->num_vertices*sizeof(vec3), sys->mesh->normals, GL_STATIC_DRAW);
@@ -50,11 +57,21 @@ RenderSystem *render_sys_new( HashCache *resources )
     const GLint color_prop = glGetAttribLocation(shader_handle, "normal");
     glEnableVertexAttribArray(color_prop);
     glVertexAttribPointer(color_prop, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), NULL);
+    
+
+
+    glGenBuffers(1, &sys->uv_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, sys->uv_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sys->mesh->num_vertices*sizeof(vec2), sys->mesh->uvs, GL_STATIC_DRAW);
+
+    const GLint uv_prop = glGetAttribLocation(shader_handle, "uv");
+    glEnableVertexAttribArray(uv_prop);
+    glVertexAttribPointer(uv_prop, 2, GL_FLOAT, GL_FALSE, sizeof(vec2), NULL);
 
     return sys;
 }
 
-void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
+void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio )
 {
     Entity camera_entity;
     if (!ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(Camera, ecs, &camera_entity)) return;
@@ -70,7 +87,8 @@ void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    GLuint shader_handle = shader_get_handle(sys->shader);
+    GLuint shader_handle = shader_get_handle( hashcache_load( resources, sys->material->shader ) );
+
     glUseProgram(shader_handle);
     glUniformMatrix4fv(glGetUniformLocation(shader_handle, "view"), 1, GL_FALSE, view);
     glUniformMatrix4fv(glGetUniformLocation(shader_handle, "projection"), 1, GL_FALSE, projection);
@@ -88,7 +106,13 @@ void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
         glUniformMatrix4fv(glGetUniformLocation(shader_handle, "model"), 1, GL_FALSE, teapot_transform->worldMatrix_);
 
         for (int i = 0; i < sys->mesh->num_submeshes; ++i)
-            glDrawElements(GL_TRIANGLES, sys->mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, sys->mesh->submeshes[i].indices);
+        {
+            glActiveTexture( GL_TEXTURE0 );
+            glBindTexture( GL_TEXTURE_2D, texture_get_handle( hashcache_load( resources, sys->material->submaterials[i].tex ) ) );
+            glUniform1i( glGetUniformLocation( shader_handle, "tex" ), 0 );
+
+            glDrawElements( GL_TRIANGLES, sys->mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, sys->mesh->submeshes[i].indices );
+        }
     }
 
     free(teapots);
