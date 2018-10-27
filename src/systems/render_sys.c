@@ -40,7 +40,7 @@ RenderSystem *render_sys_new(void)
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     sys->shader = shader_load("resources/shaders/colors.glsl");
-    sys->mesh = mesh_load("resources/models/mario.umesh");
+    sys->mesh = mesh_load("resources/models/m64_bob.umesh");
 
     GLuint shader_handle = shader_get_handle(sys->shader);
 
@@ -98,7 +98,6 @@ void render_sys_run(RenderSystem *sys, ECS *ecs, float aspect_ratio)
         ECS_GET_COMPONENT_DECL(Teapot, teapot_comp, ecs, teapots[i]);
 
         glUniformMatrix4fv(glGetUniformLocation(shader_handle, "model"), 1, GL_FALSE, teapot_transform->worldMatrix_);
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
 
         for (int i = 0; i < sys->mesh->num_submeshes; ++i)
             glDrawElements(GL_TRIANGLES, sys->mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, sys->mesh->submeshes[i].indices);

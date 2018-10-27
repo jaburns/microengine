@@ -38,6 +38,7 @@ HashCache *hashcache_new( void )
     HashCache *hc = malloc( sizeof( HashCache ) );
     hc->types = hashtable_empty( 64, sizeof( HashCacheType ) );
     hc->resources = hashtable_empty( 1024, sizeof( void* ) );
+    return hc;
 }
 
 void hashcache_register( HashCache *hc, const char *extension,
@@ -90,9 +91,53 @@ HashCache hashcache_delete( HashCache *hc )
 }
 
 #ifdef RUN_TESTS
+
+static const uint8_t test_byte = 42;
+
+static char *test_loader_path;
+static bool test_destructor_succeeded;
+
+static uint8_t *test_txt_loader(const char *path)
+{
+    uint8_t *result = malloc(1);
+    *result = test_byte;
+    test_loader_path = path;
+    return result;
+}
+
+static void test_txt_destructor(uint8_t *item)
+{
+    test_destructor_succeeded = *item == test_byte;
+    free(item);
+}
+
 TestResult hashcache_test( void )
 {
-    TEST_BEGIN("HashCache exists");
+    TEST_BEGIN("HashCache loads and caches resources");
+
+        test_loader_path = NULL;
+
+        HashCache *hc = hashcache_new();
+
+        hashcache_register(hc, "txt", test_txt_loader, test_txt_destructor);
+        uint8_t *loaded_byte = hashcache_load(hc, "file.txt");
+
+        TEST_ASSERT(strcmp(test_loader_path, "file.txt") == 0);
+        TEST_ASSERT(*loaded_byte == test_byte);
+
+        test_loader_path = NULL;
+
+        uint8_t *loaded_byte2 = hashcache_load(hc, "file.txt");
+
+        TEST_ASSERT(!test_loader_path);
+        TEST_ASSERT(*loaded_byte2 == test_byte);
+
+        test_destructor_succeeded = false;
+
+        hashcache_delete(hc);
+
+        TEST_ASSERT(test_destructor_succeeded);
+
     TEST_END();
     return 0;
 }
