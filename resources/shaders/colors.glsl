@@ -1,6 +1,6 @@
-#version 410
+///version 410
 
-V2F vec3 v_color;
+v2f vec3 v_color;
 
 #ifdef VERTEX
 

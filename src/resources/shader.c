@@ -16,15 +16,16 @@ GLuint shader_get_handle( const Shader *shader )
 
 static GLuint shader_compile_from_file( const char *shader_path, GLenum shader_type )
 {
+    // TODO load version from shader ///version metadata comment. (#version must be first directive)
     const GLchar *shader_define = shader_type == GL_VERTEX_SHADER 
-        ? "#define VERTEX  \n#define V2F out\n" 
-        : "#define FRAGMENT\n#define V2F in \n";
+        ? "#version 410\n#define VERTEX  \n#define v2f out\n" 
+        : "#version 410\n#define FRAGMENT\n#define v2f in \n";
 
     size_t shader_contents_length;
     const GLchar *shader_contents = utils_read_file_alloc( shader_path, &shader_contents_length );
 
     const GLchar *shader_strings[2] = { shader_define, shader_contents };
-    GLint shader_string_lengths[2] = { 33, (GLint)shader_contents_length };
+    GLint shader_string_lengths[2] = { 46, (GLint)shader_contents_length };
 
     GLuint shader = glCreateShader( shader_type );
     glShaderSource( shader, 2, shader_strings, shader_string_lengths );

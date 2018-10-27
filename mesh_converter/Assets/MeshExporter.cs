@@ -30,7 +30,7 @@ public class MeshExporter : MonoBehaviour
         return 0;
     }
 
-    static byte[] Serialize(Mesh mesh, Material[] mat)
+    static byte[] Serialize(Mesh mesh)
     {
         var file = new List<byte>();
 
@@ -54,6 +54,25 @@ public class MeshExporter : MonoBehaviour
         return file.ToArray();
     }
 
+    static string[] SerializeMaterial(Material[] materials)
+    {
+        var result = new List<string>();
+
+        result.Add("{");
+        result.Add("    \"shader\": \"resources/simple.glsl\",");
+        result.Add("    \"uniforms\": [");
+
+        for (int i = 0; i < materials.Length; ++i)
+            result.Add("        { \"tex\": \"resources/m64_bob_"+materials[i].name+".png\" },");
+
+        result[result.Count-1] = result[result.Count-1].Substring(0, result[result.Count-1].Length - 1);
+
+        result.Add("    ]");
+        result.Add("}");
+
+        return result.ToArray();
+    }
+
     void Update()
     {
         if (export)
@@ -63,8 +82,9 @@ public class MeshExporter : MonoBehaviour
             var exportMesh = GetComponent<MeshFilter>().sharedMesh;
             var exportMaterials = GetComponent<MeshRenderer>().sharedMaterials;
 
-            File.WriteAllBytes(Application.dataPath + "/mesh.umesh", Serialize(exportMesh, exportMaterials)); 
-            Debug.Log("Wrote umesh file");
+            File.WriteAllBytes(Application.dataPath + "/mesh.umesh", Serialize(exportMesh)); 
+            File.WriteAllLines(Application.dataPath + "/mat.umat", SerializeMaterial(exportMaterials));
+            Debug.Log("Wrote umesh+umat files");
         }
     }
 }

@@ -1,0 +1,32 @@
+{
+    "shader": "resources/shaders/simple.glsl",
+    "properties": [
+        { "tex": "resources/textures/m64_bob_57.png" },
+        { "tex": "resources/textures/m64_bob_58.png" },
+        { "tex": "resources/textures/m64_bob_30.png" },
+        { "tex": "resources/textures/m64_bob_52.png" },
+        { "tex": "resources/textures/m64_bob_53.png" },
+        { "tex": "resources/textures/m64_bob_45.png" },
+        { "tex": "resources/textures/m64_bob_46.png", "shader": "resources/shaders/simple_transparent.glsl" },
+        { "tex": "resources/textures/m64_bob_3.png" },
+        { "tex": "resources/textures/m64_bob_19.png" },
+        { "tex": "resources/textures/m64_bob_20.png" },
+        { "tex": "resources/textures/m64_bob_1.png" },
+        { "tex": "resources/textures/m64_bob_2.png" },
+        { "tex": "resources/textures/m64_bob_4.png" },
+        { "tex": "resources/textures/m64_bob_5.png" },
+        { "tex": "resources/textures/m64_bob_6.png" },
+        { "tex": "resources/textures/m64_bob_7.png" },
+        { "tex": "resources/textures/m64_bob_8.png" },
+        { "tex": "resources/textures/m64_bob_9.png" },
+        { "tex": "resources/textures/m64_bob_10.png" },
+        { "tex": "resources/textures/m64_bob_11.png" },
+        { "tex": "resources/textures/m64_bob_14.png", "shader": "resources/shaders/simple_transparent.glsl" },
+        { "tex": "resources/textures/m64_bob_15.png", "shader": "resources/shaders/simple_transparent.glsl" },
+        { "tex": "resources/textures/m64_bob_16.png" },
+        { "tex": "resources/textures/m64_bob_17.png" },
+        { "tex": "resources/textures/m64_bob_18.png" },
+        { "tex": "resources/textures/m64_bob_21.png" },
+        { "tex": "resources/textures/m64_bob_22.png" }
+    ]
+}

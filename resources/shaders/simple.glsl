@@ -1,7 +1,7 @@
-#version 150
+///version 410
 
-V2F vec3 v_normal;
-V2F vec2 v_tex_coords;
+v2f vec3 v_normal;
+v2f vec2 v_tex_coords;
 
 uniform mat4 perspective;
 uniform mat4 matrix;
