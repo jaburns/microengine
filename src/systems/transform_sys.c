@@ -1,6 +1,8 @@
 #include "transform_sys.h"
 #include "../components.h"
 
+#include <cglm/cglm.h>
+
 struct TransformSystem
 {
     uint8_t empty;
@@ -11,19 +13,17 @@ extern TransformSystem *transform_sys_new(void)
     return NULL;
 }
 
-static void Transform_to_matrix(Transform *transform, mat4x4 matrix)
+static void Transform_to_matrix(Transform *transform, mat4 matrix)
 {
-    mat4x4_identity(matrix);
-    mat4x4 m;
+    glm_mat4_identity(matrix);
 
-    mat4x4_translate(m, transform->position[0], transform->position[1], transform->position[2]);
-    mat4x4_mul(matrix, matrix, m);
+    glm_translate(matrix, transform->position);
 
-    mat4x4_from_quat(m, transform->rotation);
-    mat4x4_mul(matrix, matrix, m);
+    mat4 rotation;
+    glm_quat_mat4(transform->rotation, rotation);
+    glm_mat4_mul(matrix, rotation, matrix);
 
-    mat4x4_scale_aniso(m, m, transform->scale[0], transform->scale[1], transform->scale[2]);
-    mat4x4_mul(matrix, matrix, m);
+    glm_scale(matrix, transform->scale);
 }
 
 extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
@@ -47,10 +47,10 @@ extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
         {
             ECS_GET_COMPONENT_DECL(Transform, p, ecs, parent);
 
-            mat4x4 parent_matrix;
+            mat4 parent_matrix;
             Transform_to_matrix(p, parent_matrix);
 
-            mat4x4_mul(t->worldMatrix_, parent_matrix, t->worldMatrix_);
+            glm_mat4_mul(parent_matrix, t->worldMatrix_, t->worldMatrix_);
 
             vec_push_copy(&p->children_, &transform_entities[i]);
 

@@ -58,6 +58,8 @@ ShellContext *shell_new(const char *title, int width, int height)
     ImGui_ImplSdlGL3_NewFrame(context->sdl_window);
 
     context->input_state.keys_down = vec_empty(sizeof(SDL_Keycode));
+    context->input_state.left_mouse = false;
+    context->input_state.right_mouse = false;
 
     return context;
 
@@ -70,7 +72,7 @@ err:
     return NULL;
 }
 
-static void update_input_state(ShellInputs *state, const SDL_Event *event)
+static void update_keys_input_state(ShellInputs *state, const SDL_Event *event)
 {
     const SDL_Keycode key = event->key.keysym.sym;
     UTILS_FIND_INDEX_DECL(index, (SDL_Keycode*)state->keys_down.data, state->keys_down.item_count, key);
@@ -102,7 +104,7 @@ bool shell_flip_frame_poll_events(ShellContext *context)
 
     while (SDL_PollEvent(&event))
     {
-        update_input_state(&context->input_state, &event);
+        update_keys_input_state(&context->input_state, &event);
 
         ImGui_ImplSdlGL3_ProcessEvent(&event);
 
@@ -125,10 +127,36 @@ bool shell_flip_frame_poll_events(ShellContext *context)
                     glViewport(0, 0, context->window_width, context->window_height);
                 }
                 break;
+
+            case SDL_MOUSEMOTION:
+                context->input_state.mouse_position[0] = 
+                    2.0f * event.motion.x / (float)context->window_width - 1.0f;
+                context->input_state.mouse_position[1] = 
+                    1.0f - 2.0f * event.motion.y / (float)context->window_height;
+                break;
+
+            case SDL_MOUSEBUTTONDOWN:
+                if (event.button.button == SDL_BUTTON_LEFT)
+                    context->input_state.left_mouse = true;
+                else if (event.button.button == SDL_BUTTON_RIGHT)
+                    context->input_state.right_mouse = true;
+                break;
+
+            case SDL_MOUSEBUTTONUP:
+                if (event.button.button == SDL_BUTTON_LEFT)
+                    context->input_state.left_mouse = false;
+                else if (event.button.button == SDL_BUTTON_RIGHT)
+                    context->input_state.right_mouse = false;
+                break;
         }
     }
 
     return still_running;
+}
+
+const ShellInputs *shell_view_input_state( ShellContext *context )
+{
+    return &context->input_state;
 }
 
 void shell_delete(ShellContext *context)
@@ -146,17 +174,4 @@ void shell_delete(ShellContext *context)
         context->sdl_gl_context = NULL;
         context->sdl_window = NULL;
     }
-}
-
-ShellInputs *read_input_state_alloc(ShellContext *context)
-{
-    ShellInputs *result = malloc(sizeof(ShellInputs));
-    result->keys_down = vec_clone(&context->input_state.keys_down);
-    return result;
-}
-
-void free_input_state(ShellInputs *state)
-{
-    vec_clear(&state->keys_down);
-    free(state);
 }

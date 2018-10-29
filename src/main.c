@@ -82,10 +82,12 @@ int main( int argc, char **argv )
 
     do
     {
+        const ShellInputs *inputs = shell_view_input_state( ctx );
+
         run_lua_main_func( L, "update" );
 
         transform_sys_run( transformsystem, ecs );
-        editor_sys_run( editorsystem, ecs );
+        editor_sys_run( editorsystem, ecs, inputs );
         render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ) );
     }
     while( shell_flip_frame_poll_events( ctx ) );

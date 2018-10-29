@@ -1,6 +1,6 @@
 #pragma once
 
-#include <linmath.h>
+#include <cglm/cglm.h>
 #include <stdint.h>
 
 typedef struct Submesh

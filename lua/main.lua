@@ -22,7 +22,7 @@ function main.start()
 
     local ct = add_component_Transform(camera)
     ct.name = "Main Camera"
-    ct.position.z = -10
+    --ct.position.z = -10
     set_component_Transform(camera, ct)
     add_component_Camera(camera)
 end

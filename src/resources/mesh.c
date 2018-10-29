@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <linmath.h>
 #include "../utils.h"
 
 static void *allocate_and_load_data( uint8_t **file_ptr, uint16_t num_verts, size_t elem_size )
@@ -27,6 +26,12 @@ Mesh *mesh_load( const char *path )
     mesh->vertices = allocate_and_load_data( &p, mesh->num_vertices, sizeof( vec3 ) );
     mesh->normals = allocate_and_load_data( &p, mesh->num_vertices, sizeof( vec3 ) );
     mesh->uvs = allocate_and_load_data( &p, mesh->num_vertices, sizeof( vec2 ) );
+
+    for( int i = 0; i < mesh->num_vertices; ++i )
+    {
+        mesh->vertices[i][2] *= -1;
+        mesh->normals[i][2] *= -1;
+    }
 
     mesh->num_submeshes = *(uint16_t*)p; p += 2;
     mesh->submeshes = malloc( sizeof( Submesh ) * mesh->num_submeshes );

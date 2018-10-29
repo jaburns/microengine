@@ -8,6 +8,8 @@
 #include "../resources/material.h"
 #include "../resources/mesh.h"
 
+#include <cglm/cglm.h>
+
 struct RenderSystem
 {
     GLuint vao;
@@ -79,11 +81,22 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
     ECS_GET_COMPONENT_DECL(Camera, camera, ecs, camera_entity);
     ECS_GET_COMPONENT_DECL(Transform, camera_transform, ecs, camera_entity);
 
-    mat4x4 projection;
-    mat4x4_perspective(projection, camera->fov, aspect_ratio, camera->near, camera->far, true);
+    mat4 projection;
+    glm_perspective(camera->fov, aspect_ratio, camera->near, camera->far, projection);
 
-    mat4x4 view;
-    mat4x4_invert(view, camera_transform->worldMatrix_);
+    mat4 view;
+    vec3 look_dir = { cosf(camera->x), camera->y, sinf(camera->x) };
+    versor qq;
+
+//  glm_quat_for( look_dir, (vec3){ 0.f, 0.f, -1.f }, (vec3){ 0.f, 1.f, 0.f }, qq );
+//  glm_quat_look( camera_transform->position, qq, view );
+
+    mat4 tmp;
+    glm_lookat( (vec3){ 0.f, 0.f, 0.f }, look_dir, (vec3){ 0.f, 1.f, 0.f }, tmp );
+    glm_mat4_quat( tmp, qq );
+    glm_quat_mat4( qq, view );
+
+    //glm_quat_look( (vec3){ 0.f, 0.f, 0.f }, qq, view );
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
