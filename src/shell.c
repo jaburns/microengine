@@ -57,7 +57,7 @@ ShellContext *shell_new(const char *title, int width, int height)
     ImGui_ImplSdlGL3_Init(context->sdl_window, NULL);
     ImGui_ImplSdlGL3_NewFrame(context->sdl_window);
 
-    context->input_state.keys_down = vec_empty(sizeof(SDL_Keycode));
+    context->input_state.keys_down = hashtable_empty(256, sizeof(bool), sizeof(SDL_Keycode));
     context->input_state.left_mouse = false;
     context->input_state.right_mouse = false;
 
@@ -74,13 +74,15 @@ err:
 
 static void update_keys_input_state(ShellInputs *state, const SDL_Event *event)
 {
-    const SDL_Keycode key = event->key.keysym.sym;
-    UTILS_FIND_INDEX_DECL(index, (SDL_Keycode*)state->keys_down.data, state->keys_down.item_count, key);
-
-    if (index < 0 && event->type == SDL_KEYDOWN)
-        vec_push_copy(&state->keys_down, &key);
-    else if (index >= 0 && event->type == SDL_KEYUP)
-        vec_remove(&state->keys_down, index);
+    if (event->type == SDL_KEYDOWN)
+    {
+        bool yes = true;
+        hashtable_set_copy_i( &state->keys_down, event->key.keysym.sym, &yes );
+    }
+    else if (event->type == SDL_KEYUP)
+    {
+        hashtable_remove_i( &state->keys_down, event->key.keysym.sym );
+    }
 }
 
 float shell_get_aspect(ShellContext *context)

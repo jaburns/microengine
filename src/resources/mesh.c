@@ -27,12 +27,6 @@ Mesh *mesh_load( const char *path )
     mesh->normals = allocate_and_load_data( &p, mesh->num_vertices, sizeof( vec3 ) );
     mesh->uvs = allocate_and_load_data( &p, mesh->num_vertices, sizeof( vec2 ) );
 
-    for( int i = 0; i < mesh->num_vertices; ++i )
-    {
-        mesh->vertices[i][2] *= -1;
-        mesh->normals[i][2] *= -1;
-    }
-
     mesh->num_submeshes = *(uint16_t*)p; p += 2;
     mesh->submeshes = malloc( sizeof( Submesh ) * mesh->num_submeshes );
     for( int i = 0; i < mesh->num_submeshes; ++i )

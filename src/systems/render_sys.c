@@ -82,21 +82,12 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
     ECS_GET_COMPONENT_DECL(Transform, camera_transform, ecs, camera_entity);
 
     mat4 projection;
-    glm_perspective(camera->fov, aspect_ratio, camera->near, camera->far, projection);
+    glm_perspective(camera->fov, aspect_ratio, camera->near_clip, camera->far_clip, projection);
+    projection[2][2] *= -1.f; // Use left-handed coordinates
+    projection[2][3] *= -1.f;
 
     mat4 view;
-    vec3 look_dir = { cosf(camera->x), camera->y, sinf(camera->x) };
-    versor qq;
-
-//  glm_quat_for( look_dir, (vec3){ 0.f, 0.f, -1.f }, (vec3){ 0.f, 1.f, 0.f }, qq );
-//  glm_quat_look( camera_transform->position, qq, view );
-
-    mat4 tmp;
-    glm_lookat( (vec3){ 0.f, 0.f, 0.f }, look_dir, (vec3){ 0.f, 1.f, 0.f }, tmp );
-    glm_mat4_quat( tmp, qq );
-    glm_quat_mat4( qq, view );
-
-    //glm_quat_look( (vec3){ 0.f, 0.f, 0.f }, qq, view );
+    glm_mat4_inv( camera_transform->worldMatrix_, view );
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

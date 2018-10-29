@@ -7,12 +7,12 @@
 
 #include "../src/utils.h"
 
-const char *BASE_TYPES[] = { "float", "bool", "vec2", "vec3", "vec4", "quat", "mat4x4", "Entity", "string" };
+const char *BASE_TYPES[] = { "float", "bool", "vec2", "vec3", "vec4", "versor", "mat4", "Entity", "string" };
 const size_t NUM_BASE_TYPES = sizeof(BASE_TYPES) / sizeof(char*);
 
 const char *COMPONENTS_H_HEADER =
   "#pragma once"
-"\n#include <linmath.h>"
+"\n#include <cglm/cglm.h>"
 "\n#include <stdint.h>"
 "\n#include <lua.h>"
 "\n#include \"containers/vec.h\""
@@ -56,8 +56,8 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void icb_inspect_vec2(const char *label, vec2 *v) { igDragFloat2(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
 "\nstatic void icb_inspect_vec3(const char *label, vec3 *v) { igDragFloat3(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
 "\nstatic void icb_inspect_vec4(const char *label, vec4 *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
-"\nstatic void icb_inspect_quat(const char *label, quat *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); quat_norm(*v, *v); }"
-"\nstatic void icb_inspect_mat4x4(const char *label, quat *v) { igText(\"%s {Matrix}\", label); }"
+"\nstatic void icb_inspect_versor(const char *label, quat *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); quat_norm(*v, *v); }"
+"\nstatic void icb_inspect_mat4(const char *label, quat *v) { igText(\"%s {Matrix}\", label); }"
 "\nstatic void icb_inspect_Vec_T(const char *label, void *v) { igText(\"%s {Vec<T>}\", label); }"
 "\n"
 "\nstatic void icb_inspect_string(const char *label, char **v)"
@@ -85,10 +85,10 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void lcb_pop_vec3(lua_State *L, vec3 *v, int stack_index) { lml_get_vec3(L, stack_index, *v); }"
 "\nstatic void lcb_push_vec4(lua_State *L, vec4 *v) { lml_push_vec4(L, *v); }"
 "\nstatic void lcb_pop_vec4(lua_State *L, vec4 *v, int stack_index) { lml_get_vec4(L, stack_index, *v); }"
-"\nstatic void lcb_push_quat(lua_State *L, quat *v) { lml_push_quat(L, *v); }"
-"\nstatic void lcb_pop_quat(lua_State *L, quat *v, int stack_index) { lml_get_quat(L, stack_index, *v); }"
-"\nstatic void lcb_push_mat4x4(lua_State *L, mat4x4 *v) { lml_push_mat4x4(L, *v); }"
-"\nstatic void lcb_pop_mat4x4(lua_State *L, mat4x4 *v, int stack_index) { lml_get_mat4x4(L, stack_index, *v); }"
+"\nstatic void lcb_push_versor(lua_State *L, versor *v) { lml_push_quat(L, *v); }"
+"\nstatic void lcb_pop_versor(lua_State *L, versor *v, int stack_index) { lml_get_quat(L, stack_index, *v); }"
+"\nstatic void lcb_push_mat4(lua_State *L, mat4 *v) { lml_push_mat4x4(L, *v); }"
+"\nstatic void lcb_pop_mat4(lua_State *L, mat4 *v, int stack_index) { lml_get_mat4x4(L, stack_index, *v); }"
 "\nstatic void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }"
 "\nstatic void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
 "\nstatic void lcb_push_string(lua_State *L, char **v) { lua_pushstring(L, *v ? *v : \"\"); }"
@@ -132,10 +132,10 @@ static void write_default_for_type_name(char **output, cJSON *types, const char 
     else if (strcmp(type_name, "vec2") == 0) WL(*output, "{0.f,0.f}");
     else if (strcmp(type_name, "vec3") == 0) WL(*output, "{0.f,0.f,0.f}");
     else if (strcmp(type_name, "vec4") == 0) WL(*output, "{0.f,0.f,0.f,0.f}");
-    else if (strcmp(type_name, "quat") == 0) WL(*output, "{0.f,0.f,0.f,1.f}");
+    else if (strcmp(type_name, "versor") == 0) WL(*output, "{0.f,0.f,0.f,1.f}");
     else if (strcmp(type_name, "Entity") == 0) WL(*output, "0");
     else if (strcmp(type_name, "string") == 0) WL(*output, "0");
-    else if (strcmp(type_name, "mat4x4") == 0) 
+    else if (strcmp(type_name, "mat4") == 0) 
         WL(*output, "{{1.f,0.f,0.f,0.f},{0.f,1.f,0.f,0.f},{0.f,0.f,1.f,0.f},{0.f,0.f,0.f,1.f}}");
 
     for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)

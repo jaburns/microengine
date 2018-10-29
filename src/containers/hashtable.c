@@ -26,6 +26,32 @@ static uint32_t hash_fn(char *string, uint32_t max_len)
     return hash % max_len;
 }
 
+// TODO Just hacked these in. 
+// Should use the int_key as the hash value and ignore the strcmps in the _i methods
+
+void *hashtable_at_i(HashTable *table, uint32_t int_key)
+{
+    char key[11];
+    sprintf(key, "%u", int_key);
+    return hashtable_at(table, key);
+}
+
+void *hashtable_set_copy_i(HashTable *table, uint32_t int_key, void *item_ref)
+{
+    char key[11];
+    sprintf(key, "%u", int_key);
+    return hashtable_set_copy(table, key, item_ref);
+}
+
+bool hashtable_remove_i(HashTable *table, uint32_t int_key)
+{
+    char key[11];
+    sprintf(key, "%u", int_key);
+    return hashtable_remove(table, key);
+}
+
+// ==============================================================
+
 void *hashtable_at(HashTable *table, const char *key)
 {
     if (!table->table) return NULL;
@@ -206,6 +232,9 @@ TestResult hashtable_test(void)
         TEST_ASSERT(test_clear_callback_val == 27);
 
     TEST_END();
+    
+    // TODO add tests for _i methods
+
     return 0;
 }
 #endif

@@ -4,6 +4,7 @@
 #include <lualib.h>
 #include <string.h>
 #include <linmath.lua.h>
+#include <ns_clock.h>
 
 #ifdef RUN_TESTS
     #include "testing.h"
@@ -73,21 +74,25 @@ int main( int argc, char **argv )
     luaL_openlibs( L );
     lml_load_types( L );
 
-    lua_pushcfunction( L, l_print );
-    lua_setglobal( L, "print" );
-
     components_init( L, ecs );
 
+    lua_pushcfunction( L, l_print );
+    lua_setglobal( L, "print" );
     run_lua_main_func( L, "start" );
+
+    uint64_t last_clock = ns_clock();
 
     do
     {
-        const ShellInputs *inputs = shell_view_input_state( ctx );
+        uint64_t now = ns_clock();
+        float delta_millis = (float)(now - last_clock) / 1e6f;
+        last_clock = now;
 
+        const ShellInputs *inputs = shell_view_input_state( ctx );
         run_lua_main_func( L, "update" );
 
         transform_sys_run( transformsystem, ecs );
-        editor_sys_run( editorsystem, ecs, inputs );
+        editor_sys_run( editorsystem, ecs, inputs, delta_millis );
         render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ) );
     }
     while( shell_flip_frame_poll_events( ctx ) );

@@ -2,13 +2,13 @@
 
 #include <stdbool.h>
 
-#include "containers/vec.h"
+#include "containers/hashtable.h"
 
 typedef struct ShellContext ShellContext;
 
 typedef struct ShellInputs
 {
-    Vec keys_down; // Vec of SDL_Keycode
+    HashTable keys_down; // int keys of SDL_Keycode, if there's a value then key is down.
     bool left_mouse;
     bool right_mouse;
     float mouse_position[2];

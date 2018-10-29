@@ -188,7 +188,6 @@
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\containers\hashtable.h" />
     <ClInclude Include="external\support\ns_clock.h" />
-    <ClInclude Include="src\linmath_test.h" />
     <ClInclude Include="src\resources\material.h" />
     <ClInclude Include="src\resources\mesh.h" />
     <ClInclude Include="src\resources\shader.h" />

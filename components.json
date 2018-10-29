@@ -3,11 +3,11 @@
     "fields": [
         { "name": "name", "type": "string" },
         { "name": "position", "type": "vec3" },
-        { "name": "rotation", "type": "quat" },
+        { "name": "rotation", "type": "versor" },
         { "name": "scale", "type": "vec3", "default": "{1.f,1.f,1.f}" },
         { "name": "parent", "type": "Entity", "hideInInspector": true },
         { "name": "children_", "type": "Entity", "vec": true, "hideInInspector": true },
-        { "name": "worldMatrix_", "type": "mat4x4", "hideInInspector": true }
+        { "name": "worldMatrix_", "type": "mat4", "hideInInspector": true }
     ]
 },{
     "name": "MeshRenderer",
@@ -25,7 +25,7 @@
     "fields": [
         { "name": "selected", "type": "bool" },
         { "name": "fov", "type": "float", "default": "1.5708f" },
-        { "name": "near", "type": "float", "default": "1.0f" },
-        { "name": "far", "type": "float", "default":"500.0f" }
+        { "name": "near_clip", "type": "float", "default": "1.0f" },
+        { "name": "far_clip", "type": "float", "default":"500.0f" }
     ]
 }]
