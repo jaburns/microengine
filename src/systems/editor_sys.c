@@ -116,7 +116,7 @@ static void update_view_drag( EditorSystem *sys, const ShellInputs *inputs, Came
 
     #undef X
 
-    glm_vec_scale( drive, 0.1f * delta_millis, drive );
+    glm_vec_scale( drive, 0.02f * delta_millis, drive );
     glm_vec_add( transform->position, drive, transform->position );
 }
 
