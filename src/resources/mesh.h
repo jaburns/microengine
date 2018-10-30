@@ -2,6 +2,7 @@
 
 #include <cglm/cglm.h>
 #include <stdint.h>
+#include "../gl.h"
 
 typedef struct Submesh
 {
@@ -9,6 +10,15 @@ typedef struct Submesh
     uint16_t *indices;
 }
 Submesh;
+
+typedef struct GLData
+{
+    GLuint vao;
+    GLuint position_buffer;
+    GLuint color_buffer;
+    GLuint uv_buffer;
+}
+GLData;
 
 struct Mesh
 {
@@ -19,6 +29,8 @@ struct Mesh
 
     uint16_t num_submeshes;
     Submesh *submeshes;
+
+    GLData gl_data;
 };
 
 typedef struct Mesh Mesh;

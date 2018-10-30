@@ -16,7 +16,7 @@ char *utils_read_file_alloc( const char *path_prefix, const char *path, int *fil
     char *buffer = 0;
     FILE *f = fopen( path_str, "rb" );
 
-    if( !f ) PANIC( "Read file error: %s", path_str );
+    if( !f ) return NULL;
 
     fseek( f, 0, SEEK_END );
     length = (size_t)ftell( f );
@@ -26,7 +26,7 @@ char *utils_read_file_alloc( const char *path_prefix, const char *path, int *fil
     buffer[length] = 0;
     fclose( f );
 
-    if( file_length ) *file_length = length;
+    if( file_length ) *file_length = (int)length;
 
     return buffer;
 }

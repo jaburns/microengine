@@ -16,11 +16,6 @@
         { "name": "material", "type": "string" }
     ]
 },{
-    "name": "Teapot",
-    "fields": [
-        { "name": "placeholder", "type": "float" }
-    ]
-},{
     "name": "Camera",
     "fields": [
         { "name": "selected", "type": "bool" },

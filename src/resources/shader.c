@@ -14,18 +14,15 @@ GLuint shader_get_handle( const Shader *shader )
     return shader->handle;
 }
 
-static GLuint shader_compile_from_file( const char *shader_path, GLenum shader_type )
+static GLuint shader_compile( const char *shader_path, const char *shader_contents, GLint shader_contents_length, GLenum shader_type )
 {
     // TODO load version from shader ///version metadata comment. (#version must be first directive)
     const GLchar *shader_define = shader_type == GL_VERTEX_SHADER 
         ? "#version 410\n#define VERTEX  \n#define v2f out\n" 
         : "#version 410\n#define FRAGMENT\n#define v2f in \n";
 
-    size_t shader_contents_length;
-    const GLchar *shader_contents = utils_read_file_alloc( "resources/", shader_path, &shader_contents_length );
-
-    const GLchar *shader_strings[2] = { shader_define, shader_contents };
-    GLint shader_string_lengths[2] = { 46, (GLint)shader_contents_length };
+    GLchar *shader_strings[2] = { shader_define, shader_contents };
+    GLint shader_string_lengths[2] = { 46, shader_contents_length };
 
     GLuint shader = glCreateShader( shader_type );
     glShaderSource( shader, 2, shader_strings, shader_string_lengths );
@@ -43,28 +40,41 @@ static GLuint shader_compile_from_file( const char *shader_path, GLenum shader_t
         PANIC( "Error in shader: %s\n%s\n", shader_path, log );
     }
 
-    free( shader_contents );
-
     return shader;
 }
 
 Shader *shader_load( const char *path )
 {
-    // TODO don't read file twice
+    Shader *result = NULL;
+    int shader_contents_length;
+    char *shader_contents = utils_read_file_alloc( "resources/", path, &shader_contents_length );
+
+    if( !shader_contents ) return NULL;
+
+    GLuint vert = shader_compile( path, shader_contents, shader_contents_length, GL_VERTEX_SHADER );
+    if( !vert ) goto err_vert;
+
+    GLuint frag = shader_compile( path, shader_contents, shader_contents_length, GL_FRAGMENT_SHADER );
+    if( !frag ) goto err_frag;
+
     GLuint ref = glCreateProgram();
-    GLuint vert = shader_compile_from_file( path, GL_VERTEX_SHADER );
-    GLuint frag = shader_compile_from_file( path, GL_FRAGMENT_SHADER );
     glAttachShader( ref, vert );
     glAttachShader( ref, frag );
     glLinkProgram ( ref );
     glDetachShader( ref, vert );
     glDetachShader( ref, frag );
-    glDeleteShader( vert );
-    glDeleteShader( frag );
 
-    Shader *result = malloc( sizeof(Shader) );
+    result = malloc( sizeof(Shader) );
     result->handle = ref;
-    return result;;
+
+err_frag:
+    glDeleteShader( frag );
+err_vert:
+    glDeleteShader( vert );
+
+    free( shader_contents );
+
+    return result;
 }
 
 void shader_delete( Shader *shader )
@@ -72,5 +82,6 @@ void shader_delete( Shader *shader )
     if( !shader || shader->handle == 0 ) return;
 
     glDeleteProgram( shader->handle );
+
     free( shader );
 }

@@ -9,7 +9,11 @@ function main.start()
     local teapot_parent = create_entity()
 
     add_component_Transform(teapot_parent)
-    add_component_Teapot(teapot_parent)
+    local mr = add_component_MeshRenderer(teapot_parent)
+    mr.mesh = "models/m64_bob.umesh"
+    mr.material = "materials/m64_bob.umat"
+    set_component_MeshRenderer(teapot_parent, mr)
+
 --[[
     local tt = add_component_Transform(teapot)
     tt.name = "Child"

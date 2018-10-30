@@ -17,6 +17,9 @@ static void *allocate_and_load_data( uint8_t **file_ptr, uint16_t num_verts, siz
 Mesh *mesh_load( const char *path )
 {
     const uint8_t *file = utils_read_file_alloc( "resources/", path, NULL );
+
+    if( !file ) return NULL;
+
     const uint8_t *p = file;
     Mesh *mesh = malloc( sizeof( Mesh ) );
 

@@ -12,6 +12,9 @@
 Material *material_load( const char *path )
 {
     char *file = utils_read_file_alloc( "resources/", path, NULL );
+
+    if( !file ) return NULL;
+
     cJSON *json = cJSON_Parse( file );
     free( file );
 
