@@ -4,9 +4,6 @@
 [submodule "external/lodepng"]
 	path = external/lodepng
 	url = git@github.com:lvandeve/lodepng
-[submodule "external/linmath.lua"]
-	path = external/linmath.lua
-	url = git@github.com:jaburns/linmath.lua
 [submodule "external/cJSON"]
 	path = external/cJSON
 	url = git@github.com:DaveGamble/cJSON
