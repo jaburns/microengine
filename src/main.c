@@ -3,7 +3,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 #include <string.h>
-#include <linmath.lua.h>
+#include <cglm.lua.h>
 #include <ns_clock.h>
 
 #ifdef RUN_TESTS
@@ -72,7 +72,7 @@ int main( int argc, char **argv )
 
     lua_State *L = luaL_newstate();
     luaL_openlibs( L );
-    lml_load_types( L );
+    glmlua_load_types( L );
 
     components_init( L, ecs );
 
