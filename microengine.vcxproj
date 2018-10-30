@@ -62,7 +62,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm.lua\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\cglm.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -81,7 +81,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;NDEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\linmath.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\linmath.lua;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm.lua\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\cglm.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
