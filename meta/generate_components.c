@@ -18,7 +18,10 @@ const char *COMPONENTS_H_HEADER =
 "\n#include \"containers/vec.h\""
 "\n#include \"containers/ecs.h\""
 "\n"
-"\nextern void components_init(lua_State *L, ECS *ecs);";
+"\nextern void components_init(lua_State *L, ECS *ecs);"
+"\nextern void components_inspect_entity(Entity e);"
+"\nextern const char *components_name_entity(Entity e);"
+"\n";
 
 const char *COMPONENTS_C_HEADER = 
   "#define _CRT_SECURE_NO_WARNINGS 1"
@@ -409,17 +412,9 @@ static void write_component_names_array(char **output, cJSON *types)
     WL(*output, "};\n");
 }
 
-static void write_inspect_all(char **output, cJSON *types, bool body_decl)
+static void write_inspect_all(char **output, cJSON *types)
 {
-    W(*output, "%s", body_decl ? "" : "extern ");
-    WL(*output, "void components_inspect_entity(Entity e)");
-
-    if (! body_decl) 
-    {
-        WL(*output, ";\n");
-        return;
-    }
-
+    W(*output, "void components_inspect_entity(Entity e)");
     W(*output, "{");
     W(*output, "    static int selected_component = 0;");
     W(*output, "    igCombo(\"\", &selected_component, TOP_LEVEL_COMPONENT_NAMES, COUNT_OF(TOP_LEVEL_COMPONENT_NAMES), NULL);");
@@ -445,7 +440,8 @@ static void write_inspect_all(char **output, cJSON *types, bool body_decl)
         W(*output, "        ECS_GET_COMPONENT_DECL(%s, v, s_ecs, e);", type_name);
         W(*output, "        if (v && igCollapsingHeaderBoolPtr(\"%s\", &keep_alive, 0))", type_name);
         W(*output, "            icb_inspect_%s(NULL, v);", type_name);
-        W(*output, "        if (! keep_alive) printf(\"!!!\");"); // TODO remove component from entity
+        W(*output, "        if (! keep_alive)");
+        W(*output, "            ECS_REMOVE_COMPONENT(%s, s_ecs, e);", type_name);
         W(*output, "    }");
     }
 
@@ -479,6 +475,25 @@ static void write_components_init(char **output, cJSON *types)
     W(*output, "}");
 }
 
+static void write_components_name_entity(char **output, cJSON *types)
+{
+    W(*output, "const char *components_name_entity(Entity e)");
+    W(*output, "{");
+    W(*output, "    ECS_GET_COMPONENT_DECL(Transform, t, s_ecs, e);");
+    W(*output, "    if (t && t->name && strlen(t->name)) return t->name;");
+
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+        const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+        W(*output, "    { ECS_GET_COMPONENT_DECL(%s, c, s_ecs, e);", type_name);
+        W(*output, "    if (c) return \"(%s)\"; }", type_name);
+    }
+
+    W(*output, "    return \"(empty)\";");
+    W(*output, "}");
+}
+
 static char *generate_components_h_alloc(cJSON *types)
 {
     char *output = malloc(1024 * 1024);
@@ -492,8 +507,6 @@ static char *generate_components_h_alloc(cJSON *types)
         write_struct_def(&output, type);
         write_default_def(&output, types, type);
     }
-
-    write_inspect_all(&output, types, false);
 
     return output_start;
 }
@@ -515,7 +528,7 @@ static char *generate_components_c_alloc(cJSON *types)
         cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-        write_inspector(&output, type, true);
+        write_inspector(&output, type);
         write_lua_push(&output, type);
         write_lua_pop(&output, type);
         write_add_component(&output, type_name);
@@ -525,8 +538,9 @@ static char *generate_components_c_alloc(cJSON *types)
         write_destructor(&output, type);
     }
 
-    write_inspect_all(&output, types, true);
+    write_inspect_all(&output, types);
     write_components_init(&output, types);
+    write_components_name_entity(&output, types);
 
     return output_start;
 }

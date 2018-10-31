@@ -37,20 +37,6 @@ EditorSystem *editor_sys_new( void )
     return sys;
 }
 
-static const char *get_entity_display_name( ECS *ecs, Entity entity )
-{
-    // TODO have the meta program generate a name finder for entities without a transform that just loops through all
-    // possible components and checks if the entity has them.
-
-    ECS_GET_COMPONENT_DECL( Transform, transform, ecs, entity );
-
-    return !transform
-        ? "(entity)"
-        : transform->name && strlen( transform->name )
-            ? transform->name 
-            : "(no name)";
-}
-
 static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, Transform *transform )
 {
     ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -61,7 +47,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     if( !transform || transform->children_.item_count == 0 )
         node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    bool node_open = igTreeNodeExPtr( (void*)entity, node_flags, get_entity_display_name( ecs, entity ) );
+    bool node_open = igTreeNodeExPtr( (void*)entity, node_flags, components_name_entity( entity ) );
 
     if( igIsItemClicked( 0 ) )
         sys->selected_entity = entity;
@@ -179,7 +165,7 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs, const ShellInputs *inputs, flo
 
     if( sys->reparenting_entity )
     {
-        const char *name = get_entity_display_name( ecs, sys->reparenting_entity );
+        const char *name = components_name_entity( ecs, sys->reparenting_entity );
         if( igButton( name, (ImVec2){ 0, 0 } ) ) 
         {
             reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
