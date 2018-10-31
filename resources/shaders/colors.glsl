@@ -1,15 +1,13 @@
-///version 410
-
 v2f vec3 v_color;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 #ifdef VERTEX
 
     in vec3 position;
     in vec3 normal;
-
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
 
     void main()
     {

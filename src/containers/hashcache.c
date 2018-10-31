@@ -60,8 +60,9 @@ void *hashcache_load( HashCache *hc, const char *path )
     if( resource ) return resource->resource;
 
     const char *ext = get_filename_ext( path );
+    if( !ext ) return NULL;
     HashCacheType *type = hashtable_at( &hc->types, ext );
-    if( !type ) PANIC( "Attempted to load a resource of unregistered type: %s", path );
+    if( !type ) return NULL;
 
     HashCacheResource new_resource;
     new_resource.destructor = type->destructor;

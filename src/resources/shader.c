@@ -16,7 +16,6 @@ GLuint shader_get_handle( const Shader *shader )
 
 static GLuint shader_compile( const char *shader_path, const char *shader_contents, GLint shader_contents_length, GLenum shader_type )
 {
-    // TODO load version from shader ///version metadata comment. (#version must be first directive)
     const GLchar *shader_define = shader_type == GL_VERTEX_SHADER 
         ? "#version 410\n#define VERTEX  \n#define v2f out\n" 
         : "#version 410\n#define FRAGMENT\n#define v2f in \n";

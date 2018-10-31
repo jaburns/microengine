@@ -15,8 +15,11 @@ HashTable hashtable_empty(size_t table_size, size_t item_size)
 static uint32_t hash_fn(char *string, uint32_t max_len)
 {
     uint32_t hash = 0;
+    size_t len = strlen(string);
 
-    for (int i = strlen(string) - 1; i >= 0; --i)
+    if (len == 0) return 0;
+
+    for (int i = len - 1; i >= 0; --i)
     {
         hash ^= (uint8_t)string[i];
         uint8_t rolled_byte = hash >> ((sizeof(hash) - 1) * 8);

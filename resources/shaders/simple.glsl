@@ -1,11 +1,9 @@
-///version 410
-
 v2f vec3 v_normal;
 v2f vec2 v_tex_coords;
 
+uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform mat4 model;
 uniform sampler2D tex;
 
 #ifdef VERTEX
@@ -14,7 +12,8 @@ uniform sampler2D tex;
     in vec3 normal;
     in vec2 uv;
 
-    void main() {
+    void main() 
+    {
         v_normal = inverse(mat3(model)) * normal;
         v_tex_coords = uv;
         gl_Position = projection * view * model * vec4(position, 1.0f);
@@ -27,7 +26,8 @@ uniform sampler2D tex;
 
     out vec4 color;
 
-    void main() {
+    void main() 
+    {
         float brightness = dot(normalize(v_normal), normalize(light_x));
         color = (0.75 + 0.25 * brightness) * texture(tex, v_tex_coords);
     }
