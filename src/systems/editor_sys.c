@@ -17,8 +17,6 @@ struct EditorSystem
     Entity reparenting_entity;
 
     Entity active_camera;
-    bool view_dragging;
-    vec2 last_mouse_pos;
     float camera_pitch;
     float camera_yaw;
 };
@@ -29,11 +27,8 @@ EditorSystem *editor_sys_new( void )
     sys->selected_entity = 0;
     sys->reparenting_entity = 0;
     sys->active_camera = 0;
-    sys->view_dragging = false;
     sys->camera_pitch = 0;
     sys->camera_yaw = 0;
-    sys->last_mouse_pos[0] = 0;
-    sys->last_mouse_pos[1] = 0;
     return sys;
 }
 
@@ -65,20 +60,15 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     }
 }
 
-int i = 0;
+// TODO delta_millis should be available on a component along with total time elapsed and other time info.
 
-static void update_view_drag( EditorSystem *sys, const ShellInputs *inputs, Camera *cam, Transform *transform, float delta_millis )
+static void update_view_drag( EditorSystem *sys, const InputState *inputs, Camera *cam, Transform *transform, float delta_millis )
 {
-    sys->view_dragging = inputs->right_mouse;
-
-    float dx = inputs->mouse_position[0] - sys->last_mouse_pos[0];
-    float dy = inputs->mouse_position[1] - sys->last_mouse_pos[1];
-
-    sys->last_mouse_pos[0] = inputs->mouse_position[0];
-    sys->last_mouse_pos[1] = inputs->mouse_position[1];
-
-    if( sys->view_dragging )
+    if( inputs->cur.right_mouse )
     {
+        float dx = inputs->cur.mouse_pos[0] - inputs->prev.mouse_pos[0];
+        float dy = inputs->cur.mouse_pos[1] - inputs->prev.mouse_pos[1];
+
         sys->camera_yaw   -= 3 * dx;
         sys->camera_pitch -= 3 * dy;
     }
@@ -100,23 +90,23 @@ static void update_view_drag( EditorSystem *sys, const ShellInputs *inputs, Came
     glm_quat_rotatev( transform->rotation, (vec3){ 1.f, 0.f, 0.f }, right );
     glm_vec_zero( drive );
 
-    #define X(pos_key, neg_key, pos_vec) do { \
-        if( hashtable_at_i( &inputs->keys_down, pos_key ) ) \
-        { \
-            glm_vec_add( pos_vec, drive, drive ); \
-        } \
-        else if( hashtable_at_i( &inputs->keys_down, neg_key ) ) \
-        { \
-            glm_vec_flipsign( pos_vec ); \
-            glm_vec_add( pos_vec, drive, drive ); \
-        } \
-    } while (0)
+//  #define X(pos_key, neg_key, pos_vec) do { \
+//      if( hashtable_at_i( &inputs->cur.keys, pos_key ) ) \
+//      { \
+//          glm_vec_add( pos_vec, drive, drive ); \
+//      } \
+//      else if( hashtable_at_i( &inputs->cur.keys, neg_key ) ) \
+//      { \
+//          glm_vec_flipsign( pos_vec ); \
+//          glm_vec_add( pos_vec, drive, drive ); \
+//      } \
+//  } while (0)
 
-        X( SDLK_w, SDLK_s, fwd );
-        X( SDLK_d, SDLK_a, right );
-        X( SDLK_e, SDLK_q, up );
+//      X( SDLK_w, SDLK_s, fwd );
+//      X( SDLK_d, SDLK_a, right );
+//      X( SDLK_e, SDLK_q, up );
 
-    #undef X
+//  #undef X
 
     glm_vec_scale( drive, 0.02f * delta_millis, drive );
     glm_vec_add( transform->position, drive, transform->position );
@@ -149,7 +139,7 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
     this_t->parent = to_entity;
 }
 
-void editor_sys_run( EditorSystem *sys, ECS *ecs, const ShellInputs *inputs, float delta_millis )
+void editor_sys_run( EditorSystem *sys, ECS *ecs, float delta_millis )
 {
     size_t num_entities;
     Entity *entities = ecs_find_all_entities_alloc( ecs, &num_entities );
@@ -216,18 +206,15 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs, const ShellInputs *inputs, flo
         if( !keep_open ) sys->selected_entity = 0;
     }
 
-    if( igGetIO()->WantCaptureMouse )
-    {
-        sys->view_dragging = false;
-    }
-    else
-    {
-        ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Camera, ecs, &sys->active_camera );
-        ECS_GET_COMPONENT_DECL( Camera, active_cam, ecs, sys->active_camera );
-        ECS_GET_COMPONENT_DECL( Transform, active_cam_transform, ecs, sys->active_camera );
+    Entity inputs_entity;
+    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity );
+    ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
 
-        update_view_drag( sys, inputs, active_cam, active_cam_transform, delta_millis );
-    }
+    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Camera, ecs, &sys->active_camera );
+    ECS_GET_COMPONENT_DECL( Camera, active_cam, ecs, sys->active_camera );
+    ECS_GET_COMPONENT_DECL( Transform, active_cam_transform, ecs, sys->active_camera );
+
+    update_view_drag( sys, inputs, active_cam, active_cam_transform, delta_millis );
 }
 
 void editor_sys_delete( EditorSystem *sys )

@@ -90,11 +90,12 @@ int main( int argc, char **argv )
         float delta_millis = (float)(now - last_clock) / 1e6f;
         last_clock = now;
 
-        const ShellInputs *inputs = shell_view_input_state( ctx );
+        input_sys_run( inputsystem, ecs, ctx );
+
         run_lua_main_func( L, "update" );
 
         transform_sys_run( transformsystem, ecs );
-        editor_sys_run( editorsystem, ecs, inputs, delta_millis );
+        editor_sys_run( editorsystem, ecs, delta_millis );
         render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ) );
     }
     while( shell_flip_frame_poll_events( ctx ) );
