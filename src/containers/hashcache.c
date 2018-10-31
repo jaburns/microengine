@@ -56,6 +56,8 @@ void hashcache_register( HashCache *hc, const char *extension,
 
 void *hashcache_load( HashCache *hc, const char *path )
 {
+    if ( !path ) return NULL;
+
     HashCacheResource *resource = hashtable_at( &hc->resources, path );
     if( resource ) return resource->resource;
 

@@ -6,13 +6,15 @@
 
 #include <cglm/cglm.h>
 
+#include "../utils.h"
 #include "../containers/ecs.h"
 #include "../containers/hashtable.h"
 #include "../components.h"
 
 struct EditorSystem
 {
-    Entity inspecting_entity;
+    Entity selected_entity;
+    Entity reparenting_entity;
 
     Entity active_camera;
     bool view_dragging;
@@ -24,7 +26,8 @@ struct EditorSystem
 EditorSystem *editor_sys_new( void )
 {
     EditorSystem *sys = malloc( sizeof( EditorSystem ) );
-    sys->inspecting_entity = 0;
+    sys->selected_entity = 0;
+    sys->reparenting_entity = 0;
     sys->active_camera = 0;
     sys->view_dragging = false;
     sys->camera_pitch = 0;
@@ -34,27 +37,40 @@ EditorSystem *editor_sys_new( void )
     return sys;
 }
 
-static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity parent_entity, Transform *parent )
+static const char *get_entity_display_name( ECS *ecs, Entity entity )
+{
+    // TODO have the meta program generate a name finder for entities without a transform that just loops through all
+    // possible components and checks if the entity has them.
+
+    ECS_GET_COMPONENT_DECL( Transform, transform, ecs, entity );
+
+    return !transform
+        ? "(entity)"
+        : transform->name && strlen( transform->name )
+            ? transform->name 
+            : "(no name)";
+}
+
+static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, Transform *transform )
 {
     ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
-    if( sys->inspecting_entity == parent_entity )
+    if( sys->selected_entity == entity )
         node_flags |= ImGuiTreeNodeFlags_Selected;
 
-    if( parent->children_.item_count == 0 )
+    if( !transform || transform->children_.item_count == 0 )
         node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    const char *name = parent->name && strlen( parent->name ) ? parent->name : "( entity )";
-    bool node_open = igTreeNodeExPtr( parent, node_flags, name );
+    bool node_open = igTreeNodeExPtr( (void*)entity, node_flags, get_entity_display_name( ecs, entity ) );
 
     if( igIsItemClicked( 0 ) )
-        sys->inspecting_entity = parent_entity;
+        sys->selected_entity = entity;
 
-    if( parent->children_.item_count > 0 && node_open )
+    if( transform && transform->children_.item_count > 0 && node_open )
     {
-        for( int i = 0; i < parent->children_.item_count; ++i )
+        for( int i = 0; i < transform->children_.item_count; ++i )
         {
-            Entity e = *( Entity* )vec_at( &parent->children_, i );
+            Entity e = *( Entity* )vec_at( &transform->children_, i );
             ECS_GET_COMPONENT_DECL( Transform, t, ecs, e );
             inspect_transform_tree( sys, ecs, e, t );
         }
@@ -120,34 +136,98 @@ static void update_view_drag( EditorSystem *sys, const ShellInputs *inputs, Came
     glm_vec_add( transform->position, drive, transform->position );
 }
 
+static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
+{
+    if( !this_entity || this_entity == to_entity ) return;
+
+    ECS_GET_COMPONENT_DECL( Transform, this_t, ecs, this_entity );
+    if( !this_t ) return;
+
+    if( !to_entity )
+    {
+        this_t->parent = 0;
+        return;
+    }
+
+    ECS_GET_COMPONENT_DECL( Transform, to_t, ecs, to_entity );
+    if( !to_t ) return;
+
+    Entity parent = to_t->parent;
+    while( parent )
+    {
+        if( parent == this_entity ) return;
+        ECS_GET_COMPONENT_DECL( Transform, parent_t, ecs, parent );
+        parent = parent_t->parent;
+    }
+
+    this_t->parent = to_entity;
+}
+
 void editor_sys_run( EditorSystem *sys, ECS *ecs, const ShellInputs *inputs, float delta_millis )
 {
-    size_t num_transforms;
-    Entity *entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( Transform, ecs, &num_transforms );
+    size_t num_entities;
+    Entity *entities = ecs_find_all_entities_alloc( ecs, &num_entities );
 
     igBegin( "Scene", NULL, 0 );
+
     igText( "%.1f fps", 1000.f / delta_millis );
+
+    if( igButton( "Create", (ImVec2){ 0, 0 } ) ) 
+        ecs_create_entity( ecs );
+
+    igSameLine( 0, -1 );
+
+    if( sys->reparenting_entity )
+    {
+        const char *name = get_entity_display_name( ecs, sys->reparenting_entity );
+        if( igButton( name, (ImVec2){ 0, 0 } ) ) 
+        {
+            reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
+            sys->reparenting_entity = 0;
+        }
+    }
+    else if( igButton( "Reparent", (ImVec2){ 0, 0 } ) ) 
+    {
+        sys->reparenting_entity = sys->selected_entity;
+    }
+
+    igSameLine( 0, -1 );
+
+    if( igButton( "No Parent", (ImVec2){ 0, 0 } ) )
+    {
+        reparent_entity( ecs, sys->selected_entity, 0 );
+        sys->reparenting_entity = 0;
+    }
+
+    igSameLine( 0, -1 );
+
+    if( igButton( "Delete", (ImVec2){ 0, 0 } ) )
+    {
+        ecs_destroy_entity( ecs, sys->selected_entity );
+        sys->reparenting_entity = 0;
+        sys->selected_entity = 0;
+    }
+
     igSeparator();
 
-    for( int i = 0; i < num_transforms; ++i )
+    for( int i = 0; i < num_entities; ++i )
     {
         ECS_GET_COMPONENT_DECL( Transform, t, ecs, entities[i] );
-
-        if( t->parent ) continue;
+        if( t && t->parent ) continue;
         inspect_transform_tree( sys, ecs, entities[i], t );
     }
 
     igEnd();
     free( entities );
 
-    if( sys->inspecting_entity )
+    if( sys->selected_entity )
     {
         bool keep_open = true;
         igBegin( "Inspector", &keep_open, 0 );
-        components_inspect_entity( sys->inspecting_entity );
+        components_inspect_entity( sys->selected_entity );
         igEnd();
 
-        if( !keep_open ) sys->inspecting_entity = 0;
+        if( !keep_open ) sys->selected_entity = 0;
     }
 
     if( igGetIO()->WantCaptureMouse )

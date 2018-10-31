@@ -7,7 +7,7 @@
 
 #include "../src/utils.h"
 
-const char *BASE_TYPES[] = { "float", "bool", "vec2", "vec3", "vec4", "versor", "mat4", "Entity", "string" };
+const char *BASE_TYPES[] = { "int", "float", "bool", "vec2", "vec3", "vec4", "versor", "mat4", "Entity", "string" };
 const size_t NUM_BASE_TYPES = sizeof(BASE_TYPES) / sizeof(char*);
 
 const char *COMPONENTS_H_HEADER =
@@ -30,6 +30,7 @@ const char *COMPONENTS_C_HEADER =
 "\n#include <lualib.h>"
 "\n#include <imgui_impl.h>"
 "\n#include <string.h>"
+"\n#include \"utils.h\""
 "\n#ifdef _MSC_VER"
 "\n#define strdup _strdup"
 "\n#endif"
@@ -50,15 +51,16 @@ const char *COMPONENTS_C_HEADER =
 "\n    return 0;"
 "\n}"
 "\n"
-"\nstatic void icb_inspect_Entity(const char *label, Entity *v) { igText(\"%s {Entity}\", label); }"
-"\nstatic void icb_inspect_float(const char *label, float *v) { igDragFloat(label, v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
-"\nstatic void icb_inspect_bool(const char *label, bool *v) { igCheckbox(label, v); }"
-"\nstatic void icb_inspect_vec2(const char *label, vec2 *v) { igDragFloat2(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
-"\nstatic void icb_inspect_vec3(const char *label, vec3 *v) { igDragFloat3(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
-"\nstatic void icb_inspect_vec4(const char *label, vec4 *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
-"\nstatic void icb_inspect_versor(const char *label, versor *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); /*quat_norm(*v, *v);*/ }"
-"\nstatic void icb_inspect_mat4(const char *label, mat4 *v) { igText(\"%s {Matrix}\", label); }"
-"\nstatic void icb_inspect_Vec_T(const char *label, void *v) { igText(\"%s {Vec<T>}\", label); }"
+"\nstatic void icb_inspect_int    (const char *label, int    *v) { igInputInt(label, v, 1, 10, 0); }"
+"\nstatic void icb_inspect_float  (const char *label, float  *v) { igDragFloat(label, v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_bool   (const char *label, bool   *v) { igCheckbox(label, v); }"
+"\nstatic void icb_inspect_vec2   (const char *label, vec2   *v) { igDragFloat2(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_vec3   (const char *label, vec3   *v) { igDragFloat3(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_vec4   (const char *label, vec4   *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
+"\nstatic void icb_inspect_versor (const char *label, versor *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); glm_quat_normalize(*v); }"
+"\nstatic void icb_inspect_mat4   (const char *label, mat4   *v) { igText(\"%s {Matrix}\", label); }"
+"\nstatic void icb_inspect_Entity (const char *label, Entity *v) { igText(\"%s {Entity}\", label); }"
+"\nstatic void icb_inspect_Vec_T  (const char *label, void   *v) { igText(\"%s {Vec<T>}\", label); }"
 "\n"
 "\nstatic void icb_inspect_string(const char *label, char **v)"
 "\n{"
@@ -66,7 +68,7 @@ const char *COMPONENTS_C_HEADER =
 "\n    char buf[1024] = \"\";"
 "\n    buf[1023] = 0;"
 "\n    strncpy(buf, *v, 1023);"
-"\n    igInputText(label, buf, 1024, ImGuiInputTextFlags_CharsNoBlank, NULL, NULL);"
+"\n    igInputText(label, buf, 1024, NULL, NULL, NULL);"
 "\n    if (strcmp(buf, *v) == 0) return;"
 "\n    free(*v);"
 "\n    int len = strlen(buf);"
@@ -75,25 +77,28 @@ const char *COMPONENTS_C_HEADER =
 "\n    (*v)[len] = 0;"
 "\n}"
 "\n"
-"\nstatic void lcb_push_float(lua_State *L, float *v) { lua_pushnumber(L, (double)(*v)); }"
-"\nstatic void lcb_pop_float(lua_State *L, float *v, int stack_index) { *v = (float)luaL_checknumber(L, stack_index); }"
-"\nstatic void lcb_push_bool(lua_State *L, bool *v) { lua_pushboolean(L, *v); }"
-"\nstatic void lcb_pop_bool(lua_State *L, bool *v, int stack_index) { *v = (bool)lua_toboolean(L, stack_index); }"
-"\nstatic void lcb_push_vec2(lua_State *L, vec2 *v) { glmlua_push_vec2(L, *v); }"
-"\nstatic void lcb_pop_vec2(lua_State *L, vec2 *v, int stack_index) { glmlua_get_vec2(L, stack_index, *v); }"
-"\nstatic void lcb_push_vec3(lua_State *L, vec3 *v) { glmlua_push_vec3(L, *v); }"
-"\nstatic void lcb_pop_vec3(lua_State *L, vec3 *v, int stack_index) { glmlua_get_vec3(L, stack_index, *v); }"
-"\nstatic void lcb_push_vec4(lua_State *L, vec4 *v) { glmlua_push_vec4(L, *v); }"
-"\nstatic void lcb_pop_vec4(lua_State *L, vec4 *v, int stack_index) { glmlua_get_vec4(L, stack_index, *v); }"
-"\nstatic void lcb_push_versor(lua_State *L, versor *v) { glmlua_push_quat(L, *v); }"
-"\nstatic void lcb_pop_versor(lua_State *L, versor *v, int stack_index) { glmlua_get_quat(L, stack_index, *v); }"
-"\nstatic void lcb_push_mat4(lua_State *L, mat4 *v) { glmlua_push_mat4(L, *v); }"
-"\nstatic void lcb_pop_mat4(lua_State *L, mat4 *v, int stack_index) { glmlua_get_mat4(L, stack_index, *v); }"
-"\nstatic void lcb_push_Entity(lua_State *L, Entity *v) { lua_pushnumber(L, (double)(*v)); }"
-"\nstatic void lcb_pop_Entity(lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
-"\nstatic void lcb_push_string(lua_State *L, char **v) { lua_pushstring(L, *v ? *v : \"\"); }"
-"\nstatic void lcb_pop_string(lua_State *L, char **v, int stack_index) { *v = strdup(luaL_checkstring(L, stack_index)); }"
+"\nstatic void lcb_push_int    (lua_State *L, int    *v)                  { lua_pushnumber(L, (int)(*v)); }"
+"\nstatic void  lcb_pop_int    (lua_State *L, int    *v, int stack_index) { *v = (int)luaL_checknumber(L, stack_index); }"
+"\nstatic void lcb_push_float  (lua_State *L, float  *v)                  { lua_pushnumber(L, (double)(*v)); }"
+"\nstatic void  lcb_pop_float  (lua_State *L, float  *v, int stack_index) { *v = (float)luaL_checknumber(L, stack_index); }"
+"\nstatic void lcb_push_bool   (lua_State *L, bool   *v)                  { lua_pushboolean(L, *v); }"
+"\nstatic void  lcb_pop_bool   (lua_State *L, bool   *v, int stack_index) { *v = (bool)lua_toboolean(L, stack_index); }"
+"\nstatic void lcb_push_vec2   (lua_State *L, vec2   *v)                  { glmlua_push_vec2(L, *v); }"
+"\nstatic void  lcb_pop_vec2   (lua_State *L, vec2   *v, int stack_index) { glmlua_get_vec2(L, stack_index, *v); }"
+"\nstatic void lcb_push_vec3   (lua_State *L, vec3   *v)                  { glmlua_push_vec3(L, *v); }"
+"\nstatic void  lcb_pop_vec3   (lua_State *L, vec3   *v, int stack_index) { glmlua_get_vec3(L, stack_index, *v); }"
+"\nstatic void lcb_push_vec4   (lua_State *L, vec4   *v)                  { glmlua_push_vec4(L, *v); }"
+"\nstatic void  lcb_pop_vec4   (lua_State *L, vec4   *v, int stack_index) { glmlua_get_vec4(L, stack_index, *v); }"
+"\nstatic void lcb_push_versor (lua_State *L, versor *v)                  { glmlua_push_quat(L, *v); }"
+"\nstatic void  lcb_pop_versor (lua_State *L, versor *v, int stack_index) { glmlua_get_quat(L, stack_index, *v); }"
+"\nstatic void lcb_push_mat4   (lua_State *L, mat4   *v)                  { glmlua_push_mat4(L, *v); }"
+"\nstatic void  lcb_pop_mat4   (lua_State *L, mat4   *v, int stack_index) { glmlua_get_mat4(L, stack_index, *v); }"
+"\nstatic void lcb_push_Entity (lua_State *L, Entity *v)                  { lua_pushnumber(L, (double)(*v)); }"
+"\nstatic void  lcb_pop_Entity (lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
+"\nstatic void lcb_push_string (lua_State *L, char  **v)                  { lua_pushstring(L, *v ? *v : \"\"); }"
+"\nstatic void  lcb_pop_string (lua_State *L, char  **v, int stack_index) { *v = strdup(luaL_checkstring(L, stack_index)); }"
 "\n";
+
 
 #define W(output, ...) output += sprintf(output, "\n/*generated*/" __VA_ARGS__)
 #define WL(output, ...) output += sprintf(output, __VA_ARGS__)
@@ -360,8 +365,9 @@ static void write_inspector(char **output, cJSON *type)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-    WL(*output, "static void icb_inspect_%s(%s *v)", type_name, type_name);
-    WL(*output, "{");
+    W(*output, "static void icb_inspect_%s(const char *label, %s *v)", type_name, type_name);
+    W(*output, "{");
+    W(*output, "    if (label) { igSeparator(); igText(label); igSeparator(); }");
 
     cJSON *fields = cJSON_GetObjectItem(type, "fields");
     for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
@@ -386,6 +392,23 @@ static void write_inspector(char **output, cJSON *type)
     W(*output, "}");
 }
 
+static void write_component_names_array(char **output, cJSON *types)
+{
+    W(*output, "static const char *TOP_LEVEL_COMPONENT_NAMES[] = {");
+    
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+        const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+        if (cJSON_GetObjectItem(type, "nested_only")) continue;
+
+        WL(*output, "\"%s\"", type_name);
+        if (i < max - 1) WL(*output, ",");
+    }
+
+    WL(*output, "};\n");
+}
+
 static void write_inspect_all(char **output, cJSON *types, bool body_decl)
 {
     W(*output, "%s", body_decl ? "" : "extern ");
@@ -398,16 +421,31 @@ static void write_inspect_all(char **output, cJSON *types, bool body_decl)
     }
 
     W(*output, "{");
+    W(*output, "    static int selected_component = 0;");
+    W(*output, "    igCombo(\"\", &selected_component, TOP_LEVEL_COMPONENT_NAMES, COUNT_OF(TOP_LEVEL_COMPONENT_NAMES), NULL);");
+    W(*output, "    igSameLine(0, -1);");
+    W(*output, "    bool do_add_component = igButton(\"Add Component\", (ImVec2){0,0});");
+    W(*output, "    igSeparator();");
 
+    int top_level_index = -1;
     for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
     {
         cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
+        if (cJSON_GetObjectItem(type, "nested_only")) continue;
+
+        top_level_index++;
+        
+        W(*output, "    if (do_add_component && selected_component == %d) {", top_level_index);
+        W(*output, "        ECS_ADD_COMPONENT_DEFAULT_DECL(%s, c, s_ecs, e);", type_name);
+        W(*output, "    }");
         W(*output, "    {");
+        W(*output, "        bool keep_alive = true;");
         W(*output, "        ECS_GET_COMPONENT_DECL(%s, v, s_ecs, e);", type_name);
-        W(*output, "        if (v && igCollapsingHeader(\"%s\", 0))", type_name);
-        W(*output, "            icb_inspect_%s(v);", type_name);
+        W(*output, "        if (v && igCollapsingHeaderBoolPtr(\"%s\", &keep_alive, 0))", type_name);
+        W(*output, "            icb_inspect_%s(NULL, v);", type_name);
+        W(*output, "        if (! keep_alive) printf(\"!!!\");"); // TODO remove component from entity
         W(*output, "    }");
     }
 
@@ -466,6 +504,8 @@ static char *generate_components_c_alloc(cJSON *types)
     char *output_start = output;
 
     W(output, "%s", COMPONENTS_C_HEADER);
+
+    write_component_names_array(&output, types);
 
     for (int i = 0; i < NUM_BASE_TYPES; ++i)
         write_vec_push_pop(&output, BASE_TYPES[i]);

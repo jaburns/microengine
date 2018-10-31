@@ -1,26 +1,41 @@
 [{
     "name": "Transform",
     "fields": [
-        { "name": "name", "type": "string" },
-        { "name": "position", "type": "vec3" },
-        { "name": "rotation", "type": "versor" },
-        { "name": "scale", "type": "vec3", "default": "{1.f,1.f,1.f}" },
-        { "name": "parent", "type": "Entity", "hideInInspector": true },
-        { "name": "children_", "type": "Entity", "vec": true, "hideInInspector": true },
-        { "name": "worldMatrix_", "type": "mat4", "hideInInspector": true }
+        { "name": "name",         "type": "string" },
+        { "name": "position",     "type": "vec3"   },
+        { "name": "rotation",     "type": "versor" },
+        { "name": "scale",        "type": "vec3", "default": "{1.f,1.f,1.f}" },
+        { "name": "parent",       "type": "Entity",              "hideInInspector": true },
+        { "name": "children_",    "type": "Entity", "vec": true, "hideInInspector": true },
+        { "name": "worldMatrix_", "type": "mat4",                "hideInInspector": true }
+    ]
+},{
+    "name": "InputFrame",
+    "nested_only": true,
+    "fields": [
+        { "name": "mouse_pos",   "type": "vec2" },
+        { "name": "left_mouse",  "type": "bool" },
+        { "name": "right_mouse", "type": "bool" },
+        { "name": "keys",        "type": "int", "vec": true }
+    ]
+},{
+    "name": "InputState",
+    "fields": [
+        { "name": "cur",  "type": "InputFrame" },
+        { "name": "prev", "type": "InputFrame" }
     ]
 },{
     "name": "MeshRenderer",
     "fields": [
-        { "name": "mesh", "type": "string" },
+        { "name": "mesh",     "type": "string" },
         { "name": "material", "type": "string" }
     ]
 },{
     "name": "Camera",
     "fields": [
-        { "name": "selected", "type": "bool" },
-        { "name": "fov", "type": "float", "default": "1.5708f" },
-        { "name": "near_clip", "type": "float", "default": "1.0f" },
-        { "name": "far_clip", "type": "float", "default":"500.0f" }
+        { "name": "selected",  "type": "bool" },
+        { "name": "fov",       "type": "float", "default": "1.5708f" },
+        { "name": "near_clip", "type": "float", "default": "1.0f"    },
+        { "name": "far_clip",  "type": "float", "default":"500.0f"   }
     ]
 }]

@@ -14,6 +14,7 @@
 #include "components.h"
 #include "containers/ecs.h"
 #include "containers/hashcache.h"
+#include "systems/input_sys.h"
 #include "systems/transform_sys.h"
 #include "systems/editor_sys.h"
 #include "systems/render_sys.h"
@@ -66,6 +67,7 @@ int main( int argc, char **argv )
 
     resources_init( resources );
 
+    InputSystem *inputsystem = input_sys_new();
     TransformSystem *transformsystem = transform_sys_new();
     RenderSystem *rendersystem = render_sys_new( resources );
     EditorSystem *editorsystem = editor_sys_new();
@@ -98,6 +100,7 @@ int main( int argc, char **argv )
     while( shell_flip_frame_poll_events( ctx ) );
 
     lua_close( L );
+    input_sys_delete( inputsystem );
     transform_sys_delete( transformsystem );
     render_sys_delete( rendersystem );
     editor_sys_delete( editorsystem );
@@ -105,7 +108,7 @@ int main( int argc, char **argv )
     ecs_delete( ecs );
     shell_delete( ctx );
 
-    getchar();
+    //getchar();
 
     return 0;
 }

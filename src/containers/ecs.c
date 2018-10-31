@@ -77,6 +77,23 @@ bool giallocator_deallocate(GenerationalIndexAllocator *gia, GenerationalIndex i
     return true;
 }
 
+GenerationalIndex *giallocator_get_all_allocated_indices_alloc(GenerationalIndexAllocator *gia, size_t *result_length)
+{
+    Vec result = vec_empty(sizeof(GenerationalIndex));
+
+    for (int i = 0; i < gia->entries.item_count; ++i)
+    {
+        AllocatorEntry *entry = vec_at(&gia->entries, i);
+        if (!entry->is_live) continue;
+
+        GenerationalIndex index = { entry->generation, i };
+        vec_push_copy(&result, &index);
+    }
+
+    *result_length = result.item_count;
+    return result.data;
+}
+
 bool giallocator_clear(GenerationalIndexAllocator *gia)
 {
     vec_clear(&gia->entries);
@@ -337,6 +354,16 @@ Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *c
     return (Entity*)result;
 }
 
+Entity *ecs_find_all_entities_alloc(const ECS *ecs, size_t *result_length)
+{
+    GenerationalIndex *result = giallocator_get_all_allocated_indices_alloc(&ecs->allocator, result_length);
+
+    for (int i = 0; i < *result_length; ++i)
+        ((Entity*)result)[i] = gi_to_entity(result[i]);
+
+    return (Entity*)result;
+}
+
 
 
 #ifdef RUN_TESTS
@@ -370,6 +397,8 @@ TestResult ecs_test()
         TEST_ASSERT( giallocator_is_index_live(&alloc, k));
 
         giallocator_clear(&alloc);
+
+        // TODO test giallocator_get_all_allocated_indices_alloc
 
     TEST_END();
     TEST_BEGIN("GenerationalIndexArray works with multiple generations");
@@ -577,6 +606,7 @@ TestResult ecs_test()
         ecs_delete(ecs);
 
     TEST_END();
+    // TODO test ecs_find_all_entities_alloc()
     return 0;
 }
 #endif

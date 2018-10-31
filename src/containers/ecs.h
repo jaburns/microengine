@@ -22,6 +22,7 @@ extern void ecs_remove_component(ECS *ecs, Entity entity, const char *component_
 
 extern bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type, Entity *out_entity);
 extern Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length);
+extern Entity *ecs_find_all_entities_alloc(const ECS *ecs, size_t *result_length);
 
 #define ECS_REGISTER_COMPONENT(T, ecs_ptr, destructor) \
     ecs_register_component((ecs_ptr), #T, sizeof(T), destructor)

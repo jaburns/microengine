@@ -43,6 +43,12 @@ extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
         ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
         Entity parent = t->parent;
 
+        if (parent)
+        {
+            ECS_GET_COMPONENT_DECL(Transform, p, ecs, parent);
+            vec_push_copy(&p->children_, &transform_entities[i]);
+        }
+
         while (parent)
         {
             ECS_GET_COMPONENT_DECL(Transform, p, ecs, parent);
@@ -52,15 +58,12 @@ extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
 
             glm_mat4_mul(parent_matrix, t->worldMatrix_, t->worldMatrix_);
 
-            vec_push_copy(&p->children_, &transform_entities[i]);
-
             parent = p->parent;
         }
     }
 
     free(transform_entities);
 }
-
 
 extern void transform_sys_delete(TransformSystem *sys)
 {

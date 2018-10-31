@@ -146,6 +146,7 @@
     <ClCompile Include="src\resources\shader.c" />
     <ClCompile Include="src\resources\texture.c" />
     <ClCompile Include="src\systems\editor_sys.c" />
+    <ClCompile Include="src\systems\input_sys.c" />
     <ClCompile Include="src\systems\render_sys.c" />
     <ClCompile Include="src\shell.c" />
     <ClCompile Include="src\systems\transform_sys.c" />
@@ -193,6 +194,7 @@
     <ClInclude Include="src\resources\shader.h" />
     <ClInclude Include="src\resources\texture.h" />
     <ClInclude Include="src\systems\editor_sys.h" />
+    <ClInclude Include="src\systems\input_sys.h" />
     <ClInclude Include="src\systems\render_sys.h" />
     <ClInclude Include="src\shell.h" />
     <ClInclude Include="src\systems\transform_sys.h" />
