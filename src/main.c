@@ -105,5 +105,7 @@ int main( int argc, char **argv )
     ecs_delete( ecs );
     shell_delete( ctx );
 
+    getchar();
+
     return 0;
 }

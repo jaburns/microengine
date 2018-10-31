@@ -13,6 +13,7 @@ struct ShellContext
     int window_width;
     int window_height;
     ShellInputs input_state;
+    ImGuiContext *imgui;
 };
 
 ShellContext *shell_new(const char *title, int width, int height)
@@ -51,7 +52,7 @@ ShellContext *shell_new(const char *title, int width, int height)
         if (glewInitResult != GLEW_OK) goto err;
     #endif
 
-    igCreateContext(NULL);
+    context->imgui = igCreateContext(NULL);
     ImGuiIO *io = igGetIO();
     io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui_ImplSdlGL3_Init(context->sdl_window, NULL);
@@ -153,6 +154,9 @@ bool shell_flip_frame_poll_events(ShellContext *context)
         }
     }
 
+    if (! still_running)
+        igEndFrame();
+
     return still_running;
 }
 
@@ -167,13 +171,15 @@ void shell_delete(ShellContext *context)
 
     if (context->sdl_window)
     {
+        hashtable_clear(&context->input_state.keys_down);
+
         ImGui_ImplSdlGL3_Shutdown();
+        igDestroyContext(context->imgui);
 
         SDL_GL_DeleteContext(context->sdl_gl_context);
         SDL_DestroyWindow(context->sdl_window);
         SDL_Quit();
 
-        context->sdl_gl_context = NULL;
-        context->sdl_window = NULL;
+        free(context);
     }
 }

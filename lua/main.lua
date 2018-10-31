@@ -14,15 +14,12 @@ function main.start()
     mr.material = "materials/m64_bob.umat"
     set_component_MeshRenderer(teapot_parent, mr)
 
---[[
     local tt = add_component_Transform(teapot)
     tt.name = "Child"
     tt.position.x = 0.5
     tt.rotation = quat(math.random(), math.random(), math.random(), math.random()):normalize()
     tt.parent = teapot_parent
     set_component_Transform(teapot, tt)
-    add_component_Teapot(teapot)
-]]
 
     local ct = add_component_Transform(camera)
     ct.name = "Main Camera"
