@@ -51,7 +51,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     {
         for( int i = 0; i < transform->children_.item_count; ++i )
         {
-            Entity e = *( Entity* )vec_at( &transform->children_, i );
+            Entity e = *(Entity*)vec_at( &transform->children_, i );
             ECS_GET_COMPONENT_DECL( Transform, t, ecs, e );
             inspect_transform_tree( sys, ecs, e, t );
         }
@@ -156,7 +156,7 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs, float delta_millis )
     if( sys->reparenting_entity )
     {
         const char *name = components_name_entity( sys->reparenting_entity );
-        if( igButton( name, (ImVec2){ 0, 0 } ) )
+        if( igButton( name, (ImVec2){ 0, 0 } ) ) 
         {
             reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
             sys->reparenting_entity = 0;

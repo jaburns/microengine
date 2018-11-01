@@ -12,8 +12,8 @@ struct ShellContext
     SDL_GLContext sdl_gl_context;
     int window_width;
     int window_height;
-    ShellInputs input_state;
-    ImGuiContext *imgui;
+    ShellEventHandler event_handler;
+    ImGuiContext *imgui_context;
 };
 
 ShellContext *shell_new(const char *title, int width, int height)
@@ -52,15 +52,13 @@ ShellContext *shell_new(const char *title, int width, int height)
         if (glewInitResult != GLEW_OK) goto err;
     #endif
 
-    context->imgui = igCreateContext(NULL);
+    context->imgui_context = igCreateContext(NULL);
     ImGuiIO *io = igGetIO();
     io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui_ImplSdlGL3_Init(context->sdl_window, NULL);
     ImGui_ImplSdlGL3_NewFrame(context->sdl_window);
 
-    context->input_state.keys_down = hashtable_empty(256, sizeof(bool));
-    context->input_state.left_mouse = false;
-    context->input_state.right_mouse = false;
+    context->event_handler = NULL;
 
     return context;
 
@@ -73,17 +71,9 @@ err:
     return NULL;
 }
 
-static void update_keys_input_state(ShellInputs *state, const SDL_Event *event)
+void shell_bind_event_handler(ShellContext *context, ShellEventHandler handler)
 {
-    if (event->type == SDL_KEYDOWN)
-    {
-        bool yes = true;
-        hashtable_set_copy_i( &state->keys_down, event->key.keysym.sym, &yes );
-    }
-    else if (event->type == SDL_KEYUP)
-    {
-        hashtable_remove_i( &state->keys_down, event->key.keysym.sym );
-    }
+    context->event_handler = handler;
 }
 
 float shell_get_aspect(ShellContext *context)
@@ -107,62 +97,35 @@ bool shell_flip_frame_poll_events(ShellContext *context)
 
     while (SDL_PollEvent(&event))
     {
-        update_keys_input_state(&context->input_state, &event);
-
         ImGui_ImplSdlGL3_ProcessEvent(&event);
 
         switch (event.type)
         {
-            case SDL_QUIT:
+        case SDL_QUIT:
+            still_running = false;
+            break;
+
+        case SDL_KEYDOWN:
+            if (event.key.keysym.sym == SDLK_ESCAPE)
                 still_running = false;
-                break;
 
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_ESCAPE)
-                    still_running = false;
-                break;
-
-            case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-                {
-                    context->window_width = event.window.data1;
-                    context->window_height = event.window.data2;
-                    glViewport(0, 0, context->window_width, context->window_height);
-                }
-                break;
-
-            case SDL_MOUSEMOTION:
-                context->input_state.mouse_position[0] =
-                    2.0f * event.motion.x / (float)context->window_width - 1.0f;
-                context->input_state.mouse_position[1] =
-                    1.0f - 2.0f * event.motion.y / (float)context->window_height;
-                break;
-
-            case SDL_MOUSEBUTTONDOWN:
-                if (event.button.button == SDL_BUTTON_LEFT)
-                    context->input_state.left_mouse = true;
-                else if (event.button.button == SDL_BUTTON_RIGHT)
-                    context->input_state.right_mouse = true;
-                break;
-
-            case SDL_MOUSEBUTTONUP:
-                if (event.button.button == SDL_BUTTON_LEFT)
-                    context->input_state.left_mouse = false;
-                else if (event.button.button == SDL_BUTTON_RIGHT)
-                    context->input_state.right_mouse = false;
-                break;
+        case SDL_WINDOWEVENT:
+            if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+            {
+                context->window_width = event.window.data1;
+                context->window_height = event.window.data2;
+                glViewport(0, 0, context->window_width, context->window_height);
+            }
+            break;
         }
+
+        if (context->event_handler) 
+            context->event_handler((float)context->window_width, (float)context->window_height, &event);
     }
 
-    if (! still_running)
-        igEndFrame();
+    if (! still_running) igEndFrame();
 
     return still_running;
-}
-
-const ShellInputs *shell_view_input_state( ShellContext *context )
-{
-    return &context->input_state;
 }
 
 void shell_delete(ShellContext *context)
@@ -171,10 +134,8 @@ void shell_delete(ShellContext *context)
 
     if (context->sdl_window)
     {
-        hashtable_clear(&context->input_state.keys_down);
-
         ImGui_ImplSdlGL3_Shutdown();
-        igDestroyContext(context->imgui);
+        igDestroyContext(context->imgui_context);
 
         SDL_GL_DeleteContext(context->sdl_gl_context);
         SDL_DestroyWindow(context->sdl_window);

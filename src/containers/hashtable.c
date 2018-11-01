@@ -32,7 +32,7 @@ static uint32_t hash_fn(char *string, uint32_t max_len)
 }
 
 // TODO Just hacked these in. 
-// Should use the int_key as the hash value and ignore the strcmps in the _i methods
+// Should have _f methods that accept a format string and restargs instead
 
 void *hashtable_at_i(HashTable *table, uint32_t int_key)
 {

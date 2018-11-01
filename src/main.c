@@ -67,7 +67,7 @@ int main( int argc, char **argv )
 
     resources_init( resources );
 
-    InputSystem *inputsystem = input_sys_new();
+    InputSystem *inputsystem = input_sys_new( ctx );
     TransformSystem *transformsystem = transform_sys_new();
     RenderSystem *rendersystem = render_sys_new( resources );
     EditorSystem *editorsystem = editor_sys_new();
