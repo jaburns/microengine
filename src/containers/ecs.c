@@ -233,7 +233,7 @@ ECSComponent;
 struct ECS
 {
     GenerationalIndexAllocator allocator;
-    HashTable components; // of ECSComponent 
+    HashTable components; // of ECSComponent
 };
 
 static GenerationalIndex entity_to_gi(Entity entity)
@@ -438,7 +438,7 @@ TestResult ecs_test()
         TEST_ASSERT(val_out2);
         TEST_ASSERT(val_out2->x == 0.0f && val_out->y == 0);
 
-        giarray_clear(&arr, NULL);
+        giarray_clear(&arr);
         giallocator_clear(&alloc);
 
         TEST_ASSERT(test_destructor_call_count == 2);
@@ -467,7 +467,7 @@ TestResult ecs_test()
 
         free(results);
 
-        giarray_clear(&arr, NULL);
+        giarray_clear(&arr);
         giallocator_clear(&alloc);
 
     TEST_END();
@@ -487,7 +487,7 @@ TestResult ecs_test()
 
         TEST_ASSERT(test_destructor_call_count == 1);
 
-        giarray_clear(&arr, NULL);
+        giarray_clear(&arr);
         giallocator_clear(&alloc);
 
         TEST_ASSERT(test_destructor_call_count == 1);

@@ -73,10 +73,10 @@ static void update_view_drag( EditorSystem *sys, const InputState *inputs, Camer
         sys->camera_pitch -= 3 * dy;
     }
 
-    vec3 look_dir = { 
-        cosf(sys->camera_yaw), 
+    vec3 look_dir = {
+        cosf(sys->camera_yaw),
         sys->camera_pitch,
-        sinf(sys->camera_yaw) 
+        sinf(sys->camera_yaw)
     };
 
     mat4 tmp;
@@ -148,21 +148,21 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs, float delta_millis )
 
     igText( "%.1f fps", 1000.f / delta_millis );
 
-    if( igButton( "Create", (ImVec2){ 0, 0 } ) ) 
+    if( igButton( "Create", (ImVec2){ 0, 0 } ) )
         ecs_create_entity( ecs );
 
     igSameLine( 0, -1 );
 
     if( sys->reparenting_entity )
     {
-        const char *name = components_name_entity( ecs, sys->reparenting_entity );
-        if( igButton( name, (ImVec2){ 0, 0 } ) ) 
+        const char *name = components_name_entity( sys->reparenting_entity );
+        if( igButton( name, (ImVec2){ 0, 0 } ) )
         {
             reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
             sys->reparenting_entity = 0;
         }
     }
-    else if( igButton( "Reparent", (ImVec2){ 0, 0 } ) ) 
+    else if( igButton( "Reparent", (ImVec2){ 0, 0 } ) )
     {
         sys->reparenting_entity = sys->selected_entity;
     }

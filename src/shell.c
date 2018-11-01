@@ -58,7 +58,7 @@ ShellContext *shell_new(const char *title, int width, int height)
     ImGui_ImplSdlGL3_Init(context->sdl_window, NULL);
     ImGui_ImplSdlGL3_NewFrame(context->sdl_window);
 
-    context->input_state.keys_down = hashtable_empty(256, sizeof(bool), sizeof(SDL_Keycode));
+    context->input_state.keys_down = hashtable_empty(256, sizeof(bool));
     context->input_state.left_mouse = false;
     context->input_state.right_mouse = false;
 
@@ -132,9 +132,9 @@ bool shell_flip_frame_poll_events(ShellContext *context)
                 break;
 
             case SDL_MOUSEMOTION:
-                context->input_state.mouse_position[0] = 
+                context->input_state.mouse_position[0] =
                     2.0f * event.motion.x / (float)context->window_width - 1.0f;
-                context->input_state.mouse_position[1] = 
+                context->input_state.mouse_position[1] =
                     1.0f - 2.0f * event.motion.y / (float)context->window_height;
                 break;
 

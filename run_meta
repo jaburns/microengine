@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+cc -o meta_bin meta/*.c src/utils.c external/cJSON/cJSON.c -Iexternal/cJSON -Isrc
+./meta_bin
+rm ./meta_bin
