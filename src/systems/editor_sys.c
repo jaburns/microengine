@@ -65,8 +65,6 @@ static bool find_sdl_key_index( SDL_Keycode *a, SDL_Keycode *b )
     return *a == *b;
 }
 
-// TODO delta_millis should be available on a component along with total time elapsed and other time info.
-
 static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam, Transform *transform, float delta_millis )
 {
     if( inputs->cur.right_mouse )

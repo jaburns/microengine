@@ -12,11 +12,16 @@
 static MaterialProperty parse_material_property( char *key, cJSON *value )
 {
     MaterialProperty result;
-
-    // TODO parse
     result.name = strdup( key );
-    result.type = MATERIAL_PROPERTY_TEXTURE2D;
-    result.value = "textures/m64_bob_57.png";
+
+    const char *type_name = cJSON_GetStringValue( cJSON_GetObjectItem( value, "type" ) );
+
+    // TODO add non-texture properties
+    if( strcmp( "texture2d", type_name ) == 0 )
+    {
+        result.type = MATERIAL_PROPERTY_TEXTURE2D;
+        result.value = strdup( cJSON_GetStringValue( cJSON_GetObjectItem( value, "value" ) ) );
+    }
 
     return result;
 }
