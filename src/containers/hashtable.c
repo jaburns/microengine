@@ -1,6 +1,9 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "hashtable.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #ifdef _MSC_VER
@@ -12,12 +15,12 @@ HashTable hashtable_empty(size_t table_size, size_t item_size)
     return (HashTable) { table_size, item_size, NULL };
 }
 
-static uint32_t hash_fn(char *string, uint32_t max_len)
+static uint32_t hash_fn(const char *string, uint32_t max_len)
 {
     if (!string) return 0;
 
     uint32_t hash = 0;
-    size_t len = strlen(string);
+    int len = (int)strlen(string);
 
     if (len == 0) return 1;
 
@@ -31,37 +34,11 @@ static uint32_t hash_fn(char *string, uint32_t max_len)
     return hash % max_len;
 }
 
-// TODO Just hacked these in. 
-// Should have _f methods that accept a format string and restargs instead
-
-void *hashtable_at_i(HashTable *table, uint32_t int_key)
-{
-    char key[11];
-    sprintf(key, "%u", int_key);
-    return hashtable_at(table, key);
-}
-
-void *hashtable_set_copy_i(HashTable *table, uint32_t int_key, void *item_ref)
-{
-    char key[11];
-    sprintf(key, "%u", int_key);
-    return hashtable_set_copy(table, key, item_ref);
-}
-
-bool hashtable_remove_i(HashTable *table, uint32_t int_key)
-{
-    char key[11];
-    sprintf(key, "%u", int_key);
-    return hashtable_remove(table, key);
-}
-
-// ==============================================================
-
 void *hashtable_at(HashTable *table, const char *key)
 {
     if (!table->table) return NULL;
 
-    size_t bin = hash_fn(key, table->table_size);
+    uint32_t bin = hash_fn(key, (uint32_t)table->table_size);
 
     for (HashTableEntry *entry = table->table[bin]; entry; entry = entry->next)
         if (strcmp(key, entry->key) == 0)
@@ -75,7 +52,7 @@ void *hashtable_set_copy(HashTable *table, const char *key, void *item_ref)
     if (!table->table)
         table->table = calloc(table->table_size, sizeof(HashTableEntry*));
 
-    size_t bin = hash_fn(key, table->table_size);
+    uint32_t bin = hash_fn(key, (uint32_t)table->table_size);
 
     HashTableEntry *parent = NULL;
     HashTableEntry *entry = table->table[bin];
@@ -112,7 +89,7 @@ bool hashtable_remove(HashTable *table, const char *key)
 {
     if (!table->table) return false;
 
-    size_t bin = hash_fn(key, table->table_size);
+    uint32_t bin = hash_fn(key, (uint32_t)table->table_size);
 
     HashTableEntry *parent = NULL;
     HashTableEntry *entry = table->table[bin];
@@ -237,9 +214,6 @@ TestResult hashtable_test(void)
         TEST_ASSERT(test_clear_callback_val == 27);
 
     TEST_END();
-    
-    // TODO add tests for _i methods
-
     return 0;
 }
 #endif

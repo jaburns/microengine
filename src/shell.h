@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 
-#include "gl.h"
 #include "containers/hashtable.h"
+#include "gl.h"
 
 typedef struct ShellContext ShellContext;
 typedef void (*ShellEventHandler)( float, float, SDL_Event* );

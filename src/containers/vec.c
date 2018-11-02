@@ -66,7 +66,16 @@ bool vec_pop(Vec *vec, void *result)
     return true;
 }
 
-extern Vec vec_clone(Vec *vec)
+int vec_find_index(Vec *vec, void *context, VecItemChecker check)
+{
+    for (int i = 0; i < vec->item_count; ++i)
+        if (check(context, vec_at(vec, i)))
+            return i;
+
+    return -1;
+}
+
+Vec vec_clone(Vec *vec)
 {
     Vec result = vec_empty(vec->item_size);
     result.item_count = vec->item_count;
@@ -118,6 +127,11 @@ static void test_clear_callback(void *context, void *item)
 {
     test_clear_callback_calls++;
     test_clear_callback_sum += *((uint8_t*)item);
+}
+
+static bool test_find_callback(uint8_t *a, uint8_t *b)
+{
+    return *a == *b;
 }
 
 TestResult vec_test(void)
@@ -257,6 +271,25 @@ TestResult vec_test(void)
 
         vec_clear(&v);
         vec_clear(&u);
+
+    TEST_END();
+    TEST_BEGIN("Vec find index finds item or returns -1");
+
+        Vec v = vec_empty(sizeof(uint8_t));
+
+        uint8_t a, b;
+        a = 0; vec_push_copy(&v, &a);
+        a = 1; vec_push_copy(&v, &a);
+        a = 2; vec_push_copy(&v, &a);
+        a = 3; vec_push_copy(&v, &a);
+
+        b = 1;
+        TEST_ASSERT(vec_find_index(&v, &b, test_find_callback) == 1);
+
+        b = 42;
+        TEST_ASSERT(vec_find_index(&v, &b, test_find_callback) < 0);
+
+        vec_clear(&v);
 
     TEST_END();
     return 0;

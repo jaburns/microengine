@@ -8,7 +8,16 @@
         { "name": "parent",       "type": "Entity",              "hideInInspector": true },
         { "name": "children_",    "type": "Entity", "vec": true, "hideInInspector": true },
         { "name": "worldMatrix_", "type": "mat4",                "hideInInspector": true }
-    ]
+    ],
+    "fields_TODO_format": {
+        "name":         "string",
+        "position":     "vec3",
+        "rotation":     "versor",
+        "scale":        { "type": "vec3", "default": "{1.f,1.f,1.f}" },
+        "parent":       { "type": "Entity",              "hideInInspector": true },
+        "children_":    { "type": "Entity", "vec": true, "hideInInspector": true },
+        "worldMatrix_": { "type": "mat4",                "hideInInspector": true }
+    }
 },{
     "name": "InputFrame",
     "nested_only": true,
@@ -23,6 +32,12 @@
     "fields": [
         { "name": "cur",  "type": "InputFrame" },
         { "name": "prev", "type": "InputFrame" }
+    ]
+},{
+    "name": "ClockInfo",
+    "fields": [
+        { "name": "delta_millis",       "type": "float" },
+        { "name": "millis_since_start", "type": "float" }
     ]
 },{
     "name": "MeshRenderer",

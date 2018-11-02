@@ -60,9 +60,14 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     }
 }
 
+static bool find_sdl_key_index( SDL_Keycode *a, SDL_Keycode *b )
+{
+    return *a == *b;
+}
+
 // TODO delta_millis should be available on a component along with total time elapsed and other time info.
 
-static void update_view_drag( EditorSystem *sys, const InputState *inputs, Camera *cam, Transform *transform, float delta_millis )
+static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam, Transform *transform, float delta_millis )
 {
     if( inputs->cur.right_mouse )
     {
@@ -90,23 +95,25 @@ static void update_view_drag( EditorSystem *sys, const InputState *inputs, Camer
     glm_quat_rotatev( transform->rotation, (vec3){ 1.f, 0.f, 0.f }, right );
     glm_vec_zero( drive );
 
-//  #define X(pos_key, neg_key, pos_vec) do { \
-//      if( hashtable_at_i( &inputs->cur.keys, pos_key ) ) \
-//      { \
-//          glm_vec_add( pos_vec, drive, drive ); \
-//      } \
-//      else if( hashtable_at_i( &inputs->cur.keys, neg_key ) ) \
-//      { \
-//          glm_vec_flipsign( pos_vec ); \
-//          glm_vec_add( pos_vec, drive, drive ); \
-//      } \
-//  } while (0)
+    #define X(pos_key, neg_key, pos_vec) do { \
+        SDL_Keycode p = pos_key; \
+        SDL_Keycode n = neg_key; \
+        if( vec_find_index( &inputs->cur.keys, &p, find_sdl_key_index ) >= 0 ) \
+        { \
+            glm_vec_add( pos_vec, drive, drive ); \
+        } \
+        else if( vec_find_index( &inputs->cur.keys, &n, find_sdl_key_index ) >= 0 ) \
+        { \
+            glm_vec_flipsign( pos_vec ); \
+            glm_vec_add( pos_vec, drive, drive ); \
+        } \
+    } while (0)
 
-//      X( SDLK_w, SDLK_s, fwd );
-//      X( SDLK_d, SDLK_a, right );
-//      X( SDLK_e, SDLK_q, up );
+        X( SDLK_w, SDLK_s, fwd );
+        X( SDLK_d, SDLK_a, right );
+        X( SDLK_e, SDLK_q, up );
 
-//  #undef X
+    #undef X
 
     glm_vec_scale( drive, 0.02f * delta_millis, drive );
     glm_vec_add( transform->position, drive, transform->position );
@@ -139,14 +146,18 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
     this_t->parent = to_entity;
 }
 
-void editor_sys_run( EditorSystem *sys, ECS *ecs, float delta_millis )
+void editor_sys_run( EditorSystem *sys, ECS *ecs )
 {
+    Entity clock_entity;
+    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity );
+    ECS_GET_COMPONENT_DECL( ClockInfo, clock, ecs, clock_entity );
+
     size_t num_entities;
     Entity *entities = ecs_find_all_entities_alloc( ecs, &num_entities );
 
     igBegin( "Scene", NULL, 0 );
 
-    igText( "%.1f fps", 1000.f / delta_millis );
+    igText( "%.1f fps", 1000.f / clock->delta_millis );
 
     if( igButton( "Create", (ImVec2){ 0, 0 } ) )
         ecs_create_entity( ecs );
@@ -214,7 +225,7 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs, float delta_millis )
     ECS_GET_COMPONENT_DECL( Camera, active_cam, ecs, sys->active_camera );
     ECS_GET_COMPONENT_DECL( Transform, active_cam_transform, ecs, sys->active_camera );
 
-    update_view_drag( sys, inputs, active_cam, active_cam_transform, delta_millis );
+    update_view_drag( sys, inputs, active_cam, active_cam_transform, clock->delta_millis );
 }
 
 void editor_sys_delete( EditorSystem *sys )

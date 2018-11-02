@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "../utils.h"
 
-static void *allocate_and_load_data( uint8_t **file_ptr, uint16_t num_verts, size_t elem_size )
+static void *allocate_and_load_data( const uint8_t **file_ptr, uint16_t num_verts, size_t elem_size )
 {
     size_t size = elem_size * num_verts;
     void *result = malloc( size );
@@ -16,7 +16,7 @@ static void *allocate_and_load_data( uint8_t **file_ptr, uint16_t num_verts, siz
 
 Mesh *mesh_load( const char *path )
 {
-    const uint8_t *file = utils_read_file_alloc( "resources/", path, NULL );
+    uint8_t *file = utils_read_file_alloc( "resources/", path, NULL );
 
     if( !file ) return NULL;
 

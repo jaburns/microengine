@@ -18,7 +18,7 @@ int run_all_tests(void)
     TEST_RUN(hashcache_test);
 
     uint64_t end = ns_clock();
-    printf("\nDone! Tests completed in %d us.\n", (end - start) / 1000);
+    printf("\nDone! Tests completed in %u us.\n", (uint32_t)((end - start) / 1000));
     return 0;
 }
 

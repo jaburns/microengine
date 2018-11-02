@@ -9,6 +9,7 @@ typedef int TestResult;
 #ifdef FAST_TESTS
     #define TEST_PRINT()
 #else
+    #include <stdio.h>
     #define TEST_PRINT printf
 #endif
 

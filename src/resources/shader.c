@@ -20,7 +20,7 @@ static GLuint shader_compile( const char *shader_path, const char *shader_conten
         ? "#version 410\n#define VERTEX  \n#define v2f out\n" 
         : "#version 410\n#define FRAGMENT\n#define v2f in \n";
 
-    GLchar *shader_strings[2] = { shader_define, shader_contents };
+    const GLchar *shader_strings[2] = { shader_define, shader_contents };
     GLint shader_string_lengths[2] = { 46, shader_contents_length };
 
     GLuint shader = glCreateShader( shader_type );

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "../utils.h"
 #include "vec.h"
@@ -52,10 +53,10 @@ GenerationalIndex giallocator_allocate(GenerationalIndexAllocator *gia)
     AllocatorEntry new_entry = (AllocatorEntry) { true, 0 };
     vec_push_copy(&gia->entries, &new_entry);
 
-    return (GenerationalIndex) { 0, gia->entries.item_count - 1 };
+    return (GenerationalIndex) { 0, (uint32_t)gia->entries.item_count - 1 };
 }
 
-bool giallocator_is_index_live(const GenerationalIndexAllocator *gia, GenerationalIndex index)
+bool giallocator_is_index_live(GenerationalIndexAllocator *gia, GenerationalIndex index)
 {
     if (index.index >= gia->entries.item_count) return false;
 
@@ -94,7 +95,7 @@ GenerationalIndex *giallocator_get_all_allocated_indices_alloc(GenerationalIndex
     return result.data;
 }
 
-bool giallocator_clear(GenerationalIndexAllocator *gia)
+void giallocator_clear(GenerationalIndexAllocator *gia)
 {
     vec_clear(&gia->entries);
     vec_clear(&gia->free_indices);
@@ -182,11 +183,11 @@ void giarray_remove(GenerationalIndexArray *gia, GenerationalIndex index)
 }
 
 GenerationalIndex *giarray_get_all_valid_indices_alloc(
-    const GenerationalIndexArray *gia, const GenerationalIndexAllocator *allocator, size_t *result_length
+    GenerationalIndexArray *gia, GenerationalIndexAllocator *allocator, size_t *result_length
 ){
     Vec result = vec_empty(sizeof(GenerationalIndex));
 
-    for (size_t i = 0; i < gia->entries.item_count; ++i)
+    for (uint32_t i = 0; i < gia->entries.item_count; ++i)
     {
         GenerationalIndexArrayEntry* entry = vec_at(&gia->entries, i);
         if (!entry->has_value) continue;
@@ -202,9 +203,9 @@ GenerationalIndex *giarray_get_all_valid_indices_alloc(
 }
 
 bool giarray_get_first_valid_index(
-    const GenerationalIndexArray *gia, const GenerationalIndexAllocator *allocator, GenerationalIndex *result
+    GenerationalIndexArray *gia, GenerationalIndexAllocator *allocator, GenerationalIndex *result
 ){
-    for (size_t i = 0; i < gia->entries.item_count; ++i)
+    for (uint32_t i = 0; i < gia->entries.item_count; ++i)
     {
         GenerationalIndexArrayEntry* entry = vec_at(&gia->entries, i);
         if (!entry->has_value) continue;
@@ -244,15 +245,15 @@ static GenerationalIndex entity_to_gi(Entity entity)
     entity -= 1;
 
     return (GenerationalIndex) {
-        (entity & 0x0000FFFFFF000000) >> 24,
-        (entity & 0x0000000000FFFFFF)
+        (uint32_t)((entity & 0x0000FFFFFF000000) >> 24),
+        (uint32_t) (entity & 0x0000000000FFFFFF)
     };
 }
 
 static Entity gi_to_entity(GenerationalIndex index)
 {
-    return ((index.generation << 24) & 0x0000FFFFFF000000)
-        |  ((index.index + 1)        & 0x0000000000FFFFFF);
+    return (((uint64_t)index.generation << 24) & 0x0000FFFFFF000000)
+        |  (((uint64_t)index.index + 1)        & 0x0000000000FFFFFF);
 }
 
 ECS *ecs_new(void)
@@ -289,7 +290,7 @@ void ecs_destroy_entity(ECS *ecs, Entity entity)
     giallocator_deallocate(&ecs->allocator, entity_to_gi(entity));
 }
 
-bool ecs_is_entity_valid(const ECS *ecs, Entity entity)
+bool ecs_is_entity_valid(ECS *ecs, Entity entity)
 {
     return giallocator_is_index_live(&ecs->allocator, entity_to_gi(entity));
 }
@@ -328,7 +329,7 @@ void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
 }
 
 
-bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type, Entity *out_entity)
+bool ecs_find_first_entity_with_component(ECS *ecs, const char *component_type, Entity *out_entity)
 {
     ECSComponent *comp = hashtable_at(&ecs->components, component_type);
     if (!comp) return false;
@@ -341,7 +342,7 @@ bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_
     return true;
 }
 
-Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length)
+Entity *ecs_find_all_entities_with_component_alloc(ECS *ecs, const char *component_type, size_t *result_length)
 {
     ECSComponent *comp = hashtable_at(&ecs->components, component_type);
     if (!comp) return NULL;
@@ -354,7 +355,7 @@ Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *c
     return (Entity*)result;
 }
 
-Entity *ecs_find_all_entities_alloc(const ECS *ecs, size_t *result_length)
+Entity *ecs_find_all_entities_alloc(ECS *ecs, size_t *result_length)
 {
     GenerationalIndex *result = giallocator_get_all_allocated_indices_alloc(&ecs->allocator, result_length);
 
@@ -398,7 +399,32 @@ TestResult ecs_test()
 
         giallocator_clear(&alloc);
 
-        // TODO test giallocator_get_all_allocated_indices_alloc
+    TEST_END();
+    TEST_BEGIN("GenerationalIndexAllocator get all indices works");
+
+        GenerationalIndexAllocator alloc = giallocator_empty();
+
+        giallocator_allocate(&alloc); // [(0,0)]
+        GenerationalIndex j = giallocator_allocate(&alloc); // [(0,0), (0,1)]
+
+        giallocator_deallocate(&alloc, j); // [(0,0), (x,1)]
+
+        giallocator_allocate(&alloc); // [(0,0), (1,1)]
+        GenerationalIndex l = giallocator_allocate(&alloc); // [(0,0), (1,1), (0,2)]
+        giallocator_allocate(&alloc); // [(0,0), (1,1), (0,2), (0,3)]
+
+        giallocator_deallocate(&alloc, l); // [(0,0), (1,1), (x,2), (0,3)]
+
+        size_t num_indices;
+        GenerationalIndex *indices = giallocator_get_all_allocated_indices_alloc(&alloc, &num_indices);
+
+        TEST_ASSERT(num_indices == 3);
+        TEST_ASSERT(indices[0].generation == 0 && indices[0].index == 0);
+        TEST_ASSERT(indices[1].generation == 1 && indices[1].index == 1);
+        TEST_ASSERT(indices[2].generation == 0 && indices[2].index == 3);
+
+        free(indices);
+        giallocator_clear(&alloc);
 
     TEST_END();
     TEST_BEGIN("GenerationalIndexArray works with multiple generations");
@@ -606,7 +632,6 @@ TestResult ecs_test()
         ecs_delete(ecs);
 
     TEST_END();
-    // TODO test ecs_find_all_entities_alloc()
     return 0;
 }
 #endif

@@ -4,14 +4,14 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <cglm/cglm.h>
 
-#include "../gl.h"
 #include "../components.h"
 #include "../resources/shader.h"
 #include "../resources/material.h"
 #include "../resources/mesh.h"
-
-#include <cglm/cglm.h>
+#include "../resources/texture.h"
+#include "../gl.h"
 
 typedef struct Renderable
 {
@@ -74,7 +74,7 @@ static Renderable *get_renderable( HashTable *renderables, HashCache *resources,
     Material *material = hashcache_load( resources, material_path );
     if( !material ) return NULL;
 
-    Shader *shader = hashcache_load( resources, material->shader );
+    Shader *shader = hashcache_load( resources, material->base_properties.shader_name );
     if( !shader ) return NULL;
 
     char hash_key[1024];
@@ -139,14 +139,20 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
         glBindVertexArray( renderable->vao );
         glUseProgram( renderable->shader_handle );
 
-        glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "view" ), 1, GL_FALSE, view );
-        glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "projection" ), 1, GL_FALSE, projection );
-        glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "model" ), 1, GL_FALSE, renderer_transform->worldMatrix_ );
+        glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "view" ), 1, GL_FALSE, (GLfloat*)view );
+        glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "projection" ), 1, GL_FALSE, (GLfloat*)projection );
+        glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)renderer_transform->worldMatrix_ );
 
         for( int i = 0; i < renderable->mesh->num_submeshes; ++i )
         {
+            // TODO handle out of bounds submaterials access
+            // TODO iterate and bind properties dynamically instead of grabbing the first one
+            MaterialShaderProperties *props = vec_at( &renderable->material->submaterials, i );
+            MaterialProperty *tex_prop = vec_at( &props->properties, 0 );
+            char *tex_path = (char*)tex_prop->value;
+
             glActiveTexture( GL_TEXTURE0 );
-            glBindTexture( GL_TEXTURE_2D, texture_get_handle( hashcache_load( resources, renderable->material->submaterials[i].tex ) ) );
+            glBindTexture( GL_TEXTURE_2D, texture_get_handle( hashcache_load( resources, tex_path ) ) );
             glUniform1i( glGetUniformLocation( renderable->shader_handle, "tex" ), 0 );
             glDrawElements( GL_TRIANGLES, renderable->mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, renderable->mesh->submeshes[i].indices );
         }

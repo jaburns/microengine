@@ -65,6 +65,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm.lua;$(SolutionDir)\external\cglm.lua\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\cglm.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -84,6 +85,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm.lua;$(SolutionDir)\external\cglm.lua\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\cglm.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,7 +96,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="external\cimgui\cimgui.cpp" />
+    <ClCompile Include="external\cimgui\cimgui.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="external\cimgui\imgui\imgui.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_demo.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_draw.cpp" />
@@ -135,7 +140,10 @@
     <ClCompile Include="external\cglm.lua\lua\lzio.c" />
     <ClCompile Include="external\cglm.lua\cglm.lua.c" />
     <ClCompile Include="external\support\imgui_impl.cpp" />
-    <ClCompile Include="external\support\lodepng.c" />
+    <ClCompile Include="external\support\lodepng.c">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="src\components.c" />
     <ClCompile Include="src\containers\hashcache.c" />
     <ClCompile Include="src\containers\ecs.c" />
@@ -145,6 +153,7 @@
     <ClCompile Include="src\resources\mesh.c" />
     <ClCompile Include="src\resources\shader.c" />
     <ClCompile Include="src\resources\texture.c" />
+    <ClCompile Include="src\systems\clock_sys.c" />
     <ClCompile Include="src\systems\editor_sys.c" />
     <ClCompile Include="src\systems\input_sys.c" />
     <ClCompile Include="src\systems\render_sys.c" />
@@ -193,6 +202,7 @@
     <ClInclude Include="src\resources\mesh.h" />
     <ClInclude Include="src\resources\shader.h" />
     <ClInclude Include="src\resources\texture.h" />
+    <ClInclude Include="src\systems\clock_sys.h" />
     <ClInclude Include="src\systems\editor_sys.h" />
     <ClInclude Include="src\systems\input_sys.h" />
     <ClInclude Include="src\systems\render_sys.h" />

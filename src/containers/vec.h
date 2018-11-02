@@ -14,6 +14,7 @@ Vec;
 
 // First arg is arbitrary context, second arg is the element operated on
 typedef void (*VecCallback)(void*, void*); 
+typedef bool (*VecItemChecker)(void*, void*);
 
 extern Vec vec_empty(size_t item_size);
 
@@ -26,6 +27,7 @@ extern void vec_remove(Vec *vec, size_t index);
 extern void vec_push_copy(Vec *vec, const void *item_ref);
 extern bool vec_pop(Vec *vec, void *result);
 
+extern int vec_find_index(Vec *vec, void *context, VecItemChecker check);
 extern Vec vec_clone(Vec *vec);
 extern void vec_resize(Vec *vec, size_t new_item_count);
 extern void vec_clear(Vec *vec);

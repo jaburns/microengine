@@ -71,10 +71,10 @@ const char *COMPONENTS_C_HEADER =
 "\n    char buf[1024] = \"\";"
 "\n    buf[1023] = 0;"
 "\n    strncpy(buf, *v, 1023);"
-"\n    igInputText(label, buf, 1024, NULL, NULL, NULL);"
+"\n    igInputText(label, buf, 1024, 0, NULL, NULL);"
 "\n    if (strcmp(buf, *v) == 0) return;"
 "\n    free(*v);"
-"\n    int len = strlen(buf);"
+"\n    size_t len = strlen(buf);"
 "\n    *v = malloc(len + 1);"
 "\n    strncpy(*v, buf, len);"
 "\n    (*v)[len] = 0;"
@@ -417,7 +417,7 @@ static void write_inspect_all(char **output, cJSON *types)
     W(*output, "void components_inspect_entity(Entity e)");
     W(*output, "{");
     W(*output, "    static int selected_component = 0;");
-    W(*output, "    igCombo(\"\", &selected_component, TOP_LEVEL_COMPONENT_NAMES, COUNT_OF(TOP_LEVEL_COMPONENT_NAMES), NULL);");
+    W(*output, "    igCombo(\"\", &selected_component, TOP_LEVEL_COMPONENT_NAMES, COUNT_OF(TOP_LEVEL_COMPONENT_NAMES), 0);");
     W(*output, "    igSameLine(0, -1);");
     W(*output, "    bool do_add_component = igButton(\"Add Component\", (ImVec2){0,0});");
     W(*output, "    igSeparator();");
@@ -547,15 +547,15 @@ static char *generate_components_c_alloc(cJSON *types)
 
 void generate_components(void)
 {
-    const char *json_file = utils_read_file_alloc("", "components.json", NULL);
+    char *json_file = utils_read_file_alloc("", "components.json", NULL);
     cJSON *json = cJSON_Parse(json_file);
     free(json_file);
 
-    const char *components_h = generate_components_h_alloc(json);
+    char *components_h = generate_components_h_alloc(json);
     utils_write_string_file("src/components.h", components_h);
     free(components_h);
 
-    const char *components_c = generate_components_c_alloc(json);
+    char *components_c = generate_components_c_alloc(json);
     utils_write_string_file("src/components.c", components_c);
     free(components_c);
 

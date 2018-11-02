@@ -97,7 +97,7 @@ void hashcache_delete( HashCache *hc )
 
 static const uint8_t test_byte = 42;
 
-static char *test_loader_path;
+static const char *test_loader_path;
 static bool test_destructor_succeeded;
 
 static uint8_t *test_txt_loader(const char *path)
