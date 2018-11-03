@@ -13,80 +13,61 @@
 #include "../resources/texture.h"
 #include "../gl.h"
 
-typedef struct Renderable
+
+typedef struct MeshVAO
 {
     GLuint vao;
     GLuint position_buffer;
     GLuint normal_buffer;
     GLuint uv_buffer;
-    GLuint shader_handle;
-
-    Mesh *mesh; // non-owning
-    Material *material; // non-owning
-    Shader *shader; // non-owning
 }
-Renderable;
+MeshVAO;
 
 struct RenderSystem
 {
-    HashTable renderables; // key: concat mesh path to material path, value: a Renderable
+    HashTable vaos_for_meshes; // key: mesh_path, value: MeshVAO
 };
 
-static void load_renderable( Renderable *renderable, Mesh *mesh, Material *material, Shader *shader )
+static void load_vao( MeshVAO *vao, Mesh *mesh )
 {
-    renderable->mesh = mesh;
-    renderable->material = material;
-    renderable->shader_handle = shader_get_handle( shader );
+    glGenVertexArrays( 1, &vao->vao );
+    glBindVertexArray( vao->vao );
 
-    glGenVertexArrays( 1, &renderable->vao );
-    glBindVertexArray( renderable->vao );
-
-    #define X( buff, arr, type, name ) do { \
+    #define X( loc, buff, arr, type, name ) do { \
         glGenBuffers( 1, &buff ); \
         glBindBuffer( GL_ARRAY_BUFFER, buff ); \
         glBufferData( GL_ARRAY_BUFFER, mesh->num_vertices*sizeof( type ), arr, GL_STATIC_DRAW ); \
-        const GLint prop = glGetAttribLocation( renderable->shader_handle, name ); \
-        glEnableVertexAttribArray( prop ); \
-        glVertexAttribPointer( prop, sizeof( type ) / sizeof( float ), GL_FLOAT, GL_FALSE, sizeof( type ), NULL ); \
+        glEnableVertexAttribArray( loc ); \
+        glVertexAttribPointer( loc, sizeof( type ) / sizeof( float ), GL_FLOAT, GL_FALSE, sizeof( type ), NULL ); \
     } while( 0 )
 
-        X( renderable->position_buffer, mesh->vertices, vec3, "position" );
-        X( renderable->normal_buffer,   mesh->normals,  vec3, "normal" );
-        X( renderable->uv_buffer,       mesh->uvs,      vec2, "uv" );
+        X( 0, vao->position_buffer, mesh->vertices, vec3, "position" );
+        X( 1, vao->normal_buffer,   mesh->normals,  vec3, "normal" );
+        X( 2, vao->uv_buffer,       mesh->uvs,      vec2, "uv" );
 
     #undef X
 }
 
-static void delete_renderable( Renderable *renderable )
+static void delete_vao( MeshVAO *vao )
 {
     glBindVertexArray( 0 );
-    glDeleteBuffers( 1, &renderable->position_buffer );
-    glDeleteBuffers( 1, &renderable->normal_buffer );
-    glDeleteBuffers( 1, &renderable->uv_buffer );
-    glDeleteVertexArrays( 1, &renderable->vao );
+    glDeleteBuffers( 1, &vao->position_buffer );
+    glDeleteBuffers( 1, &vao->normal_buffer );
+    glDeleteBuffers( 1, &vao->uv_buffer );
+    glDeleteVertexArrays( 1, &vao->vao );
 }
 
-static Renderable *get_renderable( HashTable *renderables, HashCache *resources, const char *mesh_path, const char *material_path )
+static MeshVAO *get_vao( HashTable *vaos_for_meshes, HashCache *resources, const char *mesh_path )
 {
     Mesh *mesh = hashcache_load( resources, mesh_path );
     if( !mesh ) return NULL;
 
-    Material *material = hashcache_load( resources, material_path );
-    if( !material ) return NULL;
+    MeshVAO *vao = hashtable_at( vaos_for_meshes, mesh_path );
+    if( vao ) return vao;
 
-    Shader *shader = hashcache_load( resources, material->base_properties.shader_name );
-    if( !shader ) return NULL;
-
-    char hash_key[1024];
-    strcpy( hash_key, mesh_path );
-    strcat( hash_key, material_path );
-
-    Renderable *renderable = hashtable_at( renderables, hash_key );
-    if( renderable ) return renderable;
-
-    Renderable new_renderable;
-    load_renderable( &new_renderable, mesh, material, shader );
-    return hashtable_set_copy( renderables, hash_key, &new_renderable );
+    MeshVAO new_vao;
+    load_vao( &new_vao, mesh );
+    return hashtable_set_copy( vaos_for_meshes, mesh_path, &new_vao );
 }
 
 RenderSystem *render_sys_new( HashCache *resources )
@@ -97,10 +78,12 @@ RenderSystem *render_sys_new( HashCache *resources )
     glEnable( GL_CULL_FACE );
     glEnable( GL_MULTISAMPLE );
     glFrontFace( GL_CW );
-    glCullFace( GL_BACK );
+
+    glDisable(GL_CULL_FACE);
+    //glCullFace( GL_BACK );
     glClearColor( 0.2f, 0.2f, 0.2f, 1.0f );
 
-    sys->renderables = hashtable_empty( 1024, sizeof( Renderable ) );
+    sys->vaos_for_meshes = hashtable_empty( 512, sizeof( MeshVAO ) );
 
     return sys;
 }
@@ -132,52 +115,61 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
         ECS_GET_COMPONENT_DECL( Transform, renderer_transform, ecs, renderers[i] );
         ECS_GET_COMPONENT_DECL( MeshRenderer, renderer_comp, ecs, renderers[i] );
 
-        const Renderable *renderable = get_renderable( &sys->renderables, resources, renderer_comp->mesh, renderer_comp->material );
+        MeshVAO *vao = get_vao( &sys->vaos_for_meshes, resources, renderer_comp->mesh );
+        Mesh *mesh = hashcache_load( resources, renderer_comp->mesh );
+        Material *material = hashcache_load( resources, renderer_comp->material );
 
-        if( !renderable ) continue;
+        if( !vao ) continue;
+        if( !mesh ) continue;
+        if( !material ) continue;
 
+        glBindVertexArray( vao->vao );
+
+        Shader *base_shader = hashcache_load( resources, material->base_properties.shader_name );
+        GLuint base_shader_handle = shader_get_handle( base_shader );
+
+        for( int i = 0; i < mesh->num_submeshes; ++i )
         {
-            glBindVertexArray( renderable->vao );
-            glUseProgram( renderable->shader_handle );
+            MaterialShaderProperties *props = i < material->submaterials.item_count 
+                ? vec_at( &material->submaterials, i )
+                : NULL;
 
-            glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "view" ), 1, GL_FALSE, (GLfloat*)view );
-            glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "projection" ), 1, GL_FALSE, (GLfloat*)projection );
-            glUniformMatrix4fv( glGetUniformLocation( renderable->shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)renderer_transform->worldMatrix_ );
-        }
-        // TODO move this in to the submeshes loop, but only run it when the active shader changes
+            GLuint shader_handle = props && props->shader_name 
+                ? shader_get_handle( hashcache_load( resources, props->shader_name ) )
+                : base_shader_handle;
 
-        for( int i = 0; i < renderable->mesh->num_submeshes; ++i )
-        {
-            if( i < renderable->material->submaterials.item_count )
+            glUseProgram( shader_handle );
+            glUniformMatrix4fv( glGetUniformLocation( shader_handle, "view" ), 1, GL_FALSE, (GLfloat*)view );
+            glUniformMatrix4fv( glGetUniformLocation( shader_handle, "projection" ), 1, GL_FALSE, (GLfloat*)projection );
+            glUniformMatrix4fv( glGetUniformLocation( shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)renderer_transform->worldMatrix_ );
+
+            if( props )
             {
-                // TODO iterate and bind properties dynamically instead of grabbing the first one
-                // and assuming it's a texture path.
-                MaterialShaderProperties *props = vec_at( &renderable->material->submaterials, i );
+                // TODO iterate and bind properties dynamically instead of grabbing the first one and assuming it's a texture path.
                 MaterialProperty *tex_prop = vec_at( &props->properties, 0 );
                 char *tex_path = (char*)tex_prop->value;
-
                 glActiveTexture( GL_TEXTURE0 );
                 glBindTexture( GL_TEXTURE_2D, texture_get_handle( hashcache_load( resources, tex_path ) ) );
-                glUniform1i( glGetUniformLocation( renderable->shader_handle, "tex" ), 0 );
+                glUniform1i( glGetUniformLocation( shader_handle, "tex" ), 0 );
             }
 
-            glDrawElements( GL_TRIANGLES, renderable->mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, renderable->mesh->submeshes[i].indices );
+            glDrawElements( GL_TRIANGLES, mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, mesh->submeshes[i].indices );
         }
     }
 
     free( renderers );
 }
 
-static void clear_renderables_callback( void *ctx, Renderable *renderable )
+static void clear_vaos_callback( void *ctx, MeshVAO *vao )
 {
-    delete_renderable( renderable );
+    delete_vao( vao );
 }
 
 void render_sys_delete( RenderSystem *sys )
 {
     if( !sys ) return;
 
-    hashtable_clear_with_callback( &sys->renderables, NULL, clear_renderables_callback );
+    hashtable_clear_with_callback( &sys->vaos_for_meshes, NULL, clear_vaos_callback );
 
     free( sys );
 }

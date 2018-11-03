@@ -1,17 +1,53 @@
 #include "shader.h"
 
 #include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
+
 #include "../utils.h"
+#include "../containers/vec.h"
+
 
 struct Shader
 {
     GLuint handle;
+
+    GLenum cull_mode;
+
+    int render_queue;
+
+    bool blend_enabled;
+    GLenum blend_src;
+    GLenum blend_dest;
 };
+
+typedef struct Hashbang
+{
+    Vec words; // of unowned char*
+}
+Hashbang;
 
 GLuint shader_get_handle( const Shader *shader )
 {
     return shader->handle;
+}
+
+static Hashbang parse_hashbang_line( const char *line )
+{
+}
+
+static Hashbang *parse_hashbangs( const char *shader_contents, GLint shader_contents_length, size_t *results_count )
+{
+// char *token = strtok( shader_contents, "\n" );
+// 
+// /* walk through other tokens */
+// while( token != NULL ) {
+//    printf( " %s\n", token );
+//  
+//    token = strtok(NULL, s);
+// }
+// 
+//  shader_contents
 }
 
 static GLuint shader_compile( const char *shader_path, const char *shader_contents, GLint shader_contents_length, GLenum shader_type )
