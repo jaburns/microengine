@@ -74,14 +74,10 @@ RenderSystem *render_sys_new( HashCache *resources )
 {
     RenderSystem *sys = malloc( sizeof( RenderSystem ) );
 
-    glEnable( GL_DEPTH_TEST );
-    glEnable( GL_CULL_FACE );
     glEnable( GL_MULTISAMPLE );
     glFrontFace( GL_CW );
-
-    glDisable(GL_CULL_FACE);
-    //glCullFace( GL_BACK );
     glClearColor( 0.2f, 0.2f, 0.2f, 1.0f );
+    glEnable( GL_DEPTH_TEST );
 
     sys->vaos_for_meshes = hashtable_empty( 512, sizeof( MeshVAO ) );
 
@@ -105,6 +101,7 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
     mat4 view;
     glm_mat4_inv( camera_transform->worldMatrix_, view );
 
+    glDepthMask( GL_TRUE );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
     size_t num_renderers;
@@ -127,18 +124,32 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
 
         Shader *base_shader = hashcache_load( resources, material->base_properties.shader_name );
         GLuint base_shader_handle = shader_get_handle( base_shader );
+        Shader *prev_shader = base_shader;
 
-        for( int i = 0; i < mesh->num_submeshes; ++i )
+        shader_use( base_shader );
+
+        for( int pass = 0; pass < 2; ++pass ) // TODO build and sort a draw call list instead of iterating all targets multiple times.
+        for( int j = 0; j < mesh->num_submeshes; ++j )
         {
-            MaterialShaderProperties *props = i < material->submaterials.item_count 
-                ? vec_at( &material->submaterials, i )
+            MaterialShaderProperties *props = j < material->submaterials.item_count 
+                ? vec_at( &material->submaterials, j )
                 : NULL;
 
-            GLuint shader_handle = props && props->shader_name 
-                ? shader_get_handle( hashcache_load( resources, props->shader_name ) )
-                : base_shader_handle;
+            Shader *this_shader = props && props->shader_name 
+                ? hashcache_load( resources, props->shader_name )
+                : base_shader;
 
-            glUseProgram( shader_handle );
+            if( pass == 0 && shader_get_render_queue( this_shader ) == SHADER_RENDER_QUEUE_TRANSPARENT ) continue;
+            if( pass == 1 && shader_get_render_queue( this_shader ) == SHADER_RENDER_QUEUE_GEOMETRY ) continue;
+
+            if( this_shader != prev_shader )
+            {
+                shader_use( this_shader );
+                prev_shader = this_shader;
+            }
+
+            GLuint shader_handle = shader_get_handle( this_shader );
+
             glUniformMatrix4fv( glGetUniformLocation( shader_handle, "view" ), 1, GL_FALSE, (GLfloat*)view );
             glUniformMatrix4fv( glGetUniformLocation( shader_handle, "projection" ), 1, GL_FALSE, (GLfloat*)projection );
             glUniformMatrix4fv( glGetUniformLocation( shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)renderer_transform->worldMatrix_ );
@@ -153,7 +164,7 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
                 glUniform1i( glGetUniformLocation( shader_handle, "tex" ), 0 );
             }
 
-            glDrawElements( GL_TRIANGLES, mesh->submeshes[i].num_indices, GL_UNSIGNED_SHORT, mesh->submeshes[i].indices );
+            glDrawElements( GL_TRIANGLES, mesh->submeshes[j].num_indices, GL_UNSIGNED_SHORT, mesh->submeshes[j].indices );
         }
     }
 

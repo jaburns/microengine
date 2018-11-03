@@ -34,6 +34,38 @@ GLuint shader_get_handle( const Shader *shader )
     return shader->handle;
 }
 
+int shader_get_render_queue( const Shader *shader )
+{
+    return shader->render_queue;
+}
+
+void shader_use( const Shader *shader )
+{
+    if( shader->cull_mode == GL_NONE )
+    {
+        glDisable( GL_CULL_FACE );
+    }
+    else
+    {
+        glEnable( GL_CULL_FACE );
+        glCullFace( shader->cull_mode );
+    }
+
+    if( shader->blend_enabled )
+    {
+        glEnable( GL_BLEND );
+        glBlendFunc( shader->blend_src, shader->blend_dest );
+    }
+    else 
+    {
+        glDisable( GL_BLEND );
+    }
+
+    glDepthMask( shader->zwrite_enabled ? GL_TRUE : GL_FALSE );
+
+    glUseProgram( shader->handle );
+}
+
 static GLenum parse_blend_factor( char *str )
 {
     if( strcmp( "GL_ZERO", str ) == 0 )
@@ -83,14 +115,14 @@ static void parse_slashbang_line( char *line, Shader *shader )
 
         if( strcmp( "queue", directive ) == 0 )
         {
-            if( strcmp( "transparent", WORD( 1 ) ) )
+            if( strcmp( "transparent", WORD( 1 ) ) == 0 )
                 shader->render_queue = SHADER_RENDER_QUEUE_TRANSPARENT;
         }
         else if( strcmp( "cull", directive ) == 0 )
         {
-            if( strcmp( "off", WORD( 1 ) ) )
+            if( strcmp( "off", WORD( 1 ) ) == 0)
                 shader->cull_mode = GL_NONE;
-            if( strcmp( "front", WORD( 1 ) ) )
+            if( strcmp( "front", WORD( 1 ) ) == 0)
                 shader->cull_mode = GL_FRONT;
         }
         else if( strcmp( "blend", directive ) == 0 )
@@ -102,7 +134,7 @@ static void parse_slashbang_line( char *line, Shader *shader )
         }
         else if( strcmp( "zwrite", directive ) == 0 )
         {
-            if( strcmp( "off", WORD( 1 ) ) )
+            if( strcmp( "off", WORD( 1 ) ) == 0 )
                 shader->zwrite_enabled = false;
         }
 

@@ -1,6 +1,7 @@
 //! queue transparent
-//! cull off
 //! blend GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+//! cull off
+//! zwrite off
 
 v2f vec3 v_normal;
 v2f vec2 v_tex_coords;
