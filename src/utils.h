@@ -7,7 +7,23 @@
     exit(1);             \
 } while (0)
 
+
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
-extern char *utils_read_file_alloc(const char *path_prefix, const char *path, int *file_length);
+
+#ifdef _MSC_VER
+    #define strtok_ctx strtok_s
+#else
+    #define strtok_ctx strtok_r
+#endif
+
+
+#define UTILS_STRTOK_FOR( str, split, ivar ) for( \
+    char *tok_ctx_, *ivar = strtok_ctx( (str), (split), &tok_ctx_ ); \
+    ivar != NULL; \
+    ivar = strtok_ctx( NULL, (split), &tok_ctx_ ) \
+)
+
+
+extern char *utils_read_file_alloc(const char *path_prefix, const char *path, size_t *file_length);
 extern void utils_write_string_file(const char *path, const char *contents);

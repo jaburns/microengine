@@ -51,8 +51,8 @@ static void run_lua_main_func( lua_State *L, const char *func )
 static void resources_init( HashCache *resources )
 {
     hashcache_register( resources, "glsl", shader_load, shader_delete );
-    hashcache_register( resources, "umesh", mesh_load, mesh_delete );
-    hashcache_register( resources, "umat", material_load, material_delete );
+    hashcache_register( resources, "jmesh", mesh_load, mesh_delete );
+    hashcache_register( resources, "jmat", material_load, material_delete );
     hashcache_register( resources, "png", texture_load, texture_delete );
 }
 

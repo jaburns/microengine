@@ -9,8 +9,8 @@ function create_world()
     set_component_Transform(world, world_trans)
 
     local world_rend = add_component_MeshRenderer(world)
-    world_rend.mesh = "models/m64_bob.umesh"
-    world_rend.material = "materials/m64_bob.umat"
+    world_rend.mesh = "models/m64_bob.jmesh"
+    world_rend.material = "materials/m64_bob.jmat"
     set_component_MeshRenderer(world, world_rend)
 
     return world
