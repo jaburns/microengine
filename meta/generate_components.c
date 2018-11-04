@@ -20,6 +20,7 @@ const char *COMPONENTS_H_HEADER =
 "\n"
 "\nextern void components_init(lua_State *L, ECS *ecs);"
 "\nextern void components_inspect_entity(Entity e);"
+"\nextern char *components_serialize_scene_alloc();"
 "\nextern const char *components_name_entity(Entity e);"
 "\n";
 
@@ -33,6 +34,7 @@ const char *COMPONENTS_C_HEADER =
 "\n#include <lualib.h>"
 "\n#include <imgui_impl.h>"
 "\n#include <string.h>"
+"\n#include <cJSON.h>"
 "\n#include \"utils.h\""
 "\n#ifdef _MSC_VER"
 "\n#define strdup _strdup"
@@ -64,6 +66,17 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void icb_inspect_mat4   (const char *label, mat4   *v) { igText(\"%s {Matrix}\", label); }"
 "\nstatic void icb_inspect_Entity (const char *label, Entity *v) { igText(\"%s {Entity}\", label); }"
 "\nstatic void icb_inspect_Vec_T  (const char *label, void   *v) { igText(\"%s {Vec<T>}\", label); }"
+"\n"
+"\nstatic cJSON *serialize_field_int    (int    *c) { return cJSON_CreateNumber(*c); }"
+"\nstatic cJSON *serialize_field_float  (float  *c) { return cJSON_CreateNumber(*c); }"
+"\nstatic cJSON *serialize_field_bool   (bool   *c) { return cJSON_CreateBool  (*c); }"
+"\nstatic cJSON *serialize_field_vec2   (vec2   *c) { return cJSON_CreateFloatArray((float*)(*c), 2); }"
+"\nstatic cJSON *serialize_field_vec3   (vec3   *c) { return cJSON_CreateFloatArray((float*)(*c), 3); }"
+"\nstatic cJSON *serialize_field_vec4   (vec4   *c) { return cJSON_CreateFloatArray((float*)(*c), 4); }"
+"\nstatic cJSON *serialize_field_versor (versor *c) { return cJSON_CreateFloatArray((float*)(*c), 4); }"
+"\nstatic cJSON *serialize_field_mat4   (mat4   *c) { return cJSON_CreateFloatArray((float*)(*c), 16); }"
+"\nstatic cJSON *serialize_field_Entity (Entity *c) { return cJSON_CreateNumber((double)(*c)); }"
+"\nstatic cJSON *serialize_field_string (char  **c) { return cJSON_CreateString(*c); }"
 "\n"
 "\nstatic void icb_inspect_string(const char *label, char **v)"
 "\n{"
@@ -105,6 +118,15 @@ const char *COMPONENTS_C_HEADER =
 
 #define W(output, ...) output += sprintf(output, "\n/*generated*/" __VA_ARGS__)
 #define WL(output, ...) output += sprintf(output, __VA_ARGS__)
+
+static bool is_type_basic(const char *type_name)
+{
+    for (int i = 0; i < NUM_BASE_TYPES; ++i)
+        if (strcmp(type_name, BASE_TYPES[i]) == 0) 
+            return true;
+
+    return false;
+}
 
 static void write_struct_def(char **output, cJSON *type)
 {
@@ -310,13 +332,47 @@ static void write_set_component(char **output, const char *type_name)
     W(*output, "}");
 }
 
-static bool is_type_basic(const char *type_name)
+static void write_serialize(char **output, cJSON *type)
 {
-    for (int i = 0; i < NUM_BASE_TYPES; ++i)
-        if (strcmp(type_name, BASE_TYPES[i]) == 0) 
-            return true;
+    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-    return false;
+    W(*output, "static void serialize_%s(%s *c, cJSON *obj, bool nested)", type_name, type_name);
+    W(*output, "{");
+    W(*output, "    cJSON *comp_obj = nested ? obj : cJSON_AddObjectToObject(obj, \"%s\");", type_name);
+
+    cJSON *fields = cJSON_GetObjectItem( type, "fields" );
+    for( int i = 0, max = cJSON_GetArraySize( fields ); i < max; ++i )
+    {
+        cJSON *field = cJSON_GetArrayItem( fields, i );
+        const char *field_name = cJSON_GetStringValue( cJSON_GetObjectItem( field, "name" ) ); 
+        const char *field_type = cJSON_GetStringValue( cJSON_GetObjectItem( field, "type" ) ); 
+        bool type_basic = is_type_basic( field_type );
+
+        if( cJSON_GetObjectItem( field, "vec" ) ) 
+        {
+            if( type_basic )
+            {
+               W(*output, "  { cJSON *arr = cJSON_AddArrayToObject(comp_obj, \"%s\");", field_name);
+               W(*output, "    for (int i = 0; i < c->%s.item_count; ++i)", field_name);
+               W(*output, "        cJSON_AddItemToArray(arr, serialize_field_%s(vec_at(&c->%s, i))); }", field_type, field_name);
+            }
+            else
+            {
+                // TODO
+            }
+        }
+        else if( type_basic )
+        {
+            W(*output, "    cJSON_AddItemToObject(comp_obj, \"%s\", serialize_field_%s(&c->%s));", field_name, field_type, field_name);
+        }
+        else
+        {
+            W(*output, "  { cJSON *sub_obj = cJSON_AddObjectToObject(comp_obj, \"%s\");", field_name);
+            W(*output, "    serialize_%s(&c->%s, sub_obj, true); }", field_type, field_name);
+        }
+    }
+
+    W(*output, "}");
 }
 
 static void write_destructor( char **output, cJSON *type )
@@ -361,8 +417,6 @@ static void write_destructor( char **output, cJSON *type )
     }
     W( *output, "}" );
 }
-
-// TODO generate ser/de functions
 
 static void write_inspector(char **output, cJSON *type)
 {
@@ -494,6 +548,35 @@ static void write_components_name_entity(char **output, cJSON *types)
     W(*output, "}");
 }
 
+static void write_components_serialize_scene(char **output, cJSON *types)
+{
+    W(*output, "char *components_serialize_scene_alloc()");
+    W(*output, "{");
+    W(*output, "    cJSON *json = cJSON_CreateArray();");
+    W(*output, "    size_t num_entities;");
+    W(*output, "    Entity *entities = ecs_find_all_entities_alloc(s_ecs, &num_entities);");
+
+    W(*output, "    for (int i = 0; i < num_entities; ++i) {");
+    W(*output, "        cJSON *obj = cJSON_CreateObject();");
+    W(*output, "        cJSON_AddNumberToObject(obj, \"_id\", (double)entities[i]);");
+    
+    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    {
+        cJSON *type = cJSON_GetArrayItem(types, i);
+        const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+        W(*output, "        { ECS_GET_COMPONENT_DECL(%s, c, s_ecs, entities[i]);", type_name);
+        W(*output, "        if (c) serialize_%s(c, obj, false); }", type_name);
+    }
+
+    W(*output, "        cJSON_AddItemToArray(json, obj);");
+    W(*output, "    }");
+
+    W(*output, "    char *result = cJSON_Print(json);");
+    W(*output, "    cJSON_Delete(json);");
+    W(*output, "    return result;");
+    W(*output, "}");
+}
+
 static char *generate_components_h_alloc(cJSON *types)
 {
     char *output = malloc(1024 * 1024);
@@ -535,12 +618,14 @@ static char *generate_components_c_alloc(cJSON *types)
         write_get_component(&output, type_name);
         write_set_component(&output, type_name);
         write_vec_push_pop(&output, type_name);
+        write_serialize(&output, type);
         write_destructor(&output, type);
     }
 
     write_inspect_all(&output, types);
     write_components_init(&output, types);
     write_components_name_entity(&output, types);
+    write_components_serialize_scene(&output, types);
 
     return output_start;
 }

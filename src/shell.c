@@ -10,6 +10,7 @@ struct ShellContext
 {
     SDL_Window *sdl_window;
     SDL_GLContext sdl_gl_context;
+    SDL_GameController *controller;
     int window_width;
     int window_height;
     ShellEventHandler event_handler;
@@ -59,6 +60,15 @@ ShellContext *shell_new(const char *title, int width, int height)
     ImGui_ImplSdlGL3_NewFrame(context->sdl_window);
 
     context->event_handler = NULL;
+    context->controller = NULL;
+
+    for( int i = 0; i < SDL_NumJoysticks(); ++i ) 
+    {
+        if (! SDL_IsGameController( i ) ) continue;
+        context->controller = SDL_GameControllerOpen( i );
+        printf( "Using game controller: %s", SDL_GameControllerName( context->controller ) );
+        if( context->controller ) break;
+    }
 
     return context;
 

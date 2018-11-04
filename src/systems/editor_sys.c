@@ -193,6 +193,15 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs )
         sys->selected_entity = 0;
     }
 
+    igSameLine( 0, -1 );
+
+    if( igButton( "Save", (ImVec2){ 0, 0 } ) )
+    {
+        char *json_scene = components_serialize_scene_alloc();
+        printf( "\n%s\n", json_scene );
+        free( json_scene );
+    }
+
     igSeparator();
 
     for( int i = 0; i < num_entities; ++i )
@@ -223,7 +232,8 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs )
     ECS_GET_COMPONENT_DECL( Camera, active_cam, ecs, sys->active_camera );
     ECS_GET_COMPONENT_DECL( Transform, active_cam_transform, ecs, sys->active_camera );
 
-    update_view_drag( sys, inputs, active_cam, active_cam_transform, clock->delta_millis );
+    if( inputs && active_cam && active_cam_transform )
+        update_view_drag( sys, inputs, active_cam, active_cam_transform, clock->delta_millis );
 }
 
 void editor_sys_delete( EditorSystem *sys )

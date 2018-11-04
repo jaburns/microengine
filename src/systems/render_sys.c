@@ -93,6 +93,8 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
     ECS_GET_COMPONENT_DECL( Camera, camera, ecs, camera_entity );
     ECS_GET_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entity );
 
+    if( !camera_transform ) return;
+
     mat4 projection;
     glm_perspective( camera->fov, aspect_ratio, camera->near_clip, camera->far_clip, projection );
     projection[2][2] *= -1.f; // Use left-handed coordinates
