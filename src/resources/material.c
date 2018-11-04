@@ -82,11 +82,28 @@ Material *material_load( const char *path )
     return mat;
 }
 
+static void free_material_prop_callback( void *ctx, MaterialProperty *prop )
+{
+    free( prop->name );
+    free( prop->value );
+}
+
+static void free_material_props( MaterialShaderProperties *props )
+{
+    free( props->shader_name );
+    vec_clear_with_callback( &props->properties, NULL, free_material_prop_callback );
+}
+
+static void free_material_submats_callback( void *ctx, MaterialShaderProperties *props )
+{
+    free_material_props( props );
+}
+
 void material_delete( Material *mat )
 {
     if( !mat ) return;
 
-    //leak_memory();
-
-    // TODO actually free
+    free_material_props( &mat->base_properties );
+    vec_clear_with_callback( &mat->submaterials, NULL, free_material_submats_callback );
+    free( mat );
 }

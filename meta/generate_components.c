@@ -572,6 +572,7 @@ static void write_components_serialize_scene(char **output, cJSON *types)
     W(*output, "    }");
 
     W(*output, "    char *result = cJSON_Print(json);");
+    W(*output, "    free(entities);");
     W(*output, "    cJSON_Delete(json);");
     W(*output, "    return result;");
     W(*output, "}");
