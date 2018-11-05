@@ -34,7 +34,8 @@ uniform sampler2D tex;
     void main() 
     {
         float brightness = dot(normalize(v_normal), normalize(light_x));
-        color = (0.75 + 0.25 * brightness) * texture(tex, v_tex_coords);
+        vec4 tex_lookup = texture(tex, v_tex_coords);
+        color = vec4((0.75 + 0.25 * brightness) * tex_lookup.rgb, tex_lookup.a);
     }
 
 #endif

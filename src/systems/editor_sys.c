@@ -13,6 +13,11 @@
 
 struct EditorSystem
 {
+    bool hierarchy_reset;
+    bool hierarchy_open;
+    bool fps_reset;
+    bool fps_open;
+
     Entity selected_entity;
     Entity reparenting_entity;
 
@@ -29,6 +34,10 @@ EditorSystem *editor_sys_new( void )
     sys->active_camera = 0;
     sys->camera_pitch = 0;
     sys->camera_yaw = 0;
+    sys->hierarchy_open = false;
+    sys->hierarchy_reset = false;
+    sys->fps_open = false;
+    sys->fps_reset = false;
     return sys;
 }
 
@@ -146,83 +155,142 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
 
 void editor_sys_run( EditorSystem *sys, ECS *ecs )
 {
+    igBeginMainMenuBar();
+
+        if( igBeginMenu( "Engine", true ) )
+        {
+            if( igMenuItemBool( "Show Hierarchy", NULL, false, true ) )
+            {
+                if( sys->hierarchy_open )
+                    sys->hierarchy_reset = true;
+                sys->hierarchy_open = true;
+            }
+
+            if( igMenuItemBool( "Show FPS", NULL, false, true ) )
+            {
+                if( sys->fps_open )
+                    sys->fps_reset = true;
+                sys->fps_open = true;
+            }
+
+            if( igMenuItemBool( "Save Scene", NULL, false, true ) )
+            {
+                char *json_scene = components_serialize_scene_alloc();
+                utils_write_string_file( "resources/scenes/saved.jscene", json_scene );
+                free( json_scene );
+            }
+
+            if( igMenuItemBool( "Load Scene", NULL, false, true ) )
+            {
+                char *json_scene = utils_read_file_alloc( "", "resources/scenes/saved.jscene", NULL );
+                ECS *new_ecs = components_deserialize_scene_alloc( json_scene );
+                ecs_delete( new_ecs );
+                free( json_scene );
+            }
+
+            igEndMenu();
+        }
+
+    igEndMainMenuBar();
+
     Entity clock_entity;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity );
     ECS_GET_COMPONENT_DECL( ClockInfo, clock, ecs, clock_entity );
-
     size_t num_entities;
     Entity *entities = ecs_find_all_entities_alloc( ecs, &num_entities );
 
-    igBegin( "Scene", NULL, 0 );
-
-    igText( "%.1f fps", 1000.f / clock->delta_millis );
-
-    if( igButton( "Create", (ImVec2){ 0, 0 } ) )
-        ecs_create_entity( ecs );
-
-    igSameLine( 0, -1 );
-
-    if( sys->reparenting_entity )
+    if( sys->fps_open )
     {
-        const char *name = components_name_entity( sys->reparenting_entity );
-        if( igButton( name, (ImVec2){ 0, 0 } ) ) 
+        if( sys->fps_reset )
         {
-            reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
+            igSetNextWindowPos( (ImVec2){ 0.f, 20.f }, 0, (ImVec2){ 0.f, 0.f } );
+            sys->fps_reset = false;
+        }
+
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize
+            | ImGuiWindowFlags_AlwaysAutoResize
+            | ImGuiWindowFlags_NoFocusOnAppearing
+            | ImGuiWindowFlags_NoNav;
+
+        igBegin( "", &sys->fps_open, flags );
+            igText( "%.1f fps", 1000.f / clock->delta_millis );
+        igEnd();
+    }
+
+    if( sys->hierarchy_open )
+    {
+        if( sys->hierarchy_reset )
+        {
+            igSetNextWindowPos( (ImVec2){ 0.f, 20.f }, 0, (ImVec2){ 0.f, 0.f } );
+            sys->hierarchy_reset = false;
+        }
+
+        igBegin( "Hierarchy", &sys->hierarchy_open, 0 );
+
+        if( igButton( "Create", (ImVec2){ 0, 0 } ) )
+            ecs_create_entity( ecs );
+
+        igSameLine( 0, -1 );
+
+        if( sys->reparenting_entity )
+        {
+            const char *name = components_name_entity( sys->reparenting_entity );
+            if( igButton( name, (ImVec2){ 0, 0 } ) ) 
+            {
+                reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
+                sys->reparenting_entity = 0;
+            }
+        }
+        else if( igButton( "Reparent", (ImVec2){ 0, 0 } ) )
+        {
+            sys->reparenting_entity = sys->selected_entity;
+        }
+
+        igSameLine( 0, -1 );
+
+        if( igButton( "No Parent", (ImVec2){ 0, 0 } ) )
+        {
+            reparent_entity( ecs, sys->selected_entity, 0 );
             sys->reparenting_entity = 0;
         }
+
+        igSameLine( 0, -1 );
+
+        if( igButton( "Delete", (ImVec2){ 0, 0 } ) )
+        {
+            ecs_destroy_entity( ecs, sys->selected_entity );
+            sys->reparenting_entity = 0;
+            sys->selected_entity = 0;
+        }
+
+        igSameLine( 0, -1 );
+
+        if( igButton( "Save", (ImVec2){ 0, 0 } ) )
+        {
+        }
+
+        igSeparator();
+
+        for( int i = 0; i < num_entities; ++i )
+        {
+            ECS_GET_COMPONENT_DECL( Transform, t, ecs, entities[i] );
+            if( t && t->parent ) continue;
+            inspect_transform_tree( sys, ecs, entities[i], t );
+        }
+
+        igEnd();
     }
-    else if( igButton( "Reparent", (ImVec2){ 0, 0 } ) )
-    {
-        sys->reparenting_entity = sys->selected_entity;
-    }
-
-    igSameLine( 0, -1 );
-
-    if( igButton( "No Parent", (ImVec2){ 0, 0 } ) )
-    {
-        reparent_entity( ecs, sys->selected_entity, 0 );
-        sys->reparenting_entity = 0;
-    }
-
-    igSameLine( 0, -1 );
-
-    if( igButton( "Delete", (ImVec2){ 0, 0 } ) )
-    {
-        ecs_destroy_entity( ecs, sys->selected_entity );
-        sys->reparenting_entity = 0;
-        sys->selected_entity = 0;
-    }
-
-    igSameLine( 0, -1 );
-
-    if( igButton( "Save", (ImVec2){ 0, 0 } ) )
-    {
-        char *json_scene = components_serialize_scene_alloc();
-        printf( "\n%s\n", json_scene );
-        free( json_scene );
-    }
-
-    igSeparator();
-
-    for( int i = 0; i < num_entities; ++i )
-    {
-        ECS_GET_COMPONENT_DECL( Transform, t, ecs, entities[i] );
-        if( t && t->parent ) continue;
-        inspect_transform_tree( sys, ecs, entities[i], t );
-    }
-
-    igEnd();
-    free( entities );
 
     if( sys->selected_entity )
     {
         bool keep_open = true;
         igBegin( "Inspector", &keep_open, 0 );
-        components_inspect_entity( sys->selected_entity );
+            components_inspect_entity( sys->selected_entity );
         igEnd();
-
         if( !keep_open ) sys->selected_entity = 0;
     }
+
+    free( entities );
 
     Entity inputs_entity;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity );

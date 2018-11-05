@@ -21,7 +21,7 @@ ShellContext *shell_new(const char *title, int width, int height)
 {
     ShellContext *context = malloc(sizeof(ShellContext));
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) goto err;
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) goto err;
 
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);

@@ -5,9 +5,9 @@
         { "name": "position",     "type": "vec3"   },
         { "name": "rotation",     "type": "versor" },
         { "name": "scale",        "type": "vec3", "default": "{1.f,1.f,1.f}" },
-        { "name": "parent",       "type": "Entity",              "hideInInspector": true },
-        { "name": "children_",    "type": "Entity", "vec": true, "hideInInspector": true },
-        { "name": "worldMatrix_", "type": "mat4",                "hideInInspector": true }
+        { "name": "parent",       "type": "Entity",              "hide_in_inspector": true },
+        { "name": "children_",    "type": "Entity", "vec": true, "hide_in_inspector": true, "serialize": false },
+        { "name": "worldMatrix_", "type": "mat4",                "hide_in_inspector": true, "serialize": false }
     ]
 },{
     "name": "InputFrame",
@@ -20,12 +20,14 @@
     ]
 },{
     "name": "InputState",
+    "serialize": false,
     "fields": [
         { "name": "cur",  "type": "InputFrame" },
         { "name": "prev", "type": "InputFrame" }
     ]
 },{
     "name": "ClockInfo",
+    "serialize": false,
     "fields": [
         { "name": "delta_millis",       "type": "float" },
         { "name": "millis_since_start", "type": "float" }
