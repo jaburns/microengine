@@ -63,9 +63,18 @@ int main( int argc, char **argv )
     #endif
 
     ShellContext *ctx = shell_new( "Microengine", 1024, 768 );
-    ECS *ecs = ecs_new();
     HashCache *resources = hashcache_new();
     resources_init( resources );
+
+    lua_State *L = luaL_newstate();
+    luaL_openlibs( L );
+    glmlua_load_types( L );
+    lua_pushcfunction( L, l_print );
+    lua_setglobal( L, "print" );
+
+    ECS *ecs = components_ecs_new();
+    components_init_lua( L );
+    components_bind_ecs( ecs );
 
     ClockSystem *clocksystem = clock_sys_new();
     InputSystem *inputsystem = input_sys_new( ctx );
@@ -73,14 +82,6 @@ int main( int argc, char **argv )
     RenderSystem *rendersystem = render_sys_new( resources );
     EditorSystem *editorsystem = editor_sys_new();
 
-    lua_State *L = luaL_newstate();
-    luaL_openlibs( L );
-    glmlua_load_types( L );
-
-    components_init( L, ecs );
-
-    lua_pushcfunction( L, l_print );
-    lua_setglobal( L, "print" );
     run_lua_main_func( L, "start" );
 
     do
@@ -91,8 +92,15 @@ int main( int argc, char **argv )
         run_lua_main_func( L, "update" );
 
         transform_sys_run( transformsystem, ecs );
-        editor_sys_run( editorsystem, ecs );
+        ECS *new_ecs = editor_sys_run( editorsystem, ecs );
         render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ) );
+
+        if( new_ecs )
+        {
+            ecs_delete( ecs );
+            ecs = new_ecs;
+            components_bind_ecs( ecs );
+        }
     }
     while( shell_flip_frame_poll_events( ctx ) );
 

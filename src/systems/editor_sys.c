@@ -153,8 +153,10 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
     this_t->parent = to_entity;
 }
 
-void editor_sys_run( EditorSystem *sys, ECS *ecs )
+ECS *editor_sys_run( EditorSystem *sys, ECS *ecs )
 {
+    ECS *maybe_new_ecs = NULL;
+
     igBeginMainMenuBar();
 
         if( igBeginMenu( "Engine", true ) )
@@ -183,8 +185,7 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs )
             if( igMenuItemBool( "Load Scene", NULL, false, true ) )
             {
                 char *json_scene = utils_read_file_alloc( "", "resources/scenes/saved.jscene", NULL );
-                ECS *new_ecs = components_deserialize_scene_alloc( json_scene );
-                ecs_delete( new_ecs );
+                maybe_new_ecs = components_deserialize_scene_alloc( json_scene );
                 free( json_scene );
             }
 
@@ -302,6 +303,8 @@ void editor_sys_run( EditorSystem *sys, ECS *ecs )
 
     if( inputs && active_cam && active_cam_transform )
         update_view_drag( sys, inputs, active_cam, active_cam_transform, clock->delta_millis );
+
+    return maybe_new_ecs;
 }
 
 void editor_sys_delete( EditorSystem *sys )

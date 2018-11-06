@@ -18,9 +18,12 @@ const char *COMPONENTS_H_HEADER =
 "\n#include \"containers/vec.h\""
 "\n#include \"containers/ecs.h\""
 "\n"
-"\nextern void components_init(lua_State *L, ECS *ecs);"
+"\nextern ECS *components_ecs_new(void);"
+"\nextern void components_bind_ecs(ECS *ecs);"
+"\nextern void components_init_lua(lua_State *L);"
 "\nextern void components_inspect_entity(Entity e);"
-"\nextern char *components_serialize_scene_alloc();"
+"\nextern char *components_serialize_scene_alloc(void);"
+"\nextern ECS *components_deserialize_scene_alloc(const char *json_scene);"
 "\nextern const char *components_name_entity(Entity e);"
 "\n";
 
@@ -36,11 +39,17 @@ const char *COMPONENTS_C_HEADER =
 "\n#include <string.h>"
 "\n#include <cJSON.h>"
 "\n#include \"utils.h\""
+"\n#include \"containers/hashtable.h\""
 "\n#ifdef _MSC_VER"
 "\n#define strdup _strdup"
 "\n#endif"
 "\n"
 "\nstatic ECS *s_ecs;"
+"\n"
+"\nvoid components_bind_ecs(ECS *ecs)"
+"\n{"
+"\n    s_ecs = ecs;"
+"\n}"
 "\n"
 "\nstatic int lcb_create_entity(lua_State *L)"
 "\n{"
@@ -91,15 +100,20 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic cJSON *serialize_field_Entity (Entity *c) { return cJSON_CreateNumber((double)(*c)); }"
 "\nstatic cJSON *serialize_field_string (char  **c) { return cJSON_CreateString(*c); }"
 "\n"
-"\nstatic void deserialize_field_vec3( cJSON *component_obj, const char *field_name, vec3 *out ) {"
-"\n    cJSON *arr = cJSON_GetObjectItem( component_obj, field_name );"
-"\n    for( int i = 0; i < 3; ++i )"
-"\n        (*out)[i] = (float)cJSON_GetArrayItem( arr, i )->valuedouble;"
+"\nstatic void deserialize_field_int    ( cJSON *item, int    *out, void *x ) { *out = (int)item->valuedouble; }"
+"\nstatic void deserialize_field_float  ( cJSON *item, float  *out, void *x ) { *out = (float)item->valuedouble; }"
+"\nstatic void deserialize_field_bool   ( cJSON *item, bool   *out, void *x ) { *out = cJSON_IsTrue(item); }"
+"\nstatic void deserialize_field_vec2   ( cJSON *item, vec2   *out, void *x ) { for( int i = 0; i < 2; ++i ) (*out)[i] = (float)cJSON_GetArrayItem( item, i )->valuedouble; }"
+"\nstatic void deserialize_field_vec3   ( cJSON *item, vec3   *out, void *x ) { for( int i = 0; i < 3; ++i ) (*out)[i] = (float)cJSON_GetArrayItem( item, i )->valuedouble; }"
+"\nstatic void deserialize_field_vec4   ( cJSON *item, vec4   *out, void *x ) { for( int i = 0; i < 4; ++i ) (*out)[i] = (float)cJSON_GetArrayItem( item, i )->valuedouble; }"
+"\nstatic void deserialize_field_versor ( cJSON *item, versor *out, void *x ) { for( int i = 0; i < 4; ++i ) (*out)[i] = (float)cJSON_GetArrayItem( item, i )->valuedouble; }"
+"\nstatic void deserialize_field_mat4   ( cJSON *item, mat4   *out, void *x ) { for( int i = 0; i < 16; ++i ) ((float*)(*out))[i] = (float)cJSON_GetArrayItem( item, i )->valuedouble; }"
+"\nstatic void deserialize_field_string ( cJSON *item, char  **out, void *x ) { *out = strdup(cJSON_GetStringValue(item)); }"
+"\nstatic void deserialize_field_Entity ( cJSON *item, Entity *out, HashTable *entities_for_ids ) {"
+"\n    char id_as_str_buf[128];"
+"\n    sprintf( id_as_str_buf, \"%f\", item->valuedouble );"
+"\n    *out = *(Entity*)hashtable_at( entities_for_ids, id_as_str_buf );"
 "\n}"
-"\nstatic void deserialize_field_string( cJSON *component_obj, const char *field_name, char **out ) {"
-"\n  *out = strdup( cJSON_GetStringValue( cJSON_GetObjectItem( component_obj, field_name ) ) );"
-"\n}"
-"\n"
 "\n"
 "\nstatic void lcb_push_int    (lua_State *L, int    *v)                  { lua_pushnumber(L, (int)(*v)); }"
 "\nstatic void  lcb_pop_int    (lua_State *L, int    *v, int stack_index) { *v = (int)luaL_checknumber(L, stack_index); }"
@@ -407,6 +421,44 @@ static void write_serialize(char **output, cJSON *type)
     W(*output, "}");
 }
 
+static void write_deserialize(char **output, cJSON *type)
+{
+    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+
+    W(*output, "static void deserialize_nested_%s( cJSON *item, %s *out, HashTable *entities_for_ids )", type_name, type_name);
+    W(*output, "{");
+
+    cJSON *field;
+    cJSON_ArrayForEach( field, cJSON_GetObjectItem( type, "fields" ) )
+    {
+        if( !should_serialize( field ) ) continue;
+
+        const char *field_name = cJSON_GetStringValue( cJSON_GetObjectItem( field, "name" ) ); 
+        const char *field_type = cJSON_GetStringValue( cJSON_GetObjectItem( field, "type" ) ); 
+
+        if( cJSON_GetObjectItem( field, "vec" ) ) 
+        {
+            // TODO
+        }
+        else if( is_type_basic( field_type ) )
+        {
+            W(*output, "    deserialize_field_%s( cJSON_GetObjectItem( item, \"%s\" ), &out->%s, entities_for_ids );", field_type, field_name, field_name);
+        }
+        else
+        {
+            W(*output, "    deserialize_nested_%s( cJSON_GetObjectItem( item, \"%s\" ), &out->%s, entities_for_ids );", field_type, field_name, field_name);
+        }
+    }
+
+    W(*output, "}");
+
+    W(*output, "static void deserialize_%s(Entity entity, ECS *ecs, HashTable *entities_for_ids, cJSON *component_obj)", type_name);
+    W(*output, "{");
+    W(*output, "    ECS_ADD_COMPONENT_DEFAULT_DECL( %s, comp, ecs, entity );", type_name);
+    W(*output, "    deserialize_nested_%s( component_obj, comp, entities_for_ids );", type_name);
+    W(*output, "}");
+}
+
 static void write_destructor( char **output, cJSON *type )
 {
     const char *type_name = cJSON_GetStringValue( cJSON_GetObjectItem( type, "name" ) );
@@ -534,24 +586,35 @@ static void write_inspect_all(char **output, cJSON *types)
     W(*output, "}");
 }
 
+
 static void write_components_init(char **output, cJSON *types)
 {
-    W(*output, "void components_init(lua_State *L, ECS *ecs)");
+    cJSON *type;
+
+    W(*output, "ECS *components_ecs_new(void)");
     W(*output, "{");
-    W(*output, "    s_ecs = ecs;");
+    W(*output, "    ECS *ecs = ecs_new();");
 
-    for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
+    cJSON_ArrayForEach(type, types)
     {
-        cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+        W(*output, "    ECS_REGISTER_COMPONENT(%s, ecs, destruct_%s);", type_name, type_name);
+    }
 
+    W(*output, "    return ecs;");
+    W(*output, "}");
+    W(*output, "void components_init_lua(lua_State *L)");
+    W(*output, "{");
+
+    cJSON_ArrayForEach(type, types)
+    {
+        const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
         W(*output, "    lua_pushcfunction(L, lcb_get_component_%s);", type_name);
         W(*output, "    lua_setglobal(L, \"get_component_%s\");", type_name);
         W(*output, "    lua_pushcfunction(L, lcb_set_component_%s);", type_name);
         W(*output, "    lua_setglobal(L, \"set_component_%s\");", type_name);
         W(*output, "    lua_pushcfunction(L, lcb_add_component_%s);", type_name);
         W(*output, "    lua_setglobal(L, \"add_component_%s\");", type_name);
-        W(*output, "    ECS_REGISTER_COMPONENT(%s, ecs, destruct_%s);", type_name, type_name);
     }
     
     W(*output, "    lua_pushcfunction(L, lcb_create_entity);");
@@ -582,7 +645,7 @@ static void write_components_name_entity(char **output, cJSON *types)
 
 static void write_components_serialize_scene(char **output, cJSON *types)
 {
-    W(*output, "char *components_serialize_scene_alloc()");
+    W(*output, "char *components_serialize_scene_alloc(void)");
     W(*output, "{");
     W(*output, "    cJSON *json = cJSON_CreateArray();");
     W(*output, "    size_t num_entities;");
@@ -611,6 +674,56 @@ static void write_components_serialize_scene(char **output, cJSON *types)
     W(*output, "    char *result = cJSON_PrintUnformatted(json);");
     W(*output, "    free(entities);");
     W(*output, "    cJSON_Delete(json);");
+    W(*output, "    return result;");
+    W(*output, "}");
+}
+
+static void write_components_deserialize_scene(char **output, cJSON *types)
+{
+    W(*output, "ECS *components_deserialize_scene_alloc( const char *json_scene )");
+    W(*output, "{");
+    W(*output, "    ECS *result = components_ecs_new();");
+    W(*output, "    cJSON *json = cJSON_Parse( json_scene );");
+    W(*output, "    HashTable entities_for_ids = hashtable_empty( 1024, sizeof( Entity ) );");
+    W(*output, "    char id_as_str_buf[128];");
+    W(*output, "    cJSON *entity_obj;");
+    W(*output, "");
+    W(*output, "    Entity empty_entity = 0;");
+    W(*output, "    sprintf( id_as_str_buf, \"%%f\", 0.0 );");
+    W(*output, "    hashtable_set_copy( &entities_for_ids, id_as_str_buf, &empty_entity );");
+    W(*output, "");
+    W(*output, "    cJSON_ArrayForEach( entity_obj, json )");
+    W(*output, "    {");
+    W(*output, "        sprintf( id_as_str_buf, \"%%f\", cJSON_GetObjectItem( entity_obj, \"_id\" )->valuedouble );");
+    W(*output, "        Entity new_entity = ecs_create_entity( result );");
+    W(*output, "        hashtable_set_copy( &entities_for_ids, id_as_str_buf, &new_entity );");
+    W(*output, "    }");
+    W(*output, "");
+    W(*output, "    cJSON_ArrayForEach( entity_obj, json )");
+    W(*output, "    {");
+    W(*output, "        sprintf( id_as_str_buf, \"%%f\", cJSON_GetObjectItem( entity_obj, \"_id\" )->valuedouble );");
+    W(*output, "        Entity e = *(Entity*)hashtable_at( &entities_for_ids, id_as_str_buf );");
+    W(*output, "");
+    W(*output, "        cJSON *component_obj;");
+    W(*output, "        cJSON_ArrayForEach( component_obj, entity_obj )");
+    W(*output, "        {");
+    W(*output, "            char *type_name = component_obj->string;");
+    W(*output, "            if( strcmp( \"_id\", type_name ) == 0 ) continue;");
+    W(*output, "");
+
+    cJSON *type;
+    cJSON_ArrayForEach( type, types )
+    {
+        const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
+        W(*output, "            if( strcmp( \"%s\", type_name ) == 0 ) ", type_name);
+        W(*output, "                deserialize_%s( e, result, &entities_for_ids, component_obj );", type_name);
+    }
+
+    W(*output, "        }");
+    W(*output, "    }");
+    W(*output, "");
+    W(*output, "    hashtable_clear( &entities_for_ids );");
+    W(*output, "    cJSON_Delete( json );");
     W(*output, "    return result;");
     W(*output, "}");
 }
@@ -658,12 +771,14 @@ static char *generate_components_c_alloc(cJSON *types)
         write_destructor(&output, type);
         write_vec_push_pop(&output, type_name);
         write_serialize(&output, type);
+        write_deserialize(&output, type);
     }
 
     write_inspect_all(&output, types);
     write_components_init(&output, types);
     write_components_name_entity(&output, types);
     write_components_serialize_scene(&output, types);
+    write_components_deserialize_scene(&output, types);
 
     return output_start;
 }
@@ -686,65 +801,3 @@ void generate_components(void)
 
     getchar();
 }
-
-
-/*
-static void deserialize_field_string( cJSON *component_obj, const char *field_name, char **out ) {
-    *out = strdup( cJSON_GetStringValue( cJSON_GetObjectItem( component_obj, field_name ) ) );
-}
-
-static void deserialize_field_vec3( cJSON *component_obj, const char *field_name, vec3 *out ) {
-    cJSON *arr = cJSON_GetObjectItem( component_obj, field_name );
-    for( int i = 0; i < 3; ++i )
-        (*out)[i] = (float)cJSON_GetArrayItem( arr, i )->valuedouble;
-}
-
-void deserialize_Transform( Entity entity, ECS *ecs, HashTable *entities_for_ids, cJSON *component_obj )
-{
-    ECS_ADD_COMPONENT_DEFAULT_DECL( Transform, comp, ecs, entity );
-//  comp->name = deserialize_field_string( component_obj, "name" );
-//  comp->position = deserialize_field_vec3( component_obj, "position" );
-
-//cJSON_GetStringValue( cJSON_GetObjectItem( component_obj, "name" ) ) );
-        // for each field
-}
-
-ECS *components_deserialize_scene_alloc( const char *json_scene )
-{
-    ECS *result = ecs_new();
-    cJSON *json = cJSON_Parse( json_scene );
-    HashTable entities_for_ids = hashtable_empty( 1024, sizeof( Entity ) );
-    char id_as_str_buf[128];
-    cJSON *entity_obj;
-
-    cJSON_ArrayForEach( entity_obj, json )
-    {
-        sprintf( id_as_str_buf, "%f", cJSON_GetObjectItem( entity_obj, "_id" )->valuedouble );
-        Entity new_entity = ecs_create_entity( result );
-        hashtable_set_copy( &entities_for_ids, id_as_str_buf, &new_entity );
-    }
-
-    cJSON_ArrayForEach( entity_obj, json )
-    {
-        sprintf( id_as_str_buf, "%f", cJSON_GetObjectItem( entity_obj, "_id" )->valuedouble );
-        Entity e = *(Entity*)hashtable_at( &entities_for_ids, id_as_str_buf );
-
-        cJSON *component_obj;
-        cJSON_ArrayForEach( component_obj, entity_obj )
-        {
-            char *type_name = component_obj->string;
-            if( strcmp( "_id", type_name ) == 0 ) continue;
-
-            if( strcmp( "Transform", type_name ) == 0 ) 
-                deserialize_Transform( e, result, &entities_for_ids, component_obj );
-            // Generate for each type.
-
-            printf( "    %s\n", type_name );
-        }
-    }
-
-    hashtable_clear( &entities_for_ids );
-    cJSON_Delete( json );
-    return result;
-}
-*/
