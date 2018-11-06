@@ -22,8 +22,6 @@ struct EditorSystem
     Entity reparenting_entity;
 
     Entity active_camera;
-    float camera_pitch;
-    float camera_yaw;
 };
 
 EditorSystem *editor_sys_new( void )
@@ -32,8 +30,6 @@ EditorSystem *editor_sys_new( void )
     sys->selected_entity = 0;
     sys->reparenting_entity = 0;
     sys->active_camera = 0;
-    sys->camera_pitch = 0;
-    sys->camera_yaw = 0;
     sys->hierarchy_open = false;
     sys->hierarchy_reset = false;
     sys->fps_open = false;
@@ -77,27 +73,7 @@ static bool find_sdl_key_index( SDL_Keycode *a, SDL_Keycode *b )
 static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam, Transform *transform, float delta_millis )
 {
 // Camera rotation
-/*
-    if( inputs->cur.right_mouse )
-    {
-        float dx = inputs->cur.mouse_pos[0] - inputs->prev.mouse_pos[0];
-        float dy = inputs->cur.mouse_pos[1] - inputs->prev.mouse_pos[1];
 
-        sys->camera_yaw   -= 3 * dx;
-        sys->camera_pitch -= 3 * dy;
-    }
-
-    vec3 look_dir = {
-        cosf(sys->camera_yaw),
-        sys->camera_pitch,
-        sinf(sys->camera_yaw)
-    };
-
-    mat4 tmp;
-    glm_lookat( (vec3){ 0.f, 0.f, 0.f }, look_dir, (vec3){ 0.f, 1.f, 0.f }, tmp );
-    glm_mat4_inv( tmp, tmp );
-    glm_mat4_quat( tmp, transform->rotation );
-*/
     if( inputs->cur.right_mouse )
     {
         float dx = inputs->cur.mouse_pos[0] - inputs->prev.mouse_pos[0];
@@ -107,8 +83,11 @@ static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam
         glm_quatv( yaw, dx, (vec3){ 0, 1, 0 });
         glm_quat_mul( yaw, transform->rotation, transform->rotation );
 
+        vec3 pitch_axis;
         versor pitch;
-        // TODO
+        glm_quat_rotatev( transform->rotation, (vec3){ 1, 0, 0 }, pitch_axis );
+        glm_quatv( pitch, dy, pitch_axis );
+        glm_quat_mul( pitch, transform->rotation, transform->rotation );
     }
 
 // Camera movement
