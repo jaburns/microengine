@@ -76,6 +76,8 @@ static bool find_sdl_key_index( SDL_Keycode *a, SDL_Keycode *b )
 
 static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam, Transform *transform, float delta_millis )
 {
+// Camera rotation
+/*
     if( inputs->cur.right_mouse )
     {
         float dx = inputs->cur.mouse_pos[0] - inputs->prev.mouse_pos[0];
@@ -95,6 +97,21 @@ static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam
     glm_lookat( (vec3){ 0.f, 0.f, 0.f }, look_dir, (vec3){ 0.f, 1.f, 0.f }, tmp );
     glm_mat4_inv( tmp, tmp );
     glm_mat4_quat( tmp, transform->rotation );
+*/
+    if( inputs->cur.right_mouse )
+    {
+        float dx = inputs->cur.mouse_pos[0] - inputs->prev.mouse_pos[0];
+        float dy = inputs->cur.mouse_pos[1] - inputs->prev.mouse_pos[1];
+
+        versor yaw;
+        glm_quatv( yaw, dx, (vec3){ 0, 1, 0 });
+        glm_quat_mul( yaw, transform->rotation, transform->rotation );
+
+        versor pitch;
+        // TODO
+    }
+
+// Camera movement
 
     vec3 fwd, up, right, drive;
     glm_quat_rotatev( transform->rotation, (vec3){ 0.f, 0.f, 1.f }, fwd );
