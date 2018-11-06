@@ -8,7 +8,7 @@ struct TransformSystem
     uint8_t empty;
 };
 
-extern TransformSystem *transform_sys_new(void)
+TransformSystem *transform_sys_new(void)
 {
     return NULL;
 }
@@ -26,7 +26,7 @@ static void Transform_to_matrix(Transform *transform, mat4 matrix)
     glm_scale(matrix, transform->scale);
 }
 
-extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
+void transform_sys_run(TransformSystem *sys, ECS *ecs)
 {
     size_t num_transforms;
     Entity *transform_entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(Transform, ecs, &num_transforms);
@@ -65,6 +65,6 @@ extern void transform_sys_run(TransformSystem *sys, ECS *ecs)
     free(transform_entities);
 }
 
-extern void transform_sys_delete(TransformSystem *sys)
+void transform_sys_delete(TransformSystem *sys)
 {
 }
