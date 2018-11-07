@@ -84,16 +84,30 @@ RenderSystem *render_sys_new( HashCache *resources )
     return sys;
 }
 
+static void clear( void )
+{
+    glDepthMask( GL_TRUE );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+}
+
 void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio )
 {
     Entity camera_entity;
 
-    if( !ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Camera, ecs, &camera_entity ) ) return;
+    if( !ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Camera, ecs, &camera_entity ) ) 
+    {
+        clear();
+        return;
+    }
 
     ECS_GET_COMPONENT_DECL( Camera, camera, ecs, camera_entity );
     ECS_GET_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entity );
 
-    if( !camera_transform ) return;
+    if( !camera_transform )
+    {
+        clear();
+        return;
+    }
 
     mat4 projection;
     glm_perspective( camera->fov, aspect_ratio, camera->near_clip, camera->far_clip, projection );
@@ -103,11 +117,10 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
     mat4 view;
     glm_mat4_inv( camera_transform->worldMatrix_, view );
 
-    glDepthMask( GL_TRUE );
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
     size_t num_renderers;
     Entity *renderers = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( MeshRenderer, ecs, &num_renderers );
+
+    clear();
 
     for( int i = 0; i < num_renderers; ++i )
     {
