@@ -33,6 +33,12 @@ extern void vec_resize(Vec *vec, size_t new_item_count);
 extern void vec_clear(Vec *vec);
 extern void vec_clear_with_callback(Vec *vec, void *context, VecCallback cb);
 
+#define VEC_FOREACH(T, vec_ptr) for(                                                                \
+    struct ForIter_ { size_t index; T *item; } iter = { 0, 0 };                                     \
+    (size_t)(iter.item = (T*)vec_at((vec_ptr), iter.index)) && iter.index < (vec_ptr)->item_count;  \
+    ++iter.index                                                                                    \
+)
+
 #ifdef RUN_TESTS
 #include "../testing.h"
 extern TestResult vec_test(void);

@@ -54,11 +54,10 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
 
     if( transform && transform->children_.item_count > 0 && node_open )
     {
-        for( int i = 0; i < transform->children_.item_count; ++i )
+        VEC_FOREACH( Entity, &transform->children_ )
         {
-            Entity e = *(Entity*)vec_at( &transform->children_, i );
-            ECS_GET_COMPONENT_DECL( Transform, t, ecs, e );
-            inspect_transform_tree( sys, ecs, e, t );
+            ECS_GET_COMPONENT_DECL( Transform, t, ecs, *iter.item );
+            inspect_transform_tree( sys, ecs, *iter.item, t );
         }
 
         igTreePop();
