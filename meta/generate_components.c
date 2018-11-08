@@ -375,6 +375,17 @@ static void write_set_component(char **output, const char *type_name)
     W(*output, "}");
 }
 
+static void write_find_entity_with(char **output, const char *type_name)
+{
+    W(*output, "static int lcb_find_entity_with_%s(lua_State *L)", type_name);
+    W(*output, "{");
+    W(*output, "    Entity e = 0;");
+    W(*output, "    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(%s, s_ecs, &e);", type_name);
+    W(*output, "    lcb_push_Entity(L, &e);");
+    W(*output, "    return 1;");
+    W(*output, "}");
+}
+
 static void write_serialize(char **output, cJSON *type)
 {
     const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
@@ -615,6 +626,8 @@ static void write_components_init(char **output, cJSON *types)
         W(*output, "    lua_setglobal(L, \"set_component_%s\");", type_name);
         W(*output, "    lua_pushcfunction(L, lcb_add_component_%s);", type_name);
         W(*output, "    lua_setglobal(L, \"add_component_%s\");", type_name);
+        W(*output, "    lua_pushcfunction(L, lcb_find_entity_with_%s);", type_name);
+        W(*output, "    lua_setglobal(L, \"find_entity_with_%s\");", type_name);
     }
     
     W(*output, "    lua_pushcfunction(L, lcb_create_entity);");
@@ -768,6 +781,7 @@ static char *generate_components_c_alloc(cJSON *types)
         write_add_component(&output, type_name);
         write_get_component(&output, type_name);
         write_set_component(&output, type_name);
+        write_find_entity_with(&output, type_name);
         write_destructor(&output, type);
         write_vec_push_pop(&output, type_name);
         write_serialize(&output, type);

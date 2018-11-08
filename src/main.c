@@ -28,7 +28,7 @@ static int l_print( lua_State *L )
 {
     const char *d = luaL_checkstring( L, 1 );
     printf( ":: %s\n", d );
-    return 1;
+    return 0;
 }
 
 static void run_lua_main_func( lua_State *L, const char *func )
@@ -69,6 +69,7 @@ int main( int argc, char **argv )
     lua_State *L = luaL_newstate();
     luaL_openlibs( L );
     glmlua_load_types( L );
+
     lua_pushcfunction( L, l_print );
     lua_setglobal( L, "print" );
 
@@ -76,31 +77,37 @@ int main( int argc, char **argv )
     components_init_lua( L );
     components_bind_ecs( ecs );
 
+    bool play_mode = false;
+
     ClockSystem *clocksystem = clock_sys_new();
     InputSystem *inputsystem = input_sys_new( ctx );
     TransformSystem *transformsystem = transform_sys_new();
     RenderSystem *rendersystem = render_sys_new( resources );
     EditorSystem *editorsystem = editor_sys_new();
 
-    run_lua_main_func( L, "start" );
-
     do
     {
         clock_sys_run( clocksystem, ecs );
         input_sys_run( inputsystem, ecs );
 
-        run_lua_main_func( L, "update" );
+        if( play_mode )
+            run_lua_main_func( L, "update" );
 
         transform_sys_run( transformsystem, ecs );
-        ECS *new_ecs = editor_sys_run( editorsystem, ecs );
+        EditorSystemUpdateResult editor_update = editor_sys_run( editorsystem, ecs );
         render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ) );
 
-        if( new_ecs )
+        if( editor_update.new_ecs )
         {
             ecs_delete( ecs );
-            ecs = new_ecs;
+            ecs = editor_update.new_ecs;
             components_bind_ecs( ecs );
         }
+
+        if( editor_update.in_play_mode && !play_mode )
+            run_lua_main_func( L, "start" );
+
+        play_mode = editor_update.in_play_mode;
     }
     while( shell_flip_frame_poll_events( ctx ) );
 

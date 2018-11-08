@@ -23,7 +23,6 @@ void clock_sys_run( ClockSystem *sys, ECS *ecs )
     float delta_millis = (float)(now - sys->last_clock) * 1e-6f;
     sys->last_clock = now;
 
-
     Entity clock_entity;
     if( !ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity ) )
     {

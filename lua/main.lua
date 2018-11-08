@@ -1,41 +1,20 @@
-local m_camera
-local m_world
-
-function create_world()
-    local world = create_entity()
-
-    local world_trans = add_component_Transform(world)
-    world_trans.name = "World"
-    set_component_Transform(world, world_trans)
-
-    local world_rend = add_component_MeshRenderer(world)
-    world_rend.mesh = "models/m64_bob.jmesh"
-    world_rend.material = "materials/m64_bob.jmat"
-    set_component_MeshRenderer(world, world_rend)
-
-    return world
-end
-
-function create_camera()
-    local camera = create_entity()
-
-    local ct = add_component_Transform(camera)
-    ct.name = "Main Camera"
-    ct.position.z = -10
-    set_component_Transform(camera, ct)
-
-    add_component_Camera(camera)
-
-    return camera
-end
+local m_player_entity
+local m_clock_entity
+local m_start_pos
 
 return {
     start = function()
-        m_world = create_world()
-        m_camera = create_camera()
+        m_player_entity = find_entity_with_Player()
+        m_clock_entity = find_entity_with_ClockInfo()
+        m_start_pos = get_component_Transform(m_player_entity).position
     end,
 
     update = function()
+        local transform = get_component_Transform(m_player_entity)
+        local clock = get_component_ClockInfo(m_clock_entity)
 
+        transform.position = m_start_pos + vec3(0, 5 * math.sin(clock.millis_since_start / 1000), 0)
+
+        set_component_Transform(m_player_entity, transform)
     end
 }

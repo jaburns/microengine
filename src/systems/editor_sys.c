@@ -18,6 +18,8 @@ struct EditorSystem
     bool fps_reset;
     bool fps_open;
 
+    ECS *pre_play_ecs;
+
     Entity selected_entity;
     Entity reparenting_entity;
 
@@ -34,6 +36,7 @@ EditorSystem *editor_sys_new( void )
     sys->hierarchy_reset = false;
     sys->fps_open = false;
     sys->fps_reset = false;
+    sys->pre_play_ecs = NULL;
     return sys;
 }
 
@@ -75,8 +78,8 @@ static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam
 
     if( inputs->cur.right_mouse )
     {
-        float dx = inputs->cur.mouse_pos[0] - inputs->prev.mouse_pos[0];
-        float dy = inputs->cur.mouse_pos[1] - inputs->prev.mouse_pos[1];
+        float dx = 3 * (inputs->cur.mouse_pos[0] - inputs->prev.mouse_pos[0]);
+        float dy = 3 * (inputs->cur.mouse_pos[1] - inputs->prev.mouse_pos[1]);
 
         versor yaw;
         glm_quatv( yaw, dx, (vec3){ 0, 1, 0 });
@@ -85,7 +88,7 @@ static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam
         vec3 pitch_axis;
         versor pitch;
         glm_quat_rotatev( transform->rotation, (vec3){ 1, 0, 0 }, pitch_axis );
-        glm_quatv( pitch, dy, pitch_axis );
+        glm_quatv( pitch, -dy, pitch_axis );
         glm_quat_mul( pitch, transform->rotation, transform->rotation );
     }
 
@@ -148,13 +151,14 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
     this_t->parent = to_entity;
 }
 
-ECS *editor_sys_run( EditorSystem *sys, ECS *ecs )
+
+EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 {
     ECS *maybe_new_ecs = NULL;
 
     igBeginMainMenuBar();
 
-        if( igBeginMenu( "Engine", true ) )
+        if( igBeginMenu( "Scene", true ) )
         {
             if( igMenuItemBool( "Show Hierarchy", NULL, false, true ) )
             {
@@ -182,6 +186,30 @@ ECS *editor_sys_run( EditorSystem *sys, ECS *ecs )
                 char *json_scene = utils_read_file_alloc( "", "resources/scenes/saved.jscene", NULL );
                 maybe_new_ecs = components_deserialize_scene_alloc( json_scene );
                 free( json_scene );
+            }
+
+            igEndMenu();
+        }
+
+        if( igBeginMenu( "Game", true ) )
+        {
+            if( sys->pre_play_ecs )
+            {
+                if( igMenuItemBool( "Pause", NULL, false, true ) ) {}
+                if( igMenuItemBool( "Stop", NULL, false, true ) )
+                {
+                    maybe_new_ecs = sys->pre_play_ecs;
+                    sys->pre_play_ecs = NULL;
+                }
+            }
+            else
+            {
+                if( igMenuItemBool( "Play", NULL, false, true ) )
+                {
+                    char *json_scene = components_serialize_scene_alloc();
+                    sys->pre_play_ecs = components_deserialize_scene_alloc( json_scene );
+                    free( json_scene );
+                }
             }
 
             igEndMenu();
@@ -288,18 +316,25 @@ ECS *editor_sys_run( EditorSystem *sys, ECS *ecs )
 
     free( entities );
 
-    Entity inputs_entity;
-    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity );
-    ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
-
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Camera, ecs, &sys->active_camera );
-    ECS_GET_COMPONENT_DECL( Camera, active_cam, ecs, sys->active_camera );
-    ECS_GET_COMPONENT_DECL( Transform, active_cam_transform, ecs, sys->active_camera );
 
-    if( inputs && active_cam && active_cam_transform )
-        update_view_drag( sys, inputs, active_cam, active_cam_transform, clock->delta_millis );
+    if( sys->active_camera )
+    {
+        ECS_GET_COMPONENT_DECL( Camera, active_cam, ecs, sys->active_camera );
+        ECS_GET_COMPONENT_DECL( Transform, active_cam_transform, ecs, sys->active_camera );
 
-    return maybe_new_ecs;
+        Entity inputs_entity;
+        ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity );
+        ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
+
+        if( inputs && active_cam && active_cam_transform )
+            update_view_drag( sys, inputs, active_cam, active_cam_transform, clock->delta_millis );
+    }
+
+    return (EditorSystemUpdateResult) {
+        .new_ecs = maybe_new_ecs,
+        .in_play_mode = sys->pre_play_ecs != NULL
+    };
 }
 
 void editor_sys_delete( EditorSystem *sys )
