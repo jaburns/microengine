@@ -17,11 +17,13 @@ ClockSystem *clock_sys_new( void )
     return sys;
 }
 
-void clock_sys_run( ClockSystem *sys, ECS *ecs )
+void clock_sys_run( ClockSystem *sys, ECS *ecs, bool reset_clock )
 {
     uint64_t now = ns_clock();
     float delta_millis = (float)(now - sys->last_clock) * 1e-6f;
     sys->last_clock = now;
+
+    if( reset_clock ) sys->first_clock = now;
 
     Entity clock_entity;
     if( !ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity ) )

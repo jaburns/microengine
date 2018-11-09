@@ -77,6 +77,7 @@ int main( int argc, char **argv )
     components_init_lua( L );
     components_bind_ecs( ecs );
 
+    bool switching_mode = false;
     bool play_mode = false;
 
     ClockSystem *clocksystem = clock_sys_new();
@@ -87,7 +88,7 @@ int main( int argc, char **argv )
 
     do
     {
-        clock_sys_run( clocksystem, ecs );
+        clock_sys_run( clocksystem, ecs, switching_mode );
         input_sys_run( inputsystem, ecs );
 
         if( play_mode )
@@ -107,6 +108,7 @@ int main( int argc, char **argv )
         if( editor_update.in_play_mode && !play_mode )
             run_lua_main_func( L, "start" );
 
+        switching_mode = editor_update.in_play_mode != play_mode;
         play_mode = editor_update.in_play_mode;
     }
     while( shell_flip_frame_poll_events( ctx ) );
@@ -122,6 +124,8 @@ int main( int argc, char **argv )
     hashcache_delete( resources );
     ecs_delete( ecs );
     shell_delete( ctx );
+
+    getchar();
 
     return 0;
 }

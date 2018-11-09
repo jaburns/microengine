@@ -4,14 +4,14 @@
         { "name": "name",         "type": "string" },
         { "name": "position",     "type": "vec3"   },
         { "name": "rotation",     "type": "versor" },
-        { "name": "scale",        "type": "vec3", "default": "{1.f,1.f,1.f}" },
-        { "name": "parent",       "type": "Entity",              "hide_in_inspector": true },
-        { "name": "children_",    "type": "Entity", "vec": true, "hide_in_inspector": true, "serialize": false },
-        { "name": "worldMatrix_", "type": "mat4",                "hide_in_inspector": true, "serialize": false }
+        { "name": "scale",        "type": "vec3",   "default": "{1.f,1.f,1.f}" },
+        { "name": "parent",       "type": "Entity",              "hide": true },
+        { "name": "children_",    "type": "Entity", "vec": true, "hide": true, "serialize": false },
+        { "name": "worldMatrix_", "type": "mat4",                "hide": true, "serialize": false }
     ]
 },{
     "name": "InputFrame",
-    "nested_only": true,
+    "hide": true,
     "fields": [
         { "name": "mouse_pos",   "type": "vec2" },
         { "name": "left_mouse",  "type": "bool" },
@@ -20,6 +20,7 @@
     ]
 },{
     "name": "InputState",
+    "hide": true,
     "serialize": false,
     "fields": [
         { "name": "cur",  "type": "InputFrame" },
@@ -27,6 +28,7 @@
     ]
 },{
     "name": "ClockInfo",
+    "hide": true,
     "serialize": false,
     "fields": [
         { "name": "delta_millis",       "type": "float" },
@@ -39,12 +41,17 @@
         { "name": "material", "type": "string" }
     ]
 },{
+    "name": "MeshCollider",
+    "fields": [
+        { "name": "mesh",     "type": "string" }
+    ]
+},{
     "name": "Camera",
     "fields": [
-        { "name": "selected",  "type": "bool" },
+        { "name": "is_editor", "type": "bool" },
         { "name": "fov",       "type": "float", "default": "1.5708f" },
         { "name": "near_clip", "type": "float", "default": "1.0f"    },
-        { "name": "far_clip",  "type": "float", "default":"500.0f"   }
+        { "name": "far_clip",  "type": "float", "default": "500.0f"  }
     ]
 },{
     "name": "Player",

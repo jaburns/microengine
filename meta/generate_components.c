@@ -134,7 +134,7 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void lcb_push_Entity (lua_State *L, Entity *v)                  { lua_pushnumber(L, (double)(*v)); }"
 "\nstatic void  lcb_pop_Entity (lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
 "\nstatic void lcb_push_string (lua_State *L, char  **v)                  { lua_pushstring(L, *v ? *v : \"\"); }"
-"\nstatic void  lcb_pop_string (lua_State *L, char  **v, int stack_index) { *v = strdup(luaL_checkstring(L, stack_index)); }"
+"\nstatic void  lcb_pop_string (lua_State *L, char  **v, int stack_index) { if(*v) free(*v); *v = strdup(luaL_checkstring(L, stack_index)); }"
 "\n";
 
 
