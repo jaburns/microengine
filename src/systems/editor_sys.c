@@ -47,7 +47,13 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     if( !transform || transform->children_.item_count == 0 )
         node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    bool node_open = igTreeNodeExPtr( (void*)entity, node_flags, components_name_entity( entity ) );
+    bool name_from_transform;
+    const char *entity_name = components_name_entity( entity, &name_from_transform );
+
+    char name_buffer[256];
+    snprintf( name_buffer, 256, name_from_transform ? "%s" : "(%s)", entity_name );
+
+    bool node_open = igTreeNodeExPtr( (void*)entity, node_flags, name_buffer );
 
     if( igIsItemClicked( 0 ) )
         sys->selected_entity = entity;

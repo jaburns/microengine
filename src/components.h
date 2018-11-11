@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 #include "containers/ecs.h"
 
 typedef enum ComponentFieldType
@@ -31,12 +32,14 @@ typedef struct ComponentField
     ComponentFieldType type;
     ComponentFlags flags;
     const char *subcomponent_name;
+    size_t offset;
 }
 ComponentField;
 
 typedef struct ComponentInfo
 {
     const char *name;
+    size_t size;
     ComponentDestructor destructor;
     ComponentFlags flags;
     size_t num_fields;
@@ -48,7 +51,7 @@ extern ECS *components_ecs_new( void );
 extern void components_bind_ecs( ECS *ecs );
 
 extern void components_inspect_entity( Entity e );
-extern const char *components_name_entity( Entity e );
+extern const char *components_name_entity( Entity e, bool *name_from_transform );
 extern Entity *components_entity_to_change; // TODO use a function instead of a global var
 
 extern char *components_serialize_scene_alloc( void );

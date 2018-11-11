@@ -91,11 +91,11 @@ const writeTypeInfo = (types, rootType) =>
             : 'NULL';
 
     const writeFieldInfo = field => 
-        `    { "${field.name}", ${writeFieldType(field.type)}, ${writeFlags(field)}, ${writeSubName(field)} }`;
+        `    { "${field.name}", ${writeFieldType(field.type)}, ${writeFlags(field)}, ${writeSubName(field)}, (size_t)&((${rootType.name}*)0)->${field.name} }`;
 
     const fieldInfos = rootType.fields.map(writeFieldInfo).join(',\n');
 
-    return `static const ComponentInfo ${rootType.name}_info = { "${rootType.name}", ` +
+    return `static const ComponentInfo ${rootType.name}_info = { "${rootType.name}", sizeof(${rootType.name}), ` +
         `&${rootType.name}_destruct, ${writeFlags(rootType)}, ${rootType.fields.length}, {\n${fieldInfos}\n}};`;
 };
 
@@ -111,7 +111,7 @@ const writeDestructor = (type, body) => {
 const writeAllInfosArray = types => {
     const infoPtrs = types.map(t => `&${t.name}_info`).join(', ');
 
-    return `static const size_t COMPONENTS_ALL_INFOS_COUNT = ${types.length};\n` +
+    return `#define COMPONENTS_TOTAL_COUNT ${types.length}\n` +
            `static const ComponentInfo *COMPONENTS_ALL_INFOS[] = { ${infoPtrs} };`;
 };
 
@@ -140,7 +140,7 @@ const writeComponentDefsHeader = types => {
 
     result.push(writeAllInfosArray(types));
 
-    return result.join('\n');
+    return result.join('\n').replace(/\n/g, '\n/*generated*/ ');
 };
 
 fs.writeFileSync(

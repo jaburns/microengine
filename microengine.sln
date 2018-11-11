@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27428.2015
+VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "microengine", "microengine.vcxproj", "{4ECE9A7E-3145-440C-90BB-A9BE64AC300C}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "microengine_meta", "microengine_meta.vcxproj", "{DE036FF4-60F2-43E6-A06A-71D4F7A425AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		{4ECE9A7E-3145-440C-90BB-A9BE64AC300C}.Debug|x64.Build.0 = Debug|x64
 		{4ECE9A7E-3145-440C-90BB-A9BE64AC300C}.Release|x64.ActiveCfg = Release|x64
 		{4ECE9A7E-3145-440C-90BB-A9BE64AC300C}.Release|x64.Build.0 = Release|x64
-		{DE036FF4-60F2-43E6-A06A-71D4F7A425AF}.Debug|x64.ActiveCfg = Debug|x64
-		{DE036FF4-60F2-43E6-A06A-71D4F7A425AF}.Debug|x64.Build.0 = Debug|x64
-		{DE036FF4-60F2-43E6-A06A-71D4F7A425AF}.Release|x64.ActiveCfg = Debug|x64
-		{DE036FF4-60F2-43E6-A06A-71D4F7A425AF}.Release|x64.Build.0 = Debug|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
