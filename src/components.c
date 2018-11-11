@@ -209,6 +209,20 @@ void components_generic_destruct( const ComponentInfo *info, void *component )
     }
 }
 
+static void *add_component_if_missing( ECS *ecs, Entity e, const char *type_name )
+{
+    void *comp =  ecs_get_component( ecs, e, type_name );
+
+    if( !comp )
+    {
+        comp = ecs_add_component_zeroed( ecs, e, type_name );
+        const ComponentInfo *comp_info = get_info_for_component_type( type_name );
+        memcpy( comp, comp_info->prototype, comp_info->size );
+    }
+
+    return comp;
+}
+
 void components_inspect_entity( ECS *ecs, Entity e )
 {
     int visible_component_count = 0;
@@ -228,13 +242,7 @@ void components_inspect_entity( ECS *ecs, Entity e )
     igSameLine( 0, -1 );
 
     if( igButton( "Add Component", (ImVec2){ 0, 0 } ) )
-    {
-        const char *comp = visible_components[selected_component];
-        
-        // TODO use defaults not zero
-        if( !ecs_get_component( ecs, e, comp ) )
-            ecs_add_component_zeroed( ecs, e, comp );
-    }
+        add_component_if_missing( ecs, e, visible_components[selected_component] );
 
     igSeparator();
 
@@ -296,7 +304,7 @@ static void serialize_component( cJSON *obj, void *component, const ComponentInf
 
         if( field->flags & COMPONENT_FLAG_IS_VEC )
         {
-            // TODO
+            // TODO implement
         }
         else
             cJSON_AddItemToObject( comp_obj, field->name, serialize_field( field_ptr, field ) );
@@ -350,7 +358,7 @@ static void deserialize_nested_component( cJSON *item, void *out, const Componen
 
         if( field->flags & COMPONENT_FLAG_IS_VEC )
         {
-            // TODO
+            // TODO implement
         }
         else
             deserialize_field( cJSON_GetObjectItem( item, field->name ), field_ptr, entities_for_ids, field );
@@ -359,8 +367,7 @@ static void deserialize_nested_component( cJSON *item, void *out, const Componen
 
 static void deserialize_component( ECS *ecs, cJSON *component_obj, Entity entity, const ComponentInfo *info, HashTable *entities_for_ids )
 {
-    // TODO use default
-    void *comp = ecs_add_component_zeroed( ecs, entity, info->name );
+    void *comp = add_component_if_missing( ecs, entity, info->name );
     deserialize_nested_component( component_obj, comp, info, entities_for_ids );
 }
 

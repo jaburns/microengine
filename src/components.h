@@ -40,6 +40,7 @@ typedef struct ComponentInfo
 {
     const char *name;
     size_t size;
+    const void *prototype;
     ComponentDestructor destructor;
     ComponentFlags flags;
     size_t num_fields;

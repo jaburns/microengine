@@ -96,7 +96,7 @@ const writeTypeInfo = (types, rootType) =>
     const fieldInfos = rootType.fields.map(writeFieldInfo).join(',\n');
 
     return `static const ComponentInfo ${rootType.name}_info = { "${rootType.name}", sizeof(${rootType.name}), ` +
-        `&${rootType.name}_destruct, ${writeFlags(rootType)}, ${rootType.fields.length}, {\n${fieldInfos}\n}};`;
+        `&${rootType.name}_default, &${rootType.name}_destruct, ${writeFlags(rootType)}, ${rootType.fields.length}, {\n${fieldInfos}\n}};`;
 };
 
 const writeDestructor = (type, body) => {
