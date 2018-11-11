@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <cglm.lua.h>
 #include <ns_clock.h>
 
 #ifdef RUN_TESTS
@@ -8,7 +7,7 @@
 #endif
 
 #include "shell.h"
-#include "components.h"
+#include "component_defs.h"
 #include "containers/ecs.h"
 #include "containers/hashcache.h"
 #include "systems/input_sys.h"

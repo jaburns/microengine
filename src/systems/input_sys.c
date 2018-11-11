@@ -1,6 +1,6 @@
 #include "input_sys.h"
 
-#include "../components.h"
+#include "../component_defs.h"
 #include "../containers/vec.h"
 
 static InputFrame s_latest_inputs;

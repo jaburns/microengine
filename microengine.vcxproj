@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -62,7 +62,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -82,7 +82,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;NDEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -110,7 +110,6 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
-    <ClCompile Include="src\components.c" />
     <ClCompile Include="src\containers\hashcache.c" />
     <ClCompile Include="src\containers\ecs.c" />
     <ClCompile Include="src\containers\hashtable.c" />
@@ -119,6 +118,7 @@
     <ClCompile Include="src\resources\mesh.c" />
     <ClCompile Include="src\resources\shader.c" />
     <ClCompile Include="src\resources\texture.c" />
+    <ClCompile Include="src\components.c" />
     <ClCompile Include="src\systems\clock_sys.c" />
     <ClCompile Include="src\systems\editor_sys.c" />
     <ClCompile Include="src\systems\game_sys.c" />
@@ -131,7 +131,7 @@
     <ClCompile Include="src\containers\vec.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\components.h" />
+    <ClInclude Include="src\component_defs.h" />
     <ClInclude Include="src\containers\hashcache.h" />
     <ClInclude Include="src\containers\ecs.h" />
     <ClInclude Include="src\gl.h" />
@@ -141,6 +141,7 @@
     <ClInclude Include="src\resources\mesh.h" />
     <ClInclude Include="src\resources\shader.h" />
     <ClInclude Include="src\resources\texture.h" />
+    <ClInclude Include="src\components.h" />
     <ClInclude Include="src\systems\clock_sys.h" />
     <ClInclude Include="src\systems\editor_sys.h" />
     <ClInclude Include="src\systems\game_sys.h" />

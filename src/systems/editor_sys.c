@@ -9,7 +9,7 @@
 #include "../utils.h"
 #include "../containers/ecs.h"
 #include "../containers/hashtable.h"
-#include "../components.h"
+#include "../component_defs.h"
 
 struct EditorSystem
 {

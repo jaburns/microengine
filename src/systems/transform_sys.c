@@ -1,5 +1,5 @@
 #include "transform_sys.h"
-#include "../components.h"
+#include "../component_defs.h"
 
 #include <cglm/cglm.h>
 

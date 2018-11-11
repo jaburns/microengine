@@ -1,6 +1,6 @@
 #include "clock_sys.h"
 
-#include "../components.h"
+#include "../component_defs.h"
 #include <ns_clock.h>
 
 struct ClockSystem

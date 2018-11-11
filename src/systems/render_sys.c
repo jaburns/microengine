@@ -6,7 +6,7 @@
 #include <string.h>
 #include <cglm/cglm.h>
 
-#include "../components.h"
+#include "../component_defs.h"
 #include "../resources/shader.h"
 #include "../resources/material.h"
 #include "../resources/mesh.h"

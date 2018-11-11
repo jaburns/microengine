@@ -5,8 +5,7 @@
 !/external/glew-*.zip
 !/external/SDL2-*.zip
 /*.dll
-/src/components.h
-/src/components.c
+/src/component_defs.h
 /imgui.ini
 /build
 /Makefile
