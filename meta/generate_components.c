@@ -14,13 +14,11 @@ const char *COMPONENTS_H_HEADER =
   "#pragma once"
 "\n#include <cglm/cglm.h>"
 "\n#include <stdint.h>"
-"\n#include <lua.h>"
 "\n#include \"containers/vec.h\""
 "\n#include \"containers/ecs.h\""
 "\n"
 "\nextern ECS *components_ecs_new(void);"
 "\nextern void components_bind_ecs(ECS *ecs);"
-"\nextern void components_init_lua(lua_State *L);"
 "\nextern void components_inspect_entity(Entity e);"
 "\nextern char *components_serialize_scene_alloc(void);"
 "\nextern ECS *components_deserialize_scene_alloc(const char *json_scene);"
@@ -32,11 +30,8 @@ const char *COMPONENTS_H_HEADER =
 const char *COMPONENTS_C_HEADER = 
   "#define _CRT_SECURE_NO_WARNINGS 1"
 "\n#include \"components.h\""
-"\n#include <cglm.lua.h>"
 "\n#include <stdint.h>"
 "\n#include <stdbool.h>"
-"\n#include <lauxlib.h>"
-"\n#include <lualib.h>"
 "\n#include <imgui_impl.h>"
 "\n#include <string.h>"
 "\n#include <cJSON.h>"
@@ -53,20 +48,6 @@ const char *COMPONENTS_C_HEADER =
 "\nvoid components_bind_ecs(ECS *ecs)"
 "\n{"
 "\n    s_ecs = ecs;"
-"\n}"
-"\n"
-"\nstatic int lcb_create_entity(lua_State *L)"
-"\n{"
-"\n    Entity ent = ecs_create_entity(s_ecs);"
-"\n    lua_pushnumber(L, (double)ent);"
-"\n    return 1;"
-"\n}"
-"\n"
-"\nstatic int lcb_destroy_entity(lua_State *L)"
-"\n{"
-"\n    double entity = luaL_checknumber(L, 1);"
-"\n    ecs_destroy_entity(s_ecs, (Entity)entity);"
-"\n    return 0;"
 "\n}"
 "\n"
 "\nstatic void icb_inspect_int    (const char *label, int    *v) { igInputInt(label, v, 1, 10, 0); }"
@@ -123,27 +104,6 @@ const char *COMPONENTS_C_HEADER =
 "\n    sprintf( id_as_str_buf, \"%f\", item->valuedouble );"
 "\n    *out = *(Entity*)hashtable_at( entities_for_ids, id_as_str_buf );"
 "\n}"
-"\n"
-"\nstatic void lcb_push_int    (lua_State *L, int    *v)                  { lua_pushnumber(L, (int)(*v)); }"
-"\nstatic void  lcb_pop_int    (lua_State *L, int    *v, int stack_index) { *v = (int)luaL_checknumber(L, stack_index); }"
-"\nstatic void lcb_push_float  (lua_State *L, float  *v)                  { lua_pushnumber(L, (double)(*v)); }"
-"\nstatic void  lcb_pop_float  (lua_State *L, float  *v, int stack_index) { *v = (float)luaL_checknumber(L, stack_index); }"
-"\nstatic void lcb_push_bool   (lua_State *L, bool   *v)                  { lua_pushboolean(L, *v); }"
-"\nstatic void  lcb_pop_bool   (lua_State *L, bool   *v, int stack_index) { *v = (bool)lua_toboolean(L, stack_index); }"
-"\nstatic void lcb_push_vec2   (lua_State *L, vec2   *v)                  { glmlua_push_vec2(L, *v); }"
-"\nstatic void  lcb_pop_vec2   (lua_State *L, vec2   *v, int stack_index) { glmlua_get_vec2(L, stack_index, *v); }"
-"\nstatic void lcb_push_vec3   (lua_State *L, vec3   *v)                  { glmlua_push_vec3(L, *v); }"
-"\nstatic void  lcb_pop_vec3   (lua_State *L, vec3   *v, int stack_index) { glmlua_get_vec3(L, stack_index, *v); }"
-"\nstatic void lcb_push_vec4   (lua_State *L, vec4   *v)                  { glmlua_push_vec4(L, *v); }"
-"\nstatic void  lcb_pop_vec4   (lua_State *L, vec4   *v, int stack_index) { glmlua_get_vec4(L, stack_index, *v); }"
-"\nstatic void lcb_push_versor (lua_State *L, versor *v)                  { glmlua_push_quat(L, *v); }"
-"\nstatic void  lcb_pop_versor (lua_State *L, versor *v, int stack_index) { glmlua_get_quat(L, stack_index, *v); }"
-"\nstatic void lcb_push_mat4   (lua_State *L, mat4   *v)                  { glmlua_push_mat4(L, *v); }"
-"\nstatic void  lcb_pop_mat4   (lua_State *L, mat4   *v, int stack_index) { glmlua_get_mat4(L, stack_index, *v); }"
-"\nstatic void lcb_push_Entity (lua_State *L, Entity *v)                  { lua_pushnumber(L, (double)(*v)); }"
-"\nstatic void  lcb_pop_Entity (lua_State *L, Entity *v, int stack_index) { *v = (Entity)luaL_checknumber(L, stack_index); }"
-"\nstatic void lcb_push_string (lua_State *L, char  **v)                  { lua_pushstring(L, *v ? *v : \"\"); }"
-"\nstatic void  lcb_pop_string (lua_State *L, char  **v, int stack_index) { if(*v) free(*v); *v = strdup(luaL_checkstring(L, stack_index)); }"
 "\n";
 
 
@@ -255,144 +215,6 @@ static void write_default_def(char **output, cJSON *types, cJSON *type)
     WL(*output, "static const %s %s_default = ", name, name);
     write_default_for_type(output, types, type);
     WL(*output, ";\n");
-}
-
-static void write_vec_push_pop(char **output, const char *type_name)
-{
-    bool is_string = strcmp( "string", type_name ) == 0;
-    bool clear_with_callback = !is_type_basic( type_name ) || is_string;
-
-    if( clear_with_callback )
-    {
-        if( is_string )
-            W(*output, "static void lcb_vec_clear_callback_string(void *ctx, char **v) { free(*v); }");
-        else
-            W(*output, "static void lcb_vec_clear_callback_%s(void *ctx, %s *v) { destruct_%s(v); }", type_name, type_name, type_name);
-    }
-
-    W(*output, "static void lcb_push_Vec_%s(lua_State *L, Vec *v)", type_name);
-    W(*output, "{");
-    W(*output, "    lua_newtable(L);");
-    W(*output, "    for (int i = 0; i < v->item_count; ++i)");
-    W(*output, "    {");
-    W(*output, "        lcb_push_%s(L, vec_at(v, i));", type_name);
-    W(*output, "        lua_rawseti(L, -2, i + 1);");
-    W(*output, "    }");
-    W(*output, "}");
-    W(*output, "static void lcb_pop_Vec_%s(lua_State *L, Vec *v, int stack_index)", type_name);
-    W(*output, "{");
-    W(*output, "    luaL_checktype(L, stack_index, LUA_TTABLE);");
-    W(*output, "    size_t vec_len = lua_objlen(L, stack_index); ");
-    W(*output, "");
-
-    if( clear_with_callback )
-        W(*output, "    vec_clear_with_callback(v, NULL, lcb_vec_clear_callback_%s);", type_name);
-
-    W(*output, "    vec_resize(v, vec_len);");
-    W(*output, "");
-    W(*output, "    for (int i = 0; i < vec_len; ++i)");
-    W(*output, "    {");
-    W(*output, "        lua_rawgeti(L, stack_index, i + 1);");
-    W(*output, "        lcb_pop_%s(L, vec_at(v, i), -1);", type_name);
-    W(*output, "        lua_pop(L, 1);");
-    W(*output, "    }");
-    W(*output, "}");
-}
-
-static void write_lua_push(char **output, cJSON *type)
-{
-    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
-
-    W(*output, "static void lcb_push_%s(lua_State *L, %s *v)", type_name, type_name);
-    W(*output, "{");
-    W(*output, "    lua_newtable(L);");
-
-    cJSON *fields = cJSON_GetObjectItem(type, "fields");
-    for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
-    {
-        cJSON *field = cJSON_GetArrayItem(fields, i);
-        const char *field_type_prefix = cJSON_GetObjectItem(field, "vec") ? "Vec_" : "";
-        const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")); 
-        const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")); 
-
-        W(*output, "    lua_pushstring(L, \"%s\");", field_name);
-        W(*output, "    lcb_push_%s%s(L, &v->%s);", field_type_prefix, field_type, field_name);
-        W(*output, "    lua_settable(L, -3);");
-    }
-
-    W(*output, "}");
-}
-
-static void write_lua_pop(char **output, cJSON *type)
-{
-    const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
-
-    W(*output, "static void lcb_pop_%s(lua_State *L, %s *v, int stack_index)", type_name, type_name);
-    W(*output, "{");
-    W(*output, "    luaL_checktype(L, stack_index, LUA_TTABLE);");
-
-    cJSON *fields = cJSON_GetObjectItem(type, "fields");
-    for (int i = 0, max = cJSON_GetArraySize(fields); i < max; ++i)
-    {
-        cJSON *field = cJSON_GetArrayItem(fields, i);
-        const char *field_type_prefix = cJSON_GetObjectItem(field, "vec") ? "Vec_" : "";
-        const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")); 
-        const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")); 
-
-        W(*output, "    lua_getfield(L, stack_index, \"%s\");", field_name);
-        W(*output, "    lcb_pop_%s%s(L, &v->%s, -1);", field_type_prefix, field_type, field_name);
-        W(*output, "    lua_pop(L, 1);");
-    }
-
-    W(*output, "}");
-}
-
-static void write_add_component(char **output, const char *type_name)
-{
-    W(*output, "static int lcb_add_component_%s(lua_State *L)", type_name);
-    W(*output, "{");
-    W(*output, "    Entity e = (Entity)luaL_checknumber(L, 1);");
-    W(*output, "    ECS_GET_COMPONENT_DECL(%s, x, s_ecs, e);", type_name);
-    W(*output, "    if (!x) {");
-    W(*output, "        ECS_ADD_COMPONENT_DEFAULT_DECL(%s, x_new, s_ecs, e);", type_name);
-    W(*output, "        x = x_new;");
-    W(*output, "    }");
-    W(*output, "    lcb_push_%s(L, x);", type_name);
-    W(*output, "    return 1;");
-    W(*output, "}");
-}
-
-static void write_get_component(char **output, const char *type_name)
-{
-    W(*output, "static int lcb_get_component_%s(lua_State *L)", type_name);
-    W(*output, "{");
-    W(*output, "    Entity e = (Entity)luaL_checknumber(L, 1);");
-    W(*output, "    ECS_GET_COMPONENT_DECL(%s, x, s_ecs, e);", type_name);
-    W(*output, "    lcb_push_%s(L, x);", type_name);
-    W(*output, "    return 1;");
-    W(*output, "}");
-}
-
-static void write_set_component(char **output, const char *type_name)
-{
-    W(*output, "static int lcb_set_component_%s(lua_State *L)", type_name);
-    W(*output, "{");
-    W(*output, "    Entity e = (Entity)luaL_checknumber(L, 1);");
-    W(*output, "    ECS_GET_COMPONENT_DECL(%s, x, s_ecs, e);", type_name);
-    W(*output, "    lcb_pop_%s(L, x, 2);", type_name);
-    W(*output, "    return 0;");
-    W(*output, "}");
-}
-
-static void write_find_entity_with(char **output, const char *type_name)
-{
-    W(*output, "static int lcb_find_entity_with_%s(lua_State *L)", type_name);
-    W(*output, "{");
-    W(*output, "    Entity e = 0;");
-    W(*output, "    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT(%s, s_ecs, &e);", type_name);
-    W(*output, "    lcb_push_Entity(L, &e);");
-    W(*output, "    return 1;");
-    W(*output, "}");
 }
 
 static void write_serialize(char **output, cJSON *type)
@@ -626,27 +448,6 @@ static void write_components_init(char **output, cJSON *types)
 
     W(*output, "    return ecs;");
     W(*output, "}");
-    W(*output, "void components_init_lua(lua_State *L)");
-    W(*output, "{");
-
-    cJSON_ArrayForEach(type, types)
-    {
-        const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
-        W(*output, "    lua_pushcfunction(L, lcb_get_component_%s);", type_name);
-        W(*output, "    lua_setglobal(L, \"get_component_%s\");", type_name);
-        W(*output, "    lua_pushcfunction(L, lcb_set_component_%s);", type_name);
-        W(*output, "    lua_setglobal(L, \"set_component_%s\");", type_name);
-        W(*output, "    lua_pushcfunction(L, lcb_add_component_%s);", type_name);
-        W(*output, "    lua_setglobal(L, \"add_component_%s\");", type_name);
-        W(*output, "    lua_pushcfunction(L, lcb_find_entity_with_%s);", type_name);
-        W(*output, "    lua_setglobal(L, \"find_entity_with_%s\");", type_name);
-    }
-    
-    W(*output, "    lua_pushcfunction(L, lcb_create_entity);");
-    W(*output, "    lua_setglobal(L, \"create_entity\");");
-    W(*output, "    lua_pushcfunction(L, lcb_destroy_entity);");
-    W(*output, "    lua_setglobal(L, \"destroy_entity\");");
-    W(*output, "}");
 }
 
 static void write_components_name_entity(char **output, cJSON *types)
@@ -779,23 +580,13 @@ static char *generate_components_c_alloc(cJSON *types)
 
     write_component_names_array(&output, types);
 
-    for (int i = 0; i < NUM_BASE_TYPES; ++i)
-        write_vec_push_pop(&output, BASE_TYPES[i]);
-
     for (int i = 0, max = cJSON_GetArraySize(types); i < max; ++i)
     {
         cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
         write_inspector(&output, type);
-        write_lua_push(&output, type);
-        write_lua_pop(&output, type);
-        write_add_component(&output, type_name);
-        write_get_component(&output, type_name);
-        write_set_component(&output, type_name);
-        write_find_entity_with(&output, type_name);
         write_destructor(&output, type);
-        write_vec_push_pop(&output, type_name);
         write_serialize(&output, type);
         write_deserialize(&output, type);
     }

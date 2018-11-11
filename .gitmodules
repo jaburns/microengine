@@ -7,6 +7,6 @@
 [submodule "external/cJSON"]
 	path = external/cJSON
 	url = git@github.com:DaveGamble/cJSON
-[submodule "external/cglm.lua"]
-	path = external/cglm.lua
-	url = git@github.com:jaburns/cglm.lua
+[submodule "external/cglm"]
+	path = external/cglm
+	url = git@github.com:recp/cglm

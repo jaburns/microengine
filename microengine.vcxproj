@@ -62,7 +62,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;_DEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm.lua;$(SolutionDir)\external\cglm.lua\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\cglm.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -82,7 +82,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>RUN_TESTS;NDEBUG;MICROENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm.lua;$(SolutionDir)\external\cglm.lua\cglm\include;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\cglm.lua\lua;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\external\cglm;$(SolutionDir)\external\cJSON;$(SolutionDir)\external\support;$(SolutionDir)\external\lodepng;$(SolutionDir)\external\SDL2-2.0.8\include;$(SolutionDir)\external\glew-2.1.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -105,40 +105,6 @@
     <ClCompile Include="external\cimgui\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\cimgui\imgui\imgui_widgets.cpp" />
     <ClCompile Include="external\cJSON\cJSON.c" />
-    <ClCompile Include="external\cglm.lua\lua\lapi.c" />
-    <ClCompile Include="external\cglm.lua\lua\lauxlib.c" />
-    <ClCompile Include="external\cglm.lua\lua\lbaselib.c" />
-    <ClCompile Include="external\cglm.lua\lua\lcode.c" />
-    <ClCompile Include="external\cglm.lua\lua\lcorolib.c" />
-    <ClCompile Include="external\cglm.lua\lua\lctype.c" />
-    <ClCompile Include="external\cglm.lua\lua\ldblib.c" />
-    <ClCompile Include="external\cglm.lua\lua\ldebug.c" />
-    <ClCompile Include="external\cglm.lua\lua\ldo.c" />
-    <ClCompile Include="external\cglm.lua\lua\ldump.c" />
-    <ClCompile Include="external\cglm.lua\lua\lfunc.c" />
-    <ClCompile Include="external\cglm.lua\lua\lgc.c" />
-    <ClCompile Include="external\cglm.lua\lua\linit.c" />
-    <ClCompile Include="external\cglm.lua\lua\liolib.c" />
-    <ClCompile Include="external\cglm.lua\lua\llex.c" />
-    <ClCompile Include="external\cglm.lua\lua\lmathlib.c" />
-    <ClCompile Include="external\cglm.lua\lua\lmem.c" />
-    <ClCompile Include="external\cglm.lua\lua\loadlib.c" />
-    <ClCompile Include="external\cglm.lua\lua\lobject.c" />
-    <ClCompile Include="external\cglm.lua\lua\lopcodes.c" />
-    <ClCompile Include="external\cglm.lua\lua\loslib.c" />
-    <ClCompile Include="external\cglm.lua\lua\lparser.c" />
-    <ClCompile Include="external\cglm.lua\lua\lstate.c" />
-    <ClCompile Include="external\cglm.lua\lua\lstring.c" />
-    <ClCompile Include="external\cglm.lua\lua\lstrlib.c" />
-    <ClCompile Include="external\cglm.lua\lua\ltable.c" />
-    <ClCompile Include="external\cglm.lua\lua\ltablib.c" />
-    <ClCompile Include="external\cglm.lua\lua\ltests.c" />
-    <ClCompile Include="external\cglm.lua\lua\ltm.c" />
-    <ClCompile Include="external\cglm.lua\lua\lundump.c" />
-    <ClCompile Include="external\cglm.lua\lua\lutf8lib.c" />
-    <ClCompile Include="external\cglm.lua\lua\lvm.c" />
-    <ClCompile Include="external\cglm.lua\lua\lzio.c" />
-    <ClCompile Include="external\cglm.lua\cglm.lua.c" />
     <ClCompile Include="external\support\imgui_impl.cpp" />
     <ClCompile Include="external\support\lodepng.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
@@ -165,34 +131,6 @@
     <ClCompile Include="src\containers\vec.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="external\cglm.lua\lua\lapi.h" />
-    <ClInclude Include="external\cglm.lua\lua\lauxlib.h" />
-    <ClInclude Include="external\cglm.lua\lua\lcode.h" />
-    <ClInclude Include="external\cglm.lua\lua\lctype.h" />
-    <ClInclude Include="external\cglm.lua\lua\ldebug.h" />
-    <ClInclude Include="external\cglm.lua\lua\ldo.h" />
-    <ClInclude Include="external\cglm.lua\lua\lfunc.h" />
-    <ClInclude Include="external\cglm.lua\lua\lgc.h" />
-    <ClInclude Include="external\cglm.lua\lua\ljumptab.h" />
-    <ClInclude Include="external\cglm.lua\lua\llex.h" />
-    <ClInclude Include="external\cglm.lua\lua\llimits.h" />
-    <ClInclude Include="external\cglm.lua\lua\lmem.h" />
-    <ClInclude Include="external\cglm.lua\lua\lobject.h" />
-    <ClInclude Include="external\cglm.lua\lua\lopcodes.h" />
-    <ClInclude Include="external\cglm.lua\lua\lparser.h" />
-    <ClInclude Include="external\cglm.lua\lua\lprefix.h" />
-    <ClInclude Include="external\cglm.lua\lua\lstate.h" />
-    <ClInclude Include="external\cglm.lua\lua\lstring.h" />
-    <ClInclude Include="external\cglm.lua\lua\ltable.h" />
-    <ClInclude Include="external\cglm.lua\lua\ltests.h" />
-    <ClInclude Include="external\cglm.lua\lua\ltm.h" />
-    <ClInclude Include="external\cglm.lua\lua\lua.h" />
-    <ClInclude Include="external\cglm.lua\lua\luaconf.h" />
-    <ClInclude Include="external\cglm.lua\lua\lualib.h" />
-    <ClInclude Include="external\cglm.lua\lua\lundump.h" />
-    <ClInclude Include="external\cglm.lua\lua\lvm.h" />
-    <ClInclude Include="external\cglm.lua\lua\lzio.h" />
-    <ClInclude Include="external\cglm.lua\cglm.lua.h" />
     <ClInclude Include="src\components.h" />
     <ClInclude Include="src\containers\hashcache.h" />
     <ClInclude Include="src\containers\ecs.h" />

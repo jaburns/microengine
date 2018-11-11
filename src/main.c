@@ -1,7 +1,4 @@
 #include <stdio.h>
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
 #include <string.h>
 #include <cglm.lua.h>
 #include <ns_clock.h>
@@ -25,30 +22,6 @@
 #include "resources/shader.h"
 #include "resources/mesh.h"
 
-static int l_print( lua_State *L )
-{
-    const char *d = luaL_checkstring( L, 1 );
-    printf( ":: %s\n", d );
-    return 0;
-}
-
-static void run_lua_main_func( lua_State *L, const char *func )
-{
-    int error;
-
-    lua_getglobal( L, "require" );
-    lua_pushstring( L, "lua/main" );
-    error = lua_pcall( L, 1, 1, 0 );
-    lua_getfield( L, -1, func );
-    error = lua_pcall( L, 0, 0, 0 );
-
-    if( error )
-    {
-        printf( "%s", lua_tostring( L, -1 ) );
-        exit( 1 );
-    }
-}
-
 static void resources_init( HashCache *resources )
 {
     hashcache_register( resources, "glsl", shader_load, shader_delete );
@@ -67,15 +40,7 @@ int main( int argc, char **argv )
     HashCache *resources = hashcache_new();
     resources_init( resources );
 
-    lua_State *L = luaL_newstate();
-    luaL_openlibs( L );
-    glmlua_load_types( L );
-
-    lua_pushcfunction( L, l_print );
-    lua_setglobal( L, "print" );
-
     ECS *ecs = components_ecs_new();
-    components_init_lua( L );
     components_bind_ecs( ecs );
 
     bool switching_mode = false;
@@ -94,12 +59,7 @@ int main( int argc, char **argv )
         input_sys_run( inputsystem, ecs );
 
         if( play_mode )
-        {
             game_sys_run( gamesystem, ecs );
-//          if( switching_mode )
-//              run_lua_main_func( L, "start" );
-//          run_lua_main_func( L, "update" );
-        }
 
         transform_sys_run( transformsystem, ecs );
         EditorSystemUpdateResult editor_update = editor_sys_run( editorsystem, ecs );
@@ -116,8 +76,6 @@ int main( int argc, char **argv )
         play_mode = editor_update.in_play_mode;
     }
     while( shell_flip_frame_poll_events( ctx ) );
-
-    lua_close( L );
 
     game_sys_delete( gamesystem );
     editor_sys_delete( editorsystem );
