@@ -1,5 +1,5 @@
-const components = require('./components.json');
-
+const fs = require('fs');
+const path = require('path');
 
 const writeStructDef = type =>
 {
@@ -16,7 +16,6 @@ const writeStructDef = type =>
 
     return result.join('\n');
 };
-
 
 const writeDefaultDef = (types, rootType) =>
 {
@@ -60,7 +59,6 @@ const writeDefaultDef = (types, rootType) =>
     return `static const ${rootType.name} ${rootType.name}_default = ${writeDefaultForTypeName(rootType.name)};`;
 };
 
-
 const writeTypeInfo = (types, rootType) =>
 {
     const writeFieldType = typeName => {
@@ -101,7 +99,6 @@ const writeTypeInfo = (types, rootType) =>
         `&${rootType.name}_destruct, ${writeFlags(rootType)}, ${rootType.fields.length}, {\n${fieldInfos}\n}};`;
 };
 
-
 const writeDestructor = (type, body) => {
     let result = `static inline void ${type.name}_destruct( ${type.name} *x )`;
     if (body)
@@ -111,7 +108,6 @@ const writeDestructor = (type, body) => {
     return result;
 };
 
-
 const writeAllInfosArray = types => {
     const infoPtrs = types.map(t => `&${t.name}_info`).join(', ');
 
@@ -119,27 +115,35 @@ const writeAllInfosArray = types => {
            `static const ComponentInfo *COMPONENTS_ALL_INFOS[] = { ${infoPtrs} };`;
 };
 
+const writeComponentDefsHeader = types => {
+    const result = [ 
+        '#pragma once',
+        '#include <cglm/cglm.h>',
+        '#include <stdint.h>',
+        '#include <stddef.h>',
+        '#include "containers/vec.h"',
+        '#include "components.h"',
+    ''];
 
-console.log('#pragma once');
-console.log('#include <cglm/cglm.h>');
-console.log('#include <stdint.h>');
-console.log('#include <stddef.h>');
-console.log('#include "containers/vec.h"');
-console.log('#include "components.h"');
-console.log('');
+    types.forEach(c => {
+        result.push(writeStructDef(c));
+        result.push('');
+    });
 
-components.forEach(c => {
-    console.log(writeStructDef(c));
-    console.log('');
-});
+    types.forEach(c => {
+        result.push(writeDestructor(c, false));
+        result.push(writeDefaultDef(types, c));
+        result.push(writeTypeInfo(types, c));
+        result.push(writeDestructor(c, true));
+        result.push('');
+    });
 
-components.forEach(c => {
-    console.log(writeDestructor(c, false));
-    console.log(writeDefaultDef(components, c));
-    console.log(writeTypeInfo(components, c));
-    console.log(writeDestructor(c, true));
-    console.log('');
-});
+    result.push(writeAllInfosArray(types));
 
+    return result.join('\n');
+};
 
-console.log(writeAllInfosArray(components));
+fs.writeFileSync(
+    path.join(__dirname, 'src', 'component_defs.h'), 
+    writeComponentDefsHeader(require('./components.json'))
+);
