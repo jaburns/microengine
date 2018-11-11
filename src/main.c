@@ -19,6 +19,7 @@
 #include "systems/editor_sys.h"
 #include "systems/render_sys.h"
 #include "systems/clock_sys.h"
+#include "systems/game_sys.h"
 #include "resources/material.h"
 #include "resources/texture.h"
 #include "resources/shader.h"
@@ -62,7 +63,7 @@ int main( int argc, char **argv )
         if( run_all_tests() ) return 1;
     #endif
 
-    ShellContext *ctx = shell_new( "Microengine", 1024, 768 );
+    ShellContext *ctx = shell_new( "Microengine", 1280, 800 );
     HashCache *resources = hashcache_new();
     resources_init( resources );
 
@@ -85,6 +86,7 @@ int main( int argc, char **argv )
     TransformSystem *transformsystem = transform_sys_new();
     RenderSystem *rendersystem = render_sys_new( resources );
     EditorSystem *editorsystem = editor_sys_new();
+    GameSystem *gamesystem = game_sys_new();
 
     do
     {
@@ -92,11 +94,16 @@ int main( int argc, char **argv )
         input_sys_run( inputsystem, ecs );
 
         if( play_mode )
-            run_lua_main_func( L, "update" );
+        {
+            game_sys_run( gamesystem, ecs );
+//          if( switching_mode )
+//              run_lua_main_func( L, "start" );
+//          run_lua_main_func( L, "update" );
+        }
 
         transform_sys_run( transformsystem, ecs );
         EditorSystemUpdateResult editor_update = editor_sys_run( editorsystem, ecs );
-        render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ) );
+        render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ), play_mode );
 
         if( editor_update.new_ecs )
         {
@@ -105,9 +112,6 @@ int main( int argc, char **argv )
             components_bind_ecs( ecs );
         }
 
-        if( editor_update.in_play_mode && !play_mode )
-            run_lua_main_func( L, "start" );
-
         switching_mode = editor_update.in_play_mode != play_mode;
         play_mode = editor_update.in_play_mode;
     }
@@ -115,6 +119,7 @@ int main( int argc, char **argv )
 
     lua_close( L );
 
+    game_sys_delete( gamesystem );
     editor_sys_delete( editorsystem );
     render_sys_delete( rendersystem );
     transform_sys_delete( transformsystem );

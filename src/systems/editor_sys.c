@@ -22,8 +22,6 @@ struct EditorSystem
 
     Entity selected_entity;
     Entity reparenting_entity;
-
-    Entity active_camera;
 };
 
 EditorSystem *editor_sys_new( void )
@@ -31,7 +29,6 @@ EditorSystem *editor_sys_new( void )
     EditorSystem *sys = malloc( sizeof( EditorSystem ) );
     sys->selected_entity = 0;
     sys->reparenting_entity = 0;
-    sys->active_camera = 0;
     sys->hierarchy_open = false;
     sys->hierarchy_reset = false;
     sys->fps_open = false;
@@ -151,6 +148,33 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
     this_t->parent = to_entity;
 }
 
+static bool find_editor_camera( ECS *ecs, Camera **out_camera, Transform **out_transform )
+{
+    bool result = false;
+    size_t num_cameras;
+    Entity *camera_entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( Camera, ecs, &num_cameras );
+
+    if( num_cameras == 0 ) goto exit;
+
+    for( int i = 0; i < num_cameras; ++i )
+    {
+        ECS_GET_COMPONENT_DECL( Camera, camera, ecs, camera_entities[i] );
+        ECS_GET_COMPONENT_DECL( Transform, transform, ecs, camera_entities[i] );
+
+        if( transform && camera->is_editor )
+        {
+            *out_camera = camera;
+            *out_transform = transform;
+            result = true;
+            break;
+        }
+    }
+
+exit:
+    free( camera_entities );
+    return result;
+}
+
 
 EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 {
@@ -258,8 +282,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
         if( sys->reparenting_entity )
         {
-            const char *name = components_name_entity( sys->reparenting_entity );
-            if( igButton( name, (ImVec2){ 0, 0 } ) ) 
+            if( igButton( "[Reparent]", (ImVec2){ 0, 0 } ) ) 
             {
                 reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
                 sys->reparenting_entity = 0;
@@ -287,10 +310,14 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
             sys->selected_entity = 0;
         }
 
-        igSameLine( 0, -1 );
-
-        if( igButton( "Save", (ImVec2){ 0, 0 } ) )
+        if( components_entity_to_change )
         {
+            igSameLine( 0, -1 );
+            if( igButton( "Assign", (ImVec2){ 0, 0 } ) )
+            {
+                *components_entity_to_change = sys->selected_entity;
+                components_entity_to_change = NULL;
+            }
         }
 
         igSeparator();
@@ -316,19 +343,19 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
     free( entities );
 
-    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Camera, ecs, &sys->active_camera );
-
-    if( sys->active_camera )
+    if( !sys->pre_play_ecs )
     {
-        ECS_GET_COMPONENT_DECL( Camera, active_cam, ecs, sys->active_camera );
-        ECS_GET_COMPONENT_DECL( Transform, active_cam_transform, ecs, sys->active_camera );
+        Camera *camera;
+        Transform *camera_transform;
+        if( find_editor_camera( ecs, &camera, &camera_transform ) )
+        {
+            Entity inputs_entity;
+            ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity );
+            ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
 
-        Entity inputs_entity;
-        ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity );
-        ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
-
-        if( inputs && active_cam && active_cam_transform )
-            update_view_drag( sys, inputs, active_cam, active_cam_transform, clock->delta_millis );
+            if( inputs )
+                update_view_drag( sys, inputs, camera, camera_transform, clock->delta_millis );
+        }
     }
 
     return (EditorSystemUpdateResult) {

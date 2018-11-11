@@ -84,31 +84,8 @@ RenderSystem *render_sys_new( HashCache *resources )
     return sys;
 }
 
-static void clear( void )
+static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, Transform *camera_transform, Camera *camera )
 {
-    glDepthMask( GL_TRUE );
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-}
-
-void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio )
-{
-    Entity camera_entity;
-
-    if( !ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Camera, ecs, &camera_entity ) ) 
-    {
-        clear();
-        return;
-    }
-
-    ECS_GET_COMPONENT_DECL( Camera, camera, ecs, camera_entity );
-    ECS_GET_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entity );
-
-    if( !camera_transform )
-    {
-        clear();
-        return;
-    }
-
     mat4 projection;
     glm_perspective( camera->fov, aspect_ratio, camera->near_clip, camera->far_clip, projection );
     projection[2][2] *= -1.f; // Use left-handed coordinates
@@ -119,8 +96,6 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
 
     size_t num_renderers;
     Entity *renderers = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( MeshRenderer, ecs, &num_renderers );
-
-    clear();
 
     for( int i = 0; i < num_renderers; ++i )
     {
@@ -184,6 +159,31 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
     }
 
     free( renderers );
+}
+
+void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, bool play_mode )
+{
+    glDepthMask( GL_TRUE );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    size_t num_cameras;
+    Entity *camera_entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( Camera, ecs, &num_cameras );
+
+    if( num_cameras == 0 ) goto exit;
+
+    for( int i = 0; i < num_cameras; ++i )
+    {
+        ECS_GET_COMPONENT_DECL( Camera, camera, ecs, camera_entities[i] );
+        ECS_GET_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entities[i] );
+
+        if( !camera_transform ) continue;
+
+        if( camera->is_editor != play_mode )
+            draw_camera( sys, ecs, resources, aspect_ratio, camera_transform, camera );
+    }
+
+exit:
+    free( camera_entities );
 }
 
 static void clear_vaos_callback( void *ctx, MeshVAO *vao )

@@ -25,6 +25,8 @@ const char *COMPONENTS_H_HEADER =
 "\nextern char *components_serialize_scene_alloc(void);"
 "\nextern ECS *components_deserialize_scene_alloc(const char *json_scene);"
 "\nextern const char *components_name_entity(Entity e);"
+"\n"
+"\nextern Entity *components_entity_to_change;"
 "\n";
 
 const char *COMPONENTS_C_HEADER = 
@@ -45,6 +47,8 @@ const char *COMPONENTS_C_HEADER =
 "\n#endif"
 "\n"
 "\nstatic ECS *s_ecs;"
+"\n"
+"\nEntity *components_entity_to_change;"
 "\n"
 "\nvoid components_bind_ecs(ECS *ecs)"
 "\n{"
@@ -73,7 +77,12 @@ const char *COMPONENTS_C_HEADER =
 "\nstatic void icb_inspect_vec4   (const char *label, vec4   *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); }"
 "\nstatic void icb_inspect_versor (const char *label, versor *v) { igDragFloat4(label, *v, 0.005f, -INFINITY, INFINITY, NULL, 1.0f); glm_quat_normalize(*v); }"
 "\nstatic void icb_inspect_mat4   (const char *label, mat4   *v) { igText(\"%s {Matrix}\", label); }"
-"\nstatic void icb_inspect_Entity (const char *label, Entity *v) { igText(\"%s {Entity}\", label); }"
+"\nstatic void icb_inspect_Entity (const char *label, Entity *v) {"
+"\n    if(igButton(*v ? components_name_entity(*v) : \"[no entity]\", (ImVec2){0,0}))"
+"\n        components_entity_to_change = v;"
+"\n    igSameLine(0, -1);"
+"\n    igText(\"%s\", label);"
+"\n}"
 "\nstatic void icb_inspect_Vec_T  (const char *label, void   *v) { igText(\"%s {Vec<T>}\", label); }"
 "\nstatic void icb_inspect_string (const char *label, char  **v) {"
 "\n    if (!*v) { *v = malloc(1); (*v)[0] = 0; }"
@@ -526,7 +535,7 @@ static void write_inspector(char **output, cJSON *type)
     {
         cJSON *field = cJSON_GetArrayItem(fields, i);
 
-        if (cJSON_GetObjectItem(field, "hide_in_inspector")) continue;
+        if (cJSON_GetObjectItem(field, "hide")) continue;
 
         const char *field_name = cJSON_GetStringValue(cJSON_GetObjectItem(field, "name")); 
         const char *field_type = cJSON_GetStringValue(cJSON_GetObjectItem(field, "type")); 
@@ -552,7 +561,7 @@ static void write_component_names_array(char **output, cJSON *types)
     {
         cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
-        if (cJSON_GetObjectItem(type, "nested_only")) continue;
+        if (cJSON_GetObjectItem(type, "hide")) continue;
 
         WL(*output, "\"%s\"", type_name);
         if (i < max - 1) WL(*output, ",");
@@ -577,20 +586,23 @@ static void write_inspect_all(char **output, cJSON *types)
         cJSON *type = cJSON_GetArrayItem(types, i);
         const char *type_name = cJSON_GetStringValue(cJSON_GetObjectItem(type, "name"));
 
-        if (cJSON_GetObjectItem(type, "nested_only")) continue;
+        if (! cJSON_GetObjectItem(type, "hide"))
+        {
+            top_level_index++;
+            W(*output, "    if (do_add_component && selected_component == %d) {", top_level_index);
+            W(*output, "        ECS_ADD_COMPONENT_DEFAULT_DECL(%s, c, s_ecs, e);", type_name);
+            W(*output, "    }");
+        }
 
-        top_level_index++;
-        
-        W(*output, "    if (do_add_component && selected_component == %d) {", top_level_index);
-        W(*output, "        ECS_ADD_COMPONENT_DEFAULT_DECL(%s, c, s_ecs, e);", type_name);
-        W(*output, "    }");
         W(*output, "    {");
+        W(*output, "        igPushIDInt(%d);", i);
         W(*output, "        bool keep_alive = true;");
         W(*output, "        ECS_GET_COMPONENT_DECL(%s, v, s_ecs, e);", type_name);
         W(*output, "        if (v && igCollapsingHeaderBoolPtr(\"%s\", &keep_alive, 0))", type_name);
         W(*output, "            icb_inspect_%s(NULL, v);", type_name);
         W(*output, "        if (! keep_alive)");
         W(*output, "            ECS_REMOVE_COMPONENT(%s, s_ecs, e);", type_name);
+        W(*output, "        igPopID();");
         W(*output, "    }");
     }
 
