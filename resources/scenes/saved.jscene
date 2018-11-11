@@ -1,1 +1,66 @@
-[{"_id":1,"Transform":{"name":"World","position":[0,0,0],"rotation":[0,0,0,1],"scale":[1,1,1],"parent":0},"MeshRenderer":{"mesh":"models/m64_bob.jmesh","material":"materials/m64_bob.jmat"},"MeshCollider":{"mesh":"models/m64_bob.jmesh"}},{"_id":2,"Transform":{"name":"Editor Camera","position":[101.75583648681641,-4.2803249359130859,146.1864013671875],"rotation":[-0.076714009046554565,0.916402280330658,-0.21297049522399902,-0.33009845018386841],"scale":[1,1,1],"parent":0},"Camera":{"is_editor":true,"fov":1.2258000373840332,"near_clip":1,"far_clip":500}},{"_id":3,"Transform":{"name":"Mario","position":[97.750007629394531,-21.4950008392334,118.62000274658203],"rotation":[0,0,0,1],"scale":[1,1,1],"parent":0},"MeshRenderer":{"mesh":"models/cylinder.jmesh","material":"materials/normals.jmat"},"Player":{"empty":false}},{"_id":4,"Transform":{"name":"Game Camera","position":[109.89363098144531,-16.782344818115234,121.53959655761719],"rotation":[0.11794096231460571,-0.77838248014450073,0.15373809635639191,0.597139298915863],"scale":[1,1,1],"parent":0},"Camera":{"is_editor":false,"fov":1.5707999467849731,"near_clip":1,"far_clip":500},"GameCamera":{"target":3}}]
+[{
+		"_id":	1,
+		"Transform":	{
+			"name":	"World",
+			"position":	[0, 0, 0],
+			"rotation":	[0, 0, 0, 1],
+			"scale":	[1, 1, 1],
+			"parent":	0
+		},
+		"MeshRenderer":	{
+			"mesh":	"models/m64_bob.jmesh",
+			"material":	"materials/m64_bob.jmat"
+		},
+		"MeshCollider":	{
+			"mesh":	"models/m64_bob.jmesh"
+		}
+	}, {
+		"_id":	2,
+		"Transform":	{
+			"name":	"Editor Camera",
+			"position":	[101.75583648681641, -4.2803249359130859, 146.1864013671875],
+			"rotation":	[-0.076714009046554565, 0.916402280330658, -0.21297049522399902, -0.33009845018386841],
+			"scale":	[1, 1, 1],
+			"parent":	0
+		},
+		"Camera":	{
+			"is_editor":	true,
+			"fov":	1.2258000373840332,
+			"near_clip":	1,
+			"far_clip":	500
+		}
+	}, {
+		"_id":	3,
+		"Transform":	{
+			"name":	"Mario",
+			"position":	[97.750007629394531, -21.4950008392334, 118.62000274658203],
+			"rotation":	[0, 0, 0, 1],
+			"scale":	[1, 1, 1],
+			"parent":	0
+		},
+		"MeshRenderer":	{
+			"mesh":	"models/cylinder.jmesh",
+			"material":	"materials/normals.jmat"
+		},
+		"Player":	{
+			"empty":	false
+		}
+	}, {
+		"_id":	4,
+		"Transform":	{
+			"name":	"Game Camera",
+			"position":	[109.89363098144531, -16.782344818115234, 121.53959655761719],
+			"rotation":	[0.11794096231460571, -0.77838248014450073, 0.15373809635639191, 0.597139298915863],
+			"scale":	[1, 1, 1],
+			"parent":	0
+		},
+		"Camera":	{
+			"is_editor":	false,
+			"fov":	1.5707999467849731,
+			"near_clip":	1,
+			"far_clip":	500
+		},
+		"GameCamera":	{
+			"target":	3
+		}
+	}]

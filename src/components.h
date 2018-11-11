@@ -48,13 +48,14 @@ typedef struct ComponentInfo
 ComponentInfo;
 
 extern ECS *components_ecs_new( void );
-extern void components_bind_ecs( ECS *ecs );
 
-extern void components_inspect_entity( Entity e );
-extern const char *components_name_entity( Entity e, bool *name_from_transform );
-extern Entity *components_entity_to_change; // TODO use a function instead of a global var
+extern void components_inspect_entity( ECS *ecs, Entity e );
+extern const char *components_name_entity( ECS *ecs, Entity e, bool *name_from_transform );
 
-extern char *components_serialize_scene_alloc( void );
+extern bool components_inspector_wants_entity( void );
+extern void components_inspector_provide_entity( Entity e );
+
+extern char *components_serialize_scene_alloc( ECS *ecs );
 extern ECS *components_deserialize_scene_alloc( const char *json_scene );
 
 extern void components_generic_destruct( const ComponentInfo *info, void *component );

@@ -40,7 +40,6 @@ int main( int argc, char **argv )
     resources_init( resources );
 
     ECS *ecs = components_ecs_new();
-    components_bind_ecs( ecs );
 
     bool switching_mode = false;
     bool play_mode = false;
@@ -68,7 +67,6 @@ int main( int argc, char **argv )
         {
             ecs_delete( ecs );
             ecs = editor_update.new_ecs;
-            components_bind_ecs( ecs );
         }
 
         switching_mode = editor_update.in_play_mode != play_mode;

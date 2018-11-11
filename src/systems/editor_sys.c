@@ -48,7 +48,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
         node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
     bool name_from_transform;
-    const char *entity_name = components_name_entity( entity, &name_from_transform );
+    const char *entity_name = components_name_entity( ecs, entity, &name_from_transform );
 
     char name_buffer[256];
     snprintf( name_buffer, 256, name_from_transform ? "%s" : "(%s)", entity_name );
@@ -206,7 +206,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
             if( igMenuItemBool( "Save Scene", NULL, false, true ) )
             {
-                char *json_scene = components_serialize_scene_alloc();
+                char *json_scene = components_serialize_scene_alloc( ecs );
                 utils_write_string_file( "resources/scenes/saved.jscene", json_scene );
                 free( json_scene );
             }
@@ -236,7 +236,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
             {
                 if( igMenuItemBool( "Play", NULL, false, true ) )
                 {
-                    char *json_scene = components_serialize_scene_alloc();
+                    char *json_scene = components_serialize_scene_alloc( ecs );
                     sys->pre_play_ecs = components_deserialize_scene_alloc( json_scene );
                     free( json_scene );
                 }
@@ -316,14 +316,11 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
             sys->selected_entity = 0;
         }
 
-        if( components_entity_to_change )
+        if( components_inspector_wants_entity() )
         {
             igSameLine( 0, -1 );
             if( igButton( "Assign", (ImVec2){ 0, 0 } ) )
-            {
-                *components_entity_to_change = sys->selected_entity;
-                components_entity_to_change = NULL;
-            }
+                components_inspector_provide_entity( sys->selected_entity );
         }
 
         igSeparator();
@@ -342,7 +339,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
     {
         bool keep_open = true;
         igBegin( "Inspector", &keep_open, 0 );
-            components_inspect_entity( sys->selected_entity );
+            components_inspect_entity( ecs, sys->selected_entity );
         igEnd();
         if( !keep_open ) sys->selected_entity = 0;
     }
