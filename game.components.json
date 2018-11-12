@@ -1,0 +1,11 @@
+[{
+    "name": "Player",
+    "fields": [
+        { "name": "empty",  "type": "bool" }
+    ]
+},{
+    "name": "GameCamera",
+    "fields": [
+        { "name": "target", "type": "Entity" }
+    ]
+}]

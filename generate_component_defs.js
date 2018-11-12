@@ -145,5 +145,5 @@ const writeComponentDefsHeader = types => {
 
 fs.writeFileSync(
     path.join(__dirname, 'src', 'component_defs.h'), 
-    writeComponentDefsHeader(require('./components.json'))
+    writeComponentDefsHeader(require('./engine.components.json').concat(require('./game.components.json')))
 );

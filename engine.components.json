@@ -53,19 +53,4 @@
         { "name": "near_clip", "type": "float", "default": "1.0f"    },
         { "name": "far_clip",  "type": "float", "default": "500.0f"  }
     ]
-},{
-
-
-
-    "name": "Player",
-    "fields": [
-        { "name": "empty",  "type": "bool" }
-    ]
-},{
-    "name": "GameCamera",
-    "fields": [
-        { "name": "target", "type": "Entity" }
-    ]
-
-
 }]

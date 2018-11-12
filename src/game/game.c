@@ -1,18 +1,28 @@
-#include "game_sys.h"
+#include "game.h"
+
+#include <stdlib.h>
 
 #include "../component_defs.h"
 
-struct GameSystem
+struct Game
 {
-    int empty;
+    float start_pos;
 };
 
-GameSystem *game_sys_new( void )
+Game *game_new( ECS *ecs )
 {
-    return NULL;
+    Game *game = malloc( sizeof( Game ) );
+
+    Entity player_entity = 0;
+    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Player, ecs, &player_entity );
+    ECS_GET_COMPONENT_DECL( Transform, player_transform, ecs, player_entity );
+
+    game->start_pos = player_transform->position[1];
+
+    return game;
 }
 
-void game_sys_run( GameSystem *sys, ECS *ecs )
+void game_update( Game *game, ECS *ecs )
 {
     Entity clock_entity = 0;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity );
@@ -22,7 +32,7 @@ void game_sys_run( GameSystem *sys, ECS *ecs )
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Player, ecs, &player_entity );
     ECS_GET_COMPONENT_DECL( Transform, player_transform, ecs, player_entity );
 
-    player_transform->position[1] += 0.001f * sinf(clock_info->millis_since_start / 1000.f);
+    player_transform->position[1] = game->start_pos + sinf(clock_info->millis_since_start / 1000.f);
 
     Entity game_camera_entity = 0;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( GameCamera, ecs, &game_camera_entity );
@@ -37,7 +47,9 @@ void game_sys_run( GameSystem *sys, ECS *ecs )
     glm_quat_inv( q, camera_transform->rotation );
 }
 
-
-void game_sys_delete( GameSystem *sys )
+void game_delete( Game *game )
 {
+    if( !game ) return;
+
+    free( game );
 }

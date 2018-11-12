@@ -15,11 +15,11 @@
 #include "systems/editor_sys.h"
 #include "systems/render_sys.h"
 #include "systems/clock_sys.h"
-#include "systems/game_sys.h"
 #include "resources/material.h"
 #include "resources/texture.h"
 #include "resources/shader.h"
 #include "resources/mesh.h"
+#include "game/game.h"
 
 static void resources_init( HashCache *resources )
 {
@@ -44,24 +44,33 @@ int main( int argc, char **argv )
     bool switching_mode = false;
     bool play_mode = false;
 
-    ClockSystem *clocksystem = clock_sys_new();
-    InputSystem *inputsystem = input_sys_new( ctx );
-    TransformSystem *transformsystem = transform_sys_new();
-    RenderSystem *rendersystem = render_sys_new( resources );
-    EditorSystem *editorsystem = editor_sys_new();
-    GameSystem *gamesystem = game_sys_new();
+    ClockSystem *clock_system = clock_sys_new();
+    InputSystem *input_system = input_sys_new( ctx );
+    TransformSystem *transform_system = transform_sys_new();
+    RenderSystem *render_system = render_sys_new( resources );
+    EditorSystem *editor_system = editor_sys_new();
+
+    Game *game = NULL;
 
     do
     {
-        clock_sys_run( clocksystem, ecs, switching_mode );
-        input_sys_run( inputsystem, ecs );
+        clock_sys_run( clock_system, ecs, switching_mode );
+        input_sys_run( input_system, ecs );
 
         if( play_mode )
-            game_sys_run( gamesystem, ecs );
+        {
+            if( switching_mode ) game = game_new( ecs );
+            game_update( game, ecs );
+        }
+        else if( switching_mode )
+        {
+            game_delete( game );
+            game = NULL;
+        }
 
-        transform_sys_run( transformsystem, ecs );
-        EditorSystemUpdateResult editor_update = editor_sys_run( editorsystem, ecs );
-        render_sys_run( rendersystem, ecs, resources, shell_get_aspect( ctx ), play_mode );
+        transform_sys_run( transform_system, ecs );
+        EditorSystemUpdateResult editor_update = editor_sys_run( editor_system, ecs );
+        render_sys_run( render_system, ecs, resources, shell_get_aspect( ctx ), play_mode );
 
         if( editor_update.new_ecs )
         {
@@ -74,12 +83,13 @@ int main( int argc, char **argv )
     }
     while( shell_flip_frame_poll_events( ctx ) );
 
-    game_sys_delete( gamesystem );
-    editor_sys_delete( editorsystem );
-    render_sys_delete( rendersystem );
-    transform_sys_delete( transformsystem );
-    input_sys_delete( inputsystem );
-    clock_sys_delete( clocksystem );
+    if( game ) game_delete( game );
+
+    editor_sys_delete( editor_system );
+    render_sys_delete( render_system );
+    transform_sys_delete( transform_system );
+    input_sys_delete( input_system );
+    clock_sys_delete( clock_system );
 
     hashcache_delete( resources );
     ecs_delete( ecs );
