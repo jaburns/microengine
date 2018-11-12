@@ -20,6 +20,8 @@ typedef struct MeshVAO
     GLuint position_buffer;
     GLuint normal_buffer;
     GLuint uv_buffer;
+
+    Vec wireframe_lines; // of uint16_t 
 }
 MeshVAO;
 
@@ -46,6 +48,23 @@ static void load_vao( MeshVAO *vao, Mesh *mesh )
         X( 2, vao->uv_buffer,       mesh->uvs,      vec2, "uv" );
 
     #undef X
+
+    vao->wireframe_lines = vec_empty( sizeof( uint16_t ) );
+
+    for( int i = 0; i < mesh->num_submeshes; ++i )
+    for( int j = 0; j < mesh->submeshes[i].num_indices - 2; j += 3 )
+    {
+        uint16_t a = mesh->submeshes[i].indices[j+0];
+        uint16_t b = mesh->submeshes[i].indices[j+1];
+        uint16_t c = mesh->submeshes[i].indices[j+2];
+
+        vec_push_copy( &vao->wireframe_lines, &a );
+        vec_push_copy( &vao->wireframe_lines, &b );
+        vec_push_copy( &vao->wireframe_lines, &b );
+        vec_push_copy( &vao->wireframe_lines, &c );
+        vec_push_copy( &vao->wireframe_lines, &c );
+        vec_push_copy( &vao->wireframe_lines, &a );
+    }
 }
 
 static void delete_vao( MeshVAO *vao )
@@ -55,6 +74,7 @@ static void delete_vao( MeshVAO *vao )
     glDeleteBuffers( 1, &vao->normal_buffer );
     glDeleteBuffers( 1, &vao->uv_buffer );
     glDeleteVertexArrays( 1, &vao->vao );
+    vec_clear( &vao->wireframe_lines );
 }
 
 static MeshVAO *get_vao( HashTable *vaos_for_meshes, HashCache *resources, const char *mesh_path )
@@ -84,7 +104,7 @@ RenderSystem *render_sys_new( HashCache *resources )
     return sys;
 }
 
-static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, Transform *camera_transform, Camera *camera )
+static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, Transform *camera_transform, Camera *camera, bool show_editor_layer )
 {
     mat4 projection;
     glm_perspective( camera->fov, aspect_ratio, camera->near_clip, camera->far_clip, projection );
@@ -159,6 +179,36 @@ static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, floa
     }
 
     free( renderers );
+
+    if( !show_editor_layer ) return;
+
+    size_t num_colliders;
+    Entity *colliders = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( MeshCollider, ecs, &num_colliders );
+
+    Shader *wire_shader = hashcache_load( resources, "shaders/wireframe.glsl" );
+    GLuint wire_shader_handle = shader_get_handle( wire_shader );
+    shader_use( wire_shader );
+
+    for( int i = 0; i < num_colliders; ++i )
+    {
+        ECS_GET_COMPONENT_DECL( Transform, collider_transform, ecs, colliders[i] );
+        ECS_GET_COMPONENT_DECL( MeshCollider, collider, ecs, colliders[i] );
+
+        MeshVAO *vao = get_vao( &sys->vaos_for_meshes, resources, collider->mesh );
+
+        if( !vao ) continue;
+
+        glBindVertexArray( vao->vao );
+
+        glUniform3f( glGetUniformLocation( wire_shader_handle, "line_color" ), 1.f, 1.f, 1.f );
+        glUniformMatrix4fv( glGetUniformLocation( wire_shader_handle, "view" ), 1, GL_FALSE, (GLfloat*)view );
+        glUniformMatrix4fv( glGetUniformLocation( wire_shader_handle, "projection" ), 1, GL_FALSE, (GLfloat*)projection );
+        glUniformMatrix4fv( glGetUniformLocation( wire_shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)collider_transform->worldMatrix_ );
+
+        glDrawElements( GL_LINES, (GLsizei)vao->wireframe_lines.item_count, GL_UNSIGNED_SHORT, vao->wireframe_lines.data );
+    }
+
+    free( colliders );
 }
 
 void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, bool game_view )
@@ -179,7 +229,7 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
         if( !camera_transform ) continue;
 
         if( camera->is_editor != game_view )
-            draw_camera( sys, ecs, resources, aspect_ratio, camera_transform, camera );
+            draw_camera( sys, ecs, resources, aspect_ratio, camera_transform, camera, !game_view );
     }
 
 exit:

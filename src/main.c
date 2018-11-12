@@ -15,6 +15,7 @@
 #include "systems/editor_sys.h"
 #include "systems/render_sys.h"
 #include "systems/clock_sys.h"
+#include "systems/collision_sys.h"
 #include "resources/material.h"
 #include "resources/texture.h"
 #include "resources/shader.h"
@@ -49,6 +50,7 @@ int main( int argc, char **argv )
     TransformSystem *transform_system = transform_sys_new();
     RenderSystem *render_system = render_sys_new( resources );
     EditorSystem *editor_system = editor_sys_new();
+    CollisionSystem *collision_system = collision_sys_new();
 
     Game *game = NULL;
 
@@ -56,6 +58,7 @@ int main( int argc, char **argv )
     {
         clock_sys_run( clock_system, ecs, switching_mode );
         input_sys_run( input_system, ecs );
+        collision_sys_run( collision_system, ecs );
 
         if( play_mode )
         {
@@ -85,6 +88,7 @@ int main( int argc, char **argv )
 
     if( game ) game_delete( game );
 
+    collision_sys_delete( collision_system );
     editor_sys_delete( editor_system );
     render_sys_delete( render_system );
     transform_sys_delete( transform_system );

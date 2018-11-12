@@ -11,15 +11,6 @@ typedef struct Submesh
 }
 Submesh;
 
-typedef struct GLData
-{
-    GLuint vao;
-    GLuint position_buffer;
-    GLuint color_buffer;
-    GLuint uv_buffer;
-}
-GLData;
-
 struct Mesh
 {
     uint16_t num_vertices;
@@ -29,8 +20,6 @@ struct Mesh
 
     uint16_t num_submeshes;
     Submesh *submeshes;
-
-    GLData gl_data;
 };
 
 typedef struct Mesh Mesh;
