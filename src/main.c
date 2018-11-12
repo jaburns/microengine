@@ -70,7 +70,7 @@ int main( int argc, char **argv )
 
         transform_sys_run( transform_system, ecs );
         EditorSystemUpdateResult editor_update = editor_sys_run( editor_system, ecs );
-        render_sys_run( render_system, ecs, resources, shell_get_aspect( ctx ), play_mode );
+        render_sys_run( render_system, ecs, resources, shell_get_aspect( ctx ), editor_update.in_game_view );
 
         if( editor_update.new_ecs )
         {

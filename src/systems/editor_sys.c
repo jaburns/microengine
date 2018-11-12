@@ -18,6 +18,8 @@ struct EditorSystem
     bool fps_reset;
     bool fps_open;
 
+    bool game_view;
+
     ECS *pre_play_ecs;
 
     Entity selected_entity;
@@ -31,6 +33,7 @@ EditorSystem *editor_sys_new( void )
     sys->reparenting_entity = 0;
     sys->hierarchy_open = false;
     sys->hierarchy_reset = false;
+    sys->game_view = false;
     sys->fps_open = false;
     sys->fps_reset = false;
     sys->pre_play_ecs = NULL;
@@ -230,6 +233,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
                 {
                     maybe_new_ecs = sys->pre_play_ecs;
                     sys->pre_play_ecs = NULL;
+                    sys->game_view = false;
                 }
             }
             else
@@ -238,9 +242,21 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
                 {
                     char *json_scene = components_serialize_scene_alloc( ecs );
                     sys->pre_play_ecs = components_deserialize_scene_alloc( json_scene );
+                    sys->game_view = true;
                     free( json_scene );
                 }
             }
+
+            igEndMenu();
+        }
+
+        if( igBeginMenu( "View", true ) )
+        {
+            if( igMenuItemBool( "Editor Camera", NULL, false, true ) )
+                sys->game_view = false;
+
+            if( igMenuItemBool( "Game Cameras", NULL, false, true ) )
+                sys->game_view = true;
 
             igEndMenu();
         }
@@ -346,7 +362,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
     free( entities );
 
-    if( !sys->pre_play_ecs )
+    if( !sys->game_view )
     {
         Camera *camera;
         Transform *camera_transform;
@@ -363,7 +379,8 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
     return (EditorSystemUpdateResult) {
         .new_ecs = maybe_new_ecs,
-        .in_play_mode = sys->pre_play_ecs != NULL
+        .in_play_mode = sys->pre_play_ecs != NULL,
+        .in_game_view = sys->game_view
     };
 }
 

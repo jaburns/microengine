@@ -9,6 +9,7 @@ typedef struct EditorSystemUpdateResult
 {
     ECS *new_ecs;
     bool in_play_mode;
+    bool in_game_view;
 }
 EditorSystemUpdateResult;
 

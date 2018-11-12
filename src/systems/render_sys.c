@@ -161,7 +161,7 @@ static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, floa
     free( renderers );
 }
 
-void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, bool play_mode )
+void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, bool game_view )
 {
     glDepthMask( GL_TRUE );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -178,7 +178,7 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
 
         if( !camera_transform ) continue;
 
-        if( camera->is_editor != play_mode )
+        if( camera->is_editor != game_view )
             draw_camera( sys, ecs, resources, aspect_ratio, camera_transform, camera );
     }
 
