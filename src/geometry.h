@@ -3,4 +3,10 @@
 #include <stdbool.h>
 #include <cglm/cglm.h>
 
-extern bool geometry_triangle_intersects_line_seg( vec3 t0, vec3 t1, vec3 t2, vec3 l0, vec3 l1 );
+typedef struct Triangle
+{
+    vec3 a, b, c;
+}
+Triangle;
+
+extern float geometry_line_seg_intersects_triangle( const vec3 line0, const vec3 line1, const vec3 tri0, const vec3 tri1, const vec3 tri2 );

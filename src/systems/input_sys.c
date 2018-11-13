@@ -55,14 +55,7 @@ InputSystem *input_sys_new( ShellContext *shell )
 
 void input_sys_run( InputSystem *sys, ECS *ecs )
 {
-    Entity inputs_entity;
-    if( !ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity ) )
-    {
-        inputs_entity = ecs_create_entity( ecs );
-        ECS_ADD_COMPONENT_DEFAULT_DECL( InputState, inputs_, ecs, inputs_entity );
-    }
-
-    ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
+    ECS_ENSURE_SINGLETON_DECL( InputState, ecs, inputs );
 
     inputs->prev.left_mouse   = inputs->cur.left_mouse;
     inputs->prev.right_mouse  = inputs->cur.right_mouse;

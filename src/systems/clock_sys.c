@@ -25,15 +25,7 @@ void clock_sys_run( ClockSystem *sys, ECS *ecs, bool reset_clock )
 
     if( reset_clock ) sys->first_clock = now;
 
-    Entity clock_entity;
-    if( !ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity ) )
-    {
-        clock_entity = ecs_create_entity( ecs );
-        ECS_ADD_COMPONENT_DEFAULT_DECL( ClockInfo, clock_, ecs, clock_entity );
-    }
-
-    ECS_GET_COMPONENT_DECL( ClockInfo, clock, ecs, clock_entity );
-
+    ECS_ENSURE_SINGLETON_DECL( ClockInfo, ecs, clock );
     clock->delta_millis = delta_millis;
     clock->millis_since_start = (float)(now - sys->first_clock) * 1e-6f;
 }

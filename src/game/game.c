@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "../component_defs.h"
+#include "../helpers/world_collision_info.h"
 
 struct Game
 {
@@ -24,15 +25,23 @@ Game *game_new( ECS *ecs )
 
 void game_update( Game *game, ECS *ecs )
 {
-    Entity clock_entity = 0;
-    ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity );
-    ECS_GET_COMPONENT_DECL( ClockInfo, clock_info, ecs, clock_entity );
+    ECS_GET_SINGLETON_DECL( ClockInfo, ecs, clock_info );
 
     Entity player_entity = 0;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Player, ecs, &player_entity );
     ECS_GET_COMPONENT_DECL( Transform, player_transform, ecs, player_entity );
 
     player_transform->position[1] = game->start_pos + sinf(clock_info->millis_since_start / 1000.f);
+
+    ECS_GET_SINGLETON_DECL( WorldCollisionInfo, ecs, collision );
+    float intersect = world_collision_info_raycast( collision, player_transform->position, (vec3){ 0, -1, 0 } );
+    if( intersect > 0.f )
+    {
+        vec3 intersect_pt;
+        glm_vec_copy( player_transform->position, intersect_pt );
+        // TODO math
+        player_transform->position[1] = 0.f;
+    }
 
     Entity game_camera_entity = 0;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( GameCamera, ecs, &game_camera_entity );

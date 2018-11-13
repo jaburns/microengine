@@ -58,7 +58,7 @@ int main( int argc, char **argv )
     {
         clock_sys_run( clock_system, ecs, switching_mode );
         input_sys_run( input_system, ecs );
-        collision_sys_run( collision_system, ecs );
+        collision_sys_run( collision_system, ecs, resources );
 
         if( play_mode )
         {

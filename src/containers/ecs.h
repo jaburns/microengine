@@ -21,7 +21,6 @@ extern const void *ecs_get_component_const(const ECS *ecs, Entity entity, const 
 extern void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type);
 extern void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type);
 
-
 extern bool ecs_find_first_entity_with_component(ECS *ecs, const char *component_type, Entity *out_entity);
 extern Entity *ecs_find_all_entities_with_component_alloc(ECS *ecs, const char *component_type, size_t *result_length);
 extern Entity *ecs_find_all_entities_alloc(ECS *ecs, size_t *result_length);
@@ -50,6 +49,28 @@ extern Entity *ecs_find_all_entities_alloc(ECS *ecs, size_t *result_length);
 
 #define ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(T, ecs_ptr, result_length) \
     ecs_find_all_entities_with_component_alloc((ecs_ptr), #T, (result_length))
+
+#define ECS_ENSURE_SINGLETON_DECL(T, ecs_ptr, var_name) \
+    T *var_name; \
+    { \
+        Entity entity_; \
+        if (!ecs_find_first_entity_with_component((ecs_ptr), #T, &entity_)) { \
+            entity_ = ecs_create_entity(ecs_ptr); \
+            var_name = ecs_add_component_zeroed((ecs_ptr), entity_, #T); \
+            *var_name = T##_default; \
+        } else { \
+            var_name = ecs_get_component((ecs_ptr), entity_, #T); \
+        } \
+    }
+
+#define ECS_GET_SINGLETON_DECL(T, ecs_ptr, var_name) \
+    T *var_name = NULL; \
+    { \
+        Entity entity_; \
+        if (ecs_find_first_entity_with_component((ecs_ptr), #T, &entity_)) { \
+            var_name = ecs_get_component((ecs_ptr), entity_, #T); \
+        } \
+    }
 
 #ifdef RUN_TESTS
 #include "../testing.h"

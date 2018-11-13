@@ -1,15 +1,23 @@
 #include "geometry.h"
 
-bool geometry_triangle_intersects_line_seg( vec3 t0, vec3 t1, vec3 t2, vec3 l0, vec3 l1 )
+#define UNCONST_PTR( T, var ) ((T*)&(var))
+
+float geometry_line_seg_intersects_triangle( const vec3 line0, const vec3 line1, const vec3 tri0, const vec3 tri1, const vec3 tri2 )
 {
     const float EPSILON = 0.0000001f;
+
+    vec3 *l0 = (vec3*)&line0;
+    vec3 *l1 = (vec3*)&line1;
+    vec3 *t0 = (vec3*)&tri0;
+    vec3 *t1 = (vec3*)&tri1;
+    vec3 *t2 = (vec3*)&tri2;
 
     //var rayOrigin = segment.a;
     //var rayLen = (segment.b - segment.a).magnitude;
     //var rayVector = (segment.b - segment.a) / rayLen;
 
     vec3 l1_sub_l0;
-    glm_vec_sub( l1, l0, l1_sub_l0 );
+    glm_vec_sub( *l1, *l0, l1_sub_l0 );
 
     float ray_len = glm_vec_norm( l1_sub_l0 );
     vec3 ray_vector;
@@ -19,8 +27,8 @@ bool geometry_triangle_intersects_line_seg( vec3 t0, vec3 t1, vec3 t2, vec3 l0, 
     //var edge1 = triangle.c - triangle.a;
 
     vec3 edge0, edge1;
-    glm_vec_sub( t1, t0, edge0 );
-    glm_vec_sub( t2, t0, edge1 );
+    glm_vec_sub( *t1, *t0, edge0 );
+    glm_vec_sub( *t2, *t0, edge1 );
 
     //var h = Vector3.Cross(rayVector, edge1);
     //var a = Vector3.Dot(edge0, h);
@@ -38,7 +46,7 @@ bool geometry_triangle_intersects_line_seg( vec3 t0, vec3 t1, vec3 t2, vec3 l0, 
 
     float f = 1.f / a;
     vec3 s;
-    glm_vec_sub( l0, t0, s );
+    glm_vec_sub( *l0, *t0, s );
     float u = f * glm_vec_dot( s, h );
     if( u < 0.f || u > 1.f ) return false;
 
@@ -55,5 +63,5 @@ bool geometry_triangle_intersects_line_seg( vec3 t0, vec3 t1, vec3 t2, vec3 l0, 
     //return t >= 0f && t <= rayLen;
 
     float t = f * glm_vec_dot( edge1, q );
-    return t >= 0.f && t <= ray_len;
+    return t >= 0.f && t <= ray_len ? t : -1.f;
 }
