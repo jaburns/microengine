@@ -43,7 +43,8 @@
 },{
     "name": "MeshCollider",
     "fields": [
-        { "name": "mesh",     "type": "string" }
+        { "name": "mesh",           "type": "string" },
+        { "name": "collisionData_", "type": "pointer" }
     ]
 },{
     "name": "Camera",

@@ -1,20 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 
+
 const writeStructDef = type =>
 {
-    const result = [`typedef struct ${type.name}`, '{'];
+    const writeStructField = field => {
+        if (field.vec)                return `    Vec ${field.name}; // of ${field.type}`;
+        if (field.type === 'string')  return `    char *${field.name};`;
+        if (field.type === 'pointer') return `    const void *${field.name};`;
+        return `    ${field.type} ${field.name};`;
+    };
 
-    const fieldDefs = type.fields.map(field => field.vec 
-        ? `    Vec ${field.name}; // of ${field.type}` 
-        : field.type === 'string' 
-            ? `    char *${field.name};` 
-            : `    ${field.type} ${field.name};`);
-
-    [].push.apply(result, fieldDefs);
-    [].push.apply(result, ['}', `${type.name};`]);
-
-    return result.join('\n');
+    return [`typedef struct ${type.name}`, '{']
+        .concat(type.fields.map(writeStructField))
+        .concat(['}', `${type.name};`])
+        .join('\n');
 };
 
 const writeDefaultDef = (types, rootType) =>
@@ -31,6 +31,7 @@ const writeDefaultDef = (types, rootType) =>
             case 'mat4': return '{{1.f,0.f,0.f,0.f},{0.f,1.f,0.f,0.f},{0.f,0.f,1.f,0.f},{0.f,0.f,0.f,1.f}}';
             case 'Entity': return '0';
             case 'string': return '0';
+            case 'pointer': return '0';
         }
 
         for (let i = 0; i < types.length; ++i)
@@ -73,6 +74,7 @@ const writeTypeInfo = (types, rootType) =>
             case 'mat4': return 'COMPONENT_FIELD_TYPE_MAT4';
             case 'Entity': return 'COMPONENT_FIELD_TYPE_ENTITY';
             case 'string': return 'COMPONENT_FIELD_TYPE_STRING';
+            case 'pointer': return 'COMPONENT_FIELD_TYPE_POINTER';
             default: return 'COMPONENT_FIELD_TYPE_SUBCOMPONENT';
         }
     };

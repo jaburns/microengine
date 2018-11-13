@@ -100,16 +100,17 @@ static void inspect_field( ECS *ecs, void *field, const ComponentField *field_de
 
     switch( field_def->type )
     {
-    case COMPONENT_FIELD_TYPE_INT:    inspect_int( field_def->name, field );    return;
-    case COMPONENT_FIELD_TYPE_FLOAT:  inspect_float( field_def->name, field );  return;
-    case COMPONENT_FIELD_TYPE_BOOL:   inspect_bool( field_def->name, field );   return;
-    case COMPONENT_FIELD_TYPE_VEC2:   inspect_vec2( field_def->name, field );   return;
-    case COMPONENT_FIELD_TYPE_VEC3:   inspect_vec3( field_def->name, field );   return;
-    case COMPONENT_FIELD_TYPE_VEC4:   inspect_vec4( field_def->name, field );   return;
-    case COMPONENT_FIELD_TYPE_VERSOR: inspect_versor( field_def->name, field ); return;
-    case COMPONENT_FIELD_TYPE_MAT4:   inspect_mat4( field_def->name, field );   return;
-    case COMPONENT_FIELD_TYPE_STRING: inspect_string( field_def->name, field ); return;
-    case COMPONENT_FIELD_TYPE_ENTITY: inspect_Entity( ecs, field_def->name, field ); return;
+    case COMPONENT_FIELD_TYPE_INT:     inspect_int( field_def->name, field );    return;
+    case COMPONENT_FIELD_TYPE_FLOAT:   inspect_float( field_def->name, field );  return;
+    case COMPONENT_FIELD_TYPE_BOOL:    inspect_bool( field_def->name, field );   return;
+    case COMPONENT_FIELD_TYPE_VEC2:    inspect_vec2( field_def->name, field );   return;
+    case COMPONENT_FIELD_TYPE_VEC3:    inspect_vec3( field_def->name, field );   return;
+    case COMPONENT_FIELD_TYPE_VEC4:    inspect_vec4( field_def->name, field );   return;
+    case COMPONENT_FIELD_TYPE_VERSOR:  inspect_versor( field_def->name, field ); return;
+    case COMPONENT_FIELD_TYPE_MAT4:    inspect_mat4( field_def->name, field );   return;
+    case COMPONENT_FIELD_TYPE_STRING:  inspect_string( field_def->name, field ); return;
+    case COMPONENT_FIELD_TYPE_POINTER: return;
+    case COMPONENT_FIELD_TYPE_ENTITY:  inspect_Entity( ecs, field_def->name, field ); return;
 
     case COMPONENT_FIELD_TYPE_SUBCOMPONENT:
         inspect_component( ecs, field, field_def->name, get_info_for_component_type( field_def->subcomponent_name ) );
@@ -300,14 +301,16 @@ static void serialize_component( cJSON *obj, void *component, const ComponentInf
         const ComponentField *field = &info->fields[i];
         void *field_ptr = (uint8_t*)component + field->offset;
 
-        if( field->flags & COMPONENT_FLAG_DONT_SERIALIZE ) continue;
+        if( field->flags & COMPONENT_FLAG_DONT_SERIALIZE || field->type == COMPONENT_FIELD_TYPE_POINTER ) continue;
 
         if( field->flags & COMPONENT_FLAG_IS_VEC )
         {
             // TODO implement
         }
         else
+        {
             cJSON_AddItemToObject( comp_obj, field->name, serialize_field( field_ptr, field ) );
+        }
     }
 }
 
@@ -354,14 +357,16 @@ static void deserialize_nested_component( cJSON *item, void *out, const Componen
         field = &info->fields[i];
         void *field_ptr = (uint8_t*)out + field->offset;
 
-        if( field->flags & COMPONENT_FLAG_DONT_SERIALIZE ) continue;
+        if( field->flags & COMPONENT_FLAG_DONT_SERIALIZE || field->type == COMPONENT_FIELD_TYPE_POINTER ) continue;
 
         if( field->flags & COMPONENT_FLAG_IS_VEC )
         {
             // TODO implement
         }
         else
+        {
             deserialize_field( cJSON_GetObjectItem( item, field->name ), field_ptr, entities_for_ids, field );
+        }
     }
 }
 
@@ -385,7 +390,7 @@ char *components_serialize_scene_alloc( ECS *ecs )
     
         for( int j = 0; j < COMPONENTS_TOTAL_COUNT; ++j )
         {
-            if( COMPONENTS_ALL_INFOS[j]->flags & COMPONENT_FLAG_DONT_SERIALIZE) continue;
+            if( COMPONENTS_ALL_INFOS[j]->flags & COMPONENT_FLAG_DONT_SERIALIZE ) continue;
 
             void *component = ecs_get_component( ecs, entities[i], COMPONENTS_ALL_INFOS[j]->name );
             if( component )
