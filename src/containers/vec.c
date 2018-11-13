@@ -15,6 +15,11 @@ void *vec_at(Vec *vec, size_t index)
     return (uint8_t*)vec->data + (vec->item_size * index);
 }
 
+const void *vec_at_const(const Vec *vec, size_t index)
+{
+    return vec_at((Vec*)vec, index);
+}
+
 void vec_set_copy(Vec *vec, size_t index, const void *item_ref)
 {
     memcpy((uint8_t*)vec->data + vec->item_size * index, item_ref, vec->item_size);
@@ -66,16 +71,16 @@ bool vec_pop(Vec *vec, void *result)
     return true;
 }
 
-int vec_find_index(Vec *vec, void *context, VecItemChecker check)
+int vec_find_index(const Vec *vec, void *context, VecItemChecker check)
 {
     for (int i = 0; i < vec->item_count; ++i)
-        if (check(context, vec_at(vec, i)))
+        if (check(context, vec_at_const(vec, i)))
             return i;
 
     return -1;
 }
 
-Vec vec_clone(Vec *vec)
+Vec vec_clone(const Vec *vec)
 {
     Vec result = vec_empty(vec->item_size);
     result.item_count = vec->item_count;
@@ -129,7 +134,7 @@ static void test_clear_callback(void *context, void *item)
     test_clear_callback_sum += *((uint8_t*)item);
 }
 
-static bool test_find_callback(uint8_t *a, uint8_t *b)
+static bool test_find_callback(const uint8_t *a, const uint8_t *b)
 {
     return *a == *b;
 }

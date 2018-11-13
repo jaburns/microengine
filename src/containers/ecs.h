@@ -13,12 +13,14 @@ extern void ecs_delete(ECS *ecs);
 
 extern Entity ecs_create_entity(ECS *ecs);
 extern void ecs_destroy_entity(ECS *ecs, Entity entity);
-extern bool ecs_is_entity_valid(ECS *ecs, Entity entity);
+extern bool ecs_is_entity_valid(const ECS *ecs, Entity entity);
 
 extern void ecs_register_component(ECS *ecs, const char *component_type, size_t component_size, ComponentDestructor destructor);
 extern void *ecs_get_component(ECS *ecs, Entity entity, const char *component_type);
+extern const void *ecs_get_component_const(const ECS *ecs, Entity entity, const char *component_type);
 extern void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type);
 extern void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type);
+
 
 extern bool ecs_find_first_entity_with_component(ECS *ecs, const char *component_type, Entity *out_entity);
 extern Entity *ecs_find_all_entities_with_component_alloc(ECS *ecs, const char *component_type, size_t *result_length);
@@ -29,6 +31,9 @@ extern Entity *ecs_find_all_entities_alloc(ECS *ecs, size_t *result_length);
 
 #define ECS_GET_COMPONENT_DECL(T, var_name, ecs_ptr, entity) \
     T *var_name = ecs_get_component((ecs_ptr), (entity), #T)
+
+#define ECS_GET_COMPONENT_CONST_DECL(T, var_name, ecs_ptr, entity) \
+    const T *var_name = ecs_get_component_const((ecs_ptr), (entity), #T)
 
 #define ECS_ADD_COMPONENT_ZEROED_DECL(T, var_name, ecs_ptr, entity) \
     T *var_name = ecs_add_component_zeroed((ecs_ptr), (entity), #T)

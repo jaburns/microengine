@@ -56,11 +56,11 @@ GenerationalIndex giallocator_allocate(GenerationalIndexAllocator *gia)
     return (GenerationalIndex) { 0, (uint32_t)gia->entries.item_count - 1 };
 }
 
-bool giallocator_is_index_live(GenerationalIndexAllocator *gia, GenerationalIndex index)
+bool giallocator_is_index_live(const GenerationalIndexAllocator *gia, GenerationalIndex index)
 {
     if (index.index >= gia->entries.item_count) return false;
 
-    AllocatorEntry *entry = vec_at(&gia->entries, index.index);
+    const AllocatorEntry *entry = vec_at_const(&gia->entries, index.index);
 
     return entry->is_live && entry->generation == index.generation;
 }
@@ -290,7 +290,7 @@ void ecs_destroy_entity(ECS *ecs, Entity entity)
     giallocator_deallocate(&ecs->allocator, entity_to_gi(entity));
 }
 
-bool ecs_is_entity_valid(ECS *ecs, Entity entity)
+bool ecs_is_entity_valid(const ECS *ecs, Entity entity)
 {
     return giallocator_is_index_live(&ecs->allocator, entity_to_gi(entity));
 }
@@ -309,6 +309,11 @@ void *ecs_get_component(ECS *ecs, Entity entity, const char *component_type)
 {
     ECSComponent *comp = hashtable_at(&ecs->components, component_type);
     return comp ? giarray_at(&comp->components, entity_to_gi(entity)) : NULL;
+}
+
+const void *ecs_get_component_const(const ECS *ecs, Entity entity, const char *component_type)
+{
+    return ecs_get_component((ECS*)ecs, entity, component_type);
 }
 
 void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type)

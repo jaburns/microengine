@@ -114,6 +114,7 @@
     <ClCompile Include="src\containers\ecs.c" />
     <ClCompile Include="src\containers\hashtable.c" />
     <ClCompile Include="src\game\game.c" />
+    <ClCompile Include="src\geometry.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\resources\material.c" />
     <ClCompile Include="src\resources\mesh.c" />
@@ -121,6 +122,7 @@
     <ClCompile Include="src\resources\texture.c" />
     <ClCompile Include="src\components.c" />
     <ClCompile Include="src\systems\clock_sys.c" />
+    <ClCompile Include="src\systems\collision_sys.c" />
     <ClCompile Include="src\systems\editor_sys.c" />
     <ClCompile Include="src\systems\input_sys.c" />
     <ClCompile Include="src\systems\render_sys.c" />
@@ -135,6 +137,7 @@
     <ClInclude Include="src\containers\hashcache.h" />
     <ClInclude Include="src\containers\ecs.h" />
     <ClInclude Include="src\game\game.h" />
+    <ClInclude Include="src\geometry.h" />
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\containers\hashtable.h" />
     <ClInclude Include="external\support\ns_clock.h" />
@@ -144,6 +147,7 @@
     <ClInclude Include="src\resources\texture.h" />
     <ClInclude Include="src\components.h" />
     <ClInclude Include="src\systems\clock_sys.h" />
+    <ClInclude Include="src\systems\collision_sys.h" />
     <ClInclude Include="src\systems\editor_sys.h" />
     <ClInclude Include="src\systems\input_sys.h" />
     <ClInclude Include="src\systems\render_sys.h" />

@@ -73,7 +73,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     }
 }
 
-static bool find_sdl_key_index( SDL_Keycode *a, SDL_Keycode *b )
+static bool find_sdl_key_index( const SDL_Keycode *a, const SDL_Keycode *b )
 {
     return *a == *b;
 }

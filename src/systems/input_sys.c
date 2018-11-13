@@ -5,7 +5,7 @@
 
 static InputFrame s_latest_inputs;
 
-static bool compare_sdl_key_codes( SDL_Keycode *a, SDL_Keycode *b )
+static bool compare_sdl_key_codes( const SDL_Keycode *a, const SDL_Keycode *b )
 {
     return *a == *b;
 }
