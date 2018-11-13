@@ -4,7 +4,7 @@
         { "name": "name",         "type": "string" },
         { "name": "position",     "type": "vec3"   },
         { "name": "rotation",     "type": "versor" },
-        { "name": "scale",        "type": "vec3",   "default": "{1.f,1.f,1.f}" },
+        { "name": "scale",        "type": "vec3",   "default": "{1.f, 1.f, 1.f}" },
         { "name": "parent",       "type": "Entity",              "hide": true },
         { "name": "children_",    "type": "Entity", "vec": true, "hide": true, "serialize": false },
         { "name": "worldMatrix_", "type": "mat4",                "hide": true, "serialize": false }
@@ -43,8 +43,14 @@
 },{
     "name": "MeshCollider",
     "fields": [
-        { "name": "mesh",           "type": "string" },
-        { "name": "collisionData_", "type": "pointer" }
+        { "name": "mesh", "type": "string" }
+    ]
+},{
+    "name": "WorldCollisionInfo",
+    "hide": true,
+    "serialize": false,
+    "fields": [
+        { "name": "info", "type": "pointer" }
     ]
 },{
     "name": "Camera",
