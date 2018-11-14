@@ -125,21 +125,25 @@ static void inspect_component( ECS *ecs, void *component, const char *label, con
     if (label) 
     { 
         igSeparator(); 
-        igText(label); 
+        igText( label ); 
         igSeparator(); 
     }
+
+    igPushIDPtr( component );
 
     for( int i = 0; i < info->num_fields; ++ i )
     {
         const ComponentField *field = &info->fields[i];
 
-        if( (field->flags & COMPONENT_FLAG_HIDDEN) == 0 ) 
+        if( ( field->flags & COMPONENT_FLAG_HIDDEN ) == 0 ) 
         {
-            igPushIDInt(i);
+            igPushIDInt( i );
             inspect_field( ecs, (uint8_t*)component + field->offset, field );
             igPopID();
         }
     }
+
+    igPopID();
 }
 
 ECS *components_ecs_new( void )
@@ -249,8 +253,6 @@ void components_inspect_entity( ECS *ecs, Entity e )
 
     for( int i = 0; i < COMPONENTS_TOTAL_COUNT; ++i )
     {
-        igPushIDInt(0);
-
         const ComponentInfo *info = COMPONENTS_ALL_INFOS[i];
 
         bool keep_alive = true;
@@ -261,8 +263,6 @@ void components_inspect_entity( ECS *ecs, Entity e )
 
         if (! keep_alive)
             ecs_remove_component( ecs, e, info->name );
-
-        igPopID();
     }
 }
 

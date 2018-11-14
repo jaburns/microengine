@@ -38,9 +38,9 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
         for( int k = 0; k < mesh->submeshes[j].num_indices; k += 3 )
         {
             Triangle t;
-            glm_vec_copy( t.a, mesh->vertices[mesh->submeshes[j].indices[k + 0]] );
-            glm_vec_copy( t.b, mesh->vertices[mesh->submeshes[j].indices[k + 1]] );
-            glm_vec_copy( t.c, mesh->vertices[mesh->submeshes[j].indices[k + 2]] );
+            glm_vec_copy( mesh->vertices[mesh->submeshes[j].indices[k + 0]], t.a );
+            glm_vec_copy( mesh->vertices[mesh->submeshes[j].indices[k + 1]], t.b );
+            glm_vec_copy( mesh->vertices[mesh->submeshes[j].indices[k + 2]], t.c );
             vec_push_copy( &sys->triangles, &t );
         }
     }

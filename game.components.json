@@ -1,7 +1,7 @@
 [{
     "name": "Player",
     "fields": [
-        { "name": "empty",  "type": "bool" }
+        { "name": "velocity", "type": "vec3" }
     ]
 },{
     "name": "GameCamera",

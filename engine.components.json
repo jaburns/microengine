@@ -31,8 +31,8 @@
     "hide": true,
     "serialize": false,
     "fields": [
-        { "name": "delta_millis",       "type": "float" },
-        { "name": "millis_since_start", "type": "float" }
+        { "name": "delta_secs",       "type": "float" },
+        { "name": "secs_since_start", "type": "float" }
     ]
 },{
     "name": "MeshRenderer",

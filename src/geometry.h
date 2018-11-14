@@ -9,4 +9,4 @@ typedef struct Triangle
 }
 Triangle;
 
-extern float geometry_line_seg_intersects_triangle( const vec3 line0, const vec3 line1, const vec3 tri0, const vec3 tri1, const vec3 tri2 );
+extern bool geometry_line_seg_intersects_triangle( const vec3 l0, const vec3 l1, const vec3 t0, const vec3 t1, const vec3 t2, vec3 out_intersection );

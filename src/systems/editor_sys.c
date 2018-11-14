@@ -10,6 +10,7 @@
 #include "../containers/ecs.h"
 #include "../containers/hashtable.h"
 #include "../component_defs.h"
+#include "../helpers/input_help.h"
 
 struct EditorSystem
 {
@@ -73,12 +74,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     }
 }
 
-static bool find_sdl_key_index( const SDL_Keycode *a, const SDL_Keycode *b )
-{
-    return *a == *b;
-}
-
-static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam, Transform *transform, float delta_millis )
+static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam, Transform *transform, float delta_secs )
 {
 // Camera rotation
 
@@ -107,13 +103,11 @@ static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam
     glm_vec_zero( drive );
 
     #define X(pos_key, neg_key, pos_vec) do { \
-        SDL_Keycode p = pos_key; \
-        SDL_Keycode n = neg_key; \
-        if( vec_find_index( &inputs->cur.keys, &p, find_sdl_key_index ) >= 0 ) \
+        if( input_state_is_key_down( inputs, pos_key ) ) \
         { \
             glm_vec_add( pos_vec, drive, drive ); \
         } \
-        else if( vec_find_index( &inputs->cur.keys, &n, find_sdl_key_index ) >= 0 ) \
+        else if( input_state_is_key_down( inputs, neg_key ) ) \
         { \
             glm_vec_flipsign( pos_vec ); \
             glm_vec_add( pos_vec, drive, drive ); \
@@ -126,7 +120,7 @@ static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam
 
     #undef X
 
-    glm_vec_scale( drive, 0.02f * delta_millis, drive );
+    glm_vec_scale( drive, 20.f * delta_secs, drive );
     glm_vec_add( transform->position, drive, transform->position );
 }
 
@@ -283,7 +277,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
             | ImGuiWindowFlags_NoNav;
 
         igBegin( "", &sys->fps_open, flags );
-            igText( "%.1f fps", 1000.f / clock->delta_millis );
+            igText( "%.1f fps", 1.f / clock->delta_secs );
         igEnd();
     }
 
@@ -373,7 +367,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
             ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
 
             if( inputs )
-                update_view_drag( sys, inputs, camera, camera_transform, clock->delta_millis );
+                update_view_drag( sys, inputs, camera, camera_transform, clock->delta_secs );
         }
     }
 

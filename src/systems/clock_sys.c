@@ -20,14 +20,14 @@ ClockSystem *clock_sys_new( void )
 void clock_sys_run( ClockSystem *sys, ECS *ecs, bool reset_clock )
 {
     uint64_t now = ns_clock();
-    float delta_millis = (float)(now - sys->last_clock) * 1e-6f;
+    float delta_secs = (float)(now - sys->last_clock) * 1e-9f;
     sys->last_clock = now;
 
     if( reset_clock ) sys->first_clock = now;
 
     ECS_ENSURE_SINGLETON_DECL( ClockInfo, ecs, clock );
-    clock->delta_millis = delta_millis;
-    clock->millis_since_start = (float)(now - sys->first_clock) * 1e-6f;
+    clock->delta_secs = delta_secs;
+    clock->secs_since_start = (float)(now - sys->first_clock) * 1e-9f;
 }
 
 void clock_sys_delete( ClockSystem *sys )

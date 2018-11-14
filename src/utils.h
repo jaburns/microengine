@@ -25,5 +25,8 @@
 )
 
 
+#define UTILS_UNCONST_VEC( v ) ((float*)&(v)[0])
+
+
 extern char *utils_read_file_alloc(const char *path_prefix, const char *path, size_t *file_length);
 extern void utils_write_string_file(const char *path, const char *contents);
