@@ -115,8 +115,6 @@
     <ClCompile Include="src\containers\hashtable.c" />
     <ClCompile Include="src\game\game.c" />
     <ClCompile Include="src\geometry.c" />
-    <ClCompile Include="src\helpers\input_help.c" />
-    <ClCompile Include="src\helpers\world_collision_info.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\resources\material.c" />
     <ClCompile Include="src\resources\mesh.c" />
@@ -143,8 +141,6 @@
     <ClInclude Include="src\gl.h" />
     <ClInclude Include="src\containers\hashtable.h" />
     <ClInclude Include="external\support\ns_clock.h" />
-    <ClInclude Include="src\helpers\input_help.h" />
-    <ClInclude Include="src\helpers\world_collision_info.h" />
     <ClInclude Include="src\resources\material.h" />
     <ClInclude Include="src\resources\mesh.h" />
     <ClInclude Include="src\resources\shader.h" />

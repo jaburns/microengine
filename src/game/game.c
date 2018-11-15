@@ -4,8 +4,8 @@
 
 #include "../gl.h"
 #include "../component_defs.h"
-#include "../helpers/world_collision_info.h"
-#include "../helpers/input_help.h"
+#include "../systems/input_sys.h"
+#include "../systems/collision_sys.h"
 #include "../utils.h"
 
 struct Game

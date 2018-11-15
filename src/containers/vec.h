@@ -25,7 +25,7 @@ extern void vec_set_copy(Vec *vec, size_t index, const void *item_ref);
 extern void vec_insert_copy(Vec *vec, size_t index, const void *item_ref);
 extern void vec_remove(Vec *vec, size_t index);
 
-extern void vec_push_copy(Vec *vec, const void *item_ref);
+extern void *vec_push_copy(Vec *vec, const void *item_ref);
 extern bool vec_pop(Vec *vec, void *result);
 
 extern int vec_find_index(const Vec *vec, void *context, VecItemChecker check);

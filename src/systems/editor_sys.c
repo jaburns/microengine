@@ -10,7 +10,7 @@
 #include "../containers/ecs.h"
 #include "../containers/hashtable.h"
 #include "../component_defs.h"
-#include "../helpers/input_help.h"
+#include "../systems/input_sys.h"
 
 struct EditorSystem
 {

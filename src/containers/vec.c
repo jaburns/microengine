@@ -25,11 +25,12 @@ void vec_set_copy(Vec *vec, size_t index, const void *item_ref)
     memcpy((uint8_t*)vec->data + vec->item_size * index, item_ref, vec->item_size);
 }
 
-void vec_push_copy(Vec *vec, const void *item_ref)
+void *vec_push_copy(Vec *vec, const void *item_ref)
 {
     vec->item_count++;
     vec->data = realloc(vec->data, vec->item_size * vec->item_count);
     vec_set_copy(vec, vec->item_count - 1, item_ref);
+    return (uint8_t*)vec->data + vec->item_size * (vec->item_count - 1);
 }
 
 void vec_insert_copy(Vec *vec, size_t index, const void *item_ref)
