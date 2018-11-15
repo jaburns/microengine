@@ -292,7 +292,9 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
         igBegin( "Hierarchy", &sys->hierarchy_open, 0 );
 
         if( igButton( "Create", (ImVec2){ 0, 0 } ) )
-            ecs_create_entity( ecs );
+        {
+            ECS_ADD_COMPONENT_DEFAULT_DECL( Transform, x, ecs, ecs_create_entity( ecs ) );
+        }
 
         igSameLine( 0, -1 );
 

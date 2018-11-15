@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../utils.h"
+
 #ifdef _MSC_VER
     #define strdup _strdup
 #endif
@@ -18,19 +20,9 @@ HashTable hashtable_empty(size_t table_size, size_t item_size)
 static uint32_t hash_fn(const char *string, uint32_t max_len)
 {
     if (!string) return 0;
-
-    uint32_t hash = 0;
     int len = (int)strlen(string);
-
     if (len == 0) return 1;
-
-    for (int i = len - 1; i >= 0; --i)
-    {
-        hash ^= (uint8_t)string[i];
-        uint8_t rolled_byte = hash >> ((sizeof(hash) - 1) * 8);
-        hash = (hash << 8) | rolled_byte;
-    }
-
+    Hash hash = utils_hash(string, len);
     return hash % max_len;
 }
 
@@ -45,6 +37,11 @@ void *hashtable_at(HashTable *table, const char *key)
             return entry->value;
 
     return NULL;
+}
+
+const void *hashtable_at_const(const HashTable *table, const char *key)
+{
+    return hashtable_at((HashTable*)table, key);
 }
 
 void *hashtable_set_copy(HashTable *table, const char *key, void *item_ref)

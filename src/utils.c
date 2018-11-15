@@ -46,3 +46,18 @@ void utils_write_string_file( const char *path, const char *contents )
     fputs( contents, f );
     fclose( f );
 }
+
+Hash utils_hash( const void *obj, size_t size )
+{
+    const uint8_t *bytes = (uint8_t*)obj;
+    uint32_t hash = 0;
+
+    for( int i = (int)size - 1; i >= 0; --i )
+    {
+        hash ^= bytes[i];
+        uint8_t rolled_byte = hash >> ((sizeof(hash) - 1) * 8);
+        hash = (hash << 8) | rolled_byte;
+    }
+
+    return hash;
+}

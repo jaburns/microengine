@@ -159,11 +159,11 @@ ECS *components_ecs_new( void )
     return ecs;
 }
 
-const char *components_name_entity( ECS *ecs, Entity e, bool *name_from_transform )
+const char *components_name_entity( const ECS *ecs, Entity e, bool *name_from_transform )
 {
     if( !e ) return "empty";
 
-    ECS_GET_COMPONENT_DECL( Transform, t, ecs, e );
+    ECS_GET_COMPONENT_CONST_DECL( Transform, t, ecs, e );
     if( t && t->name && strlen( t->name ) ) 
     {
         *name_from_transform = true;
@@ -173,7 +173,7 @@ const char *components_name_entity( ECS *ecs, Entity e, bool *name_from_transfor
     *name_from_transform = false;
 
     for( int i = 0; i < COMPONENTS_TOTAL_COUNT; ++i )
-        if( ecs_get_component( ecs, e, COMPONENTS_ALL_INFOS[i]->name ) )
+        if( ecs_get_component_const( ecs, e, COMPONENTS_ALL_INFOS[i]->name ) )
             return COMPONENTS_ALL_INFOS[i]->name;
 
     return "empty";
@@ -260,7 +260,7 @@ void components_inspect_entity( ECS *ecs, Entity e )
         bool keep_alive = true;
         void *component = ecs_get_component( ecs, e, info->name );
 
-        if( component && igCollapsingHeaderBoolPtr( info->name, &keep_alive, 0 ) )
+        if( component && igCollapsingHeaderBoolPtr( info->name, &keep_alive, ImGuiTreeNodeFlags_DefaultOpen ) )
             inspect_component( ecs, component, NULL, info );
 
         if (! keep_alive)
@@ -294,7 +294,7 @@ static cJSON *serialize_field( void *field, const ComponentField *field_def )
     PANIC("Unhandled field type in serialize_field");
 }
 
-static void serialize_component( cJSON *obj, void *component, const ComponentInfo *info, bool nested )
+static void serialize_component( cJSON *obj, const void *component, const ComponentInfo *info, bool nested )
 {
     cJSON *comp_obj = nested ? obj : cJSON_AddObjectToObject( obj, info->name );
 
@@ -378,7 +378,7 @@ static void deserialize_component( ECS *ecs, cJSON *component_obj, Entity entity
     deserialize_nested_component( component_obj, comp, info, entities_for_ids );
 }
 
-char *components_serialize_scene_alloc( ECS *ecs )
+char *components_serialize_scene_alloc( const ECS *ecs )
 {
     cJSON *json = cJSON_CreateArray();
     size_t num_entities;
@@ -394,7 +394,7 @@ char *components_serialize_scene_alloc( ECS *ecs )
         {
             if( COMPONENTS_ALL_INFOS[j]->flags & COMPONENT_FLAG_DONT_SERIALIZE ) continue;
 
-            void *component = ecs_get_component( ecs, entities[i], COMPONENTS_ALL_INFOS[j]->name );
+            const void *component = ecs_get_component_const( ecs, entities[i], COMPONENTS_ALL_INFOS[j]->name );
             if( component )
             {
                 serialize_component( obj, component, COMPONENTS_ALL_INFOS[j], false );

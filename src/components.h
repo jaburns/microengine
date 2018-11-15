@@ -1,5 +1,8 @@
 #pragma once
+
 #include <stdbool.h>
+#include <stdint.h>
+
 #include "containers/ecs.h"
 
 typedef enum ComponentFieldType
@@ -52,12 +55,12 @@ ComponentInfo;
 extern ECS *components_ecs_new( void );
 
 extern void components_inspect_entity( ECS *ecs, Entity e );
-extern const char *components_name_entity( ECS *ecs, Entity e, bool *name_from_transform );
+extern const char *components_name_entity( const ECS *ecs, Entity e, bool *name_from_transform );
 
 extern bool components_inspector_wants_entity( void );
 extern void components_inspector_provide_entity( Entity e );
 
-extern char *components_serialize_scene_alloc( ECS *ecs );
+extern char *components_serialize_scene_alloc( const ECS *ecs );
 extern ECS *components_deserialize_scene_alloc( const char *json_scene );
 
 extern void components_generic_destruct( const ComponentInfo *info, void *component );

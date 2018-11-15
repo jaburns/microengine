@@ -1,6 +1,9 @@
 #pragma once
 
 #include <stdio.h>
+#include <stddef.h>
+#include <stdint.h>
+
 
 #define PANIC(...) do {  \
     printf(__VA_ARGS__); \
@@ -26,7 +29,11 @@
 
 
 #define UTILS_UNCONST_VEC( v ) ((float*)&(v)[0])
+#define UTILS_UNCONST_MAT( v ) ((vec4*)&(v)[0])
 
+
+typedef uint32_t Hash;
 
 extern char *utils_read_file_alloc(const char *path_prefix, const char *path, size_t *file_length);
 extern void utils_write_string_file(const char *path, const char *contents);
+extern Hash utils_hash( const void *obj, size_t size );
