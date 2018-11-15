@@ -161,6 +161,8 @@ ECS *components_ecs_new( void )
 
 const char *components_name_entity( ECS *ecs, Entity e, bool *name_from_transform )
 {
+    if( !e ) return "empty";
+
     ECS_GET_COMPONENT_DECL( Transform, t, ecs, e );
     if( t && t->name && strlen( t->name ) ) 
     {
