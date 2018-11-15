@@ -19,7 +19,7 @@ CachedCollider;
 
 struct CollisionSystem
 {
-    Vec cached_colliders; // of Triangle; TODO of CachedCollider and compute/compare hashes
+    Vec cached_colliders; // of CachedCollider
 };
 
 CollisionSystem *collision_sys_new( void )
@@ -54,13 +54,11 @@ static CachedCollider *find_or_add_cached( Vec *cached_colliders, Entity entity,
         return vec_push_copy( cached_colliders, &new );
     }
 
-    if( cached->collider_hash != collider_hash || cached->transform_hash != transform_hash )
-    {
-        *stale = false;
-        return cached;
-    }
-
-    // TODO handle case where is cached but stale
+    *stale = cached->collider_hash != collider_hash || cached->transform_hash != transform_hash;
+    cached->collider_hash = collider_hash;
+    cached->transform_hash = transform_hash;
+    vec_clear( &cached->triangles );
+    return cached;
 }
 
 void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
@@ -76,8 +74,15 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
         bool cache_stale;
         CachedCollider *cached = find_cached( &sys->cached_colliders, collider_entities[i], transform, collider, &cache_stale );
 
+        if( !cache_stale ) continue;
+
+        printf( "Recalculating collision info for: %s\n", transform->name );
+
         Mesh *mesh = hashcache_load( resources, collider->mesh );
-        if( !mesh ) continue;
+        if( !mesh ) {
+            printf( "No mesh to add\n", transform->name );
+            continue;
+        }
 
         mat4 world_matrix;
         if( transform )
@@ -92,37 +97,48 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 0]], 1.f, t.a );
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 1]], 1.f, t.b );
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 2]], 1.f, t.c );
-
-            vec_push_copy( &sys->triangles, &t );
+        
+            vec_push_copy( &cached->triangles, &t );
         }
     }
 
     free( collider_entities );
 
     ECS_ENSURE_SINGLETON_DECL( WorldCollisionInfo, ecs, info );
-    info->info = &sys->triangles;
+    info->info = &sys->cached_colliders;
+}
+
+static void clear_cached_collider( void *x, CachedCollider *c )
+{
+    vec_clear( &c->triangles );
 }
 
 void collision_sys_delete( CollisionSystem *sys )
 {
     if( !sys ) return;
-    vec_clear( &sys->triangles );
+    vec_clear_with_callback( &sys->cached_colliders, NULL, clear_cached_collider );
     free( sys );
 }
 
 bool world_collision_info_raycast( const WorldCollisionInfo *info, const vec3 origin, const vec3 ray_vec, vec3 out_intersection )
 {
     if( !info || !info->info ) return false;
-    const Vec *triangles = info->info;
+    const Vec *cached_colliders = info->info;
 
     vec3 end_pt;
     glm_vec_add( UTILS_UNCONST_VEC( origin ), UTILS_UNCONST_VEC( ray_vec ), end_pt );
 
-    for( int i = 0; i < triangles->item_count; ++i )
+    for( int i = 0; i < cached_colliders->item_count; ++i )
     {
-        const Triangle *t = vec_at_const( triangles, i );
-        if( geometry_line_seg_intersects_triangle( origin, end_pt, t->a, t->b, t->c, out_intersection ) ) 
-            return true;
+        const CachedCollider *collider = vec_at_const( cached_colliders, i );
+
+        for( int j = 0; j < collider->triangles.item_count; ++j )
+        {
+            const Triangle *t = vec_at_const( &collider->triangles, j );
+
+            if( geometry_line_seg_intersects_triangle( origin, end_pt, t->a, t->b, t->c, out_intersection ) ) 
+                return true;
+        }
     }
 
     return false;
