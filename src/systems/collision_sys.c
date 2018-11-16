@@ -57,7 +57,9 @@ static CachedCollider *find_or_add_cached( Vec *cached_colliders, Entity entity,
     *stale = cached->collider_hash != collider_hash || cached->transform_hash != transform_hash;
     cached->collider_hash = collider_hash;
     cached->transform_hash = transform_hash;
-    vec_clear( &cached->triangles );
+
+    if( *stale ) vec_clear( &cached->triangles );
+
     return cached;
 }
 
@@ -72,7 +74,7 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
         ECS_GET_COMPONENT_DECL( Transform, transform, ecs, collider_entities[i] );
 
         bool cache_stale;
-        CachedCollider *cached = find_cached( &sys->cached_colliders, collider_entities[i], transform, collider, &cache_stale );
+        CachedCollider *cached = find_or_add_cached( &sys->cached_colliders, collider_entities[i], transform, collider, &cache_stale );
 
         if( !cache_stale ) continue;
 
@@ -80,7 +82,7 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
 
         Mesh *mesh = hashcache_load( resources, collider->mesh );
         if( !mesh ) {
-            printf( "No mesh to add\n", transform->name );
+            printf( "No mesh to add\n" );
             continue;
         }
 
@@ -94,6 +96,7 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
         for( int k = 0; k < mesh->submeshes[j].num_indices; k += 3 )
         {
             Triangle t;
+
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 0]], 1.f, t.a );
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 1]], 1.f, t.b );
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 2]], 1.f, t.c );
