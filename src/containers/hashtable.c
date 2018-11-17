@@ -156,12 +156,6 @@ static void test_clear_callback(void *context, void *item)
 
 TestResult hashtable_test(void)
 {
-    TEST_BEGIN("Hash function behaves as expected");
-
-        TEST_ASSERT(hash_fn("abcd", 1000) == 0x63626164 % 1000);
-        TEST_ASSERT(hash_fn("abcde", 1000) == (0x63626564 ^ 0x00006100) % 1000);
-
-    TEST_END();
     TEST_BEGIN("Large HashTable works correctly");
 
         HashTable table = hashtable_empty(0xFFFF, sizeof(uint32_t));

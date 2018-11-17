@@ -55,6 +55,7 @@ Hash utils_hash( const void *obj, size_t size )
     for( int i = (int)size - 1; i >= 0; --i )
     {
         hash ^= bytes[i];
+        hash ^= (uint32_t)i;
         uint8_t rolled_byte = hash >> ((sizeof(hash) - 1) * 8);
         hash = (hash << 8) | rolled_byte;
     }
