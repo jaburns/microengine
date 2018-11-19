@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1 // for fopen
 
 #include "utils.h"
-#include "containers\vec.h"
+#include "containers/vec.h"
 
 #include <string.h>
 #include <stdlib.h>
