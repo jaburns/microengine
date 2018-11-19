@@ -75,16 +75,10 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
 
         bool cache_stale;
         CachedCollider *cached = find_or_add_cached( &sys->cached_colliders, collider_entities[i], transform, collider, &cache_stale );
-
         if( !cache_stale ) continue;
 
-        printf( "Recalculating collision info for: %s\n", transform->name );
-
         Mesh *mesh = hashcache_load( resources, collider->mesh );
-        if( !mesh ) {
-            printf( "No mesh to add\n" );
-            continue;
-        }
+        if( !mesh ) continue;
 
         mat4 world_matrix;
         if( transform )
