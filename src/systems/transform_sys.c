@@ -34,8 +34,8 @@ void transform_sys_run(TransformSystem *sys, ECS *ecs)
     for (int i = 0; i < num_transforms; ++i)
     {
         ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
-        Transform_to_matrix(t, t->worldMatrix_);
-        vec_clear(&t->children_);
+        Transform_to_matrix(t, t->world_matrix);
+        vec_clear(&t->children);
     }
 
     for (int i = 0; i < num_transforms; ++i)
@@ -46,7 +46,7 @@ void transform_sys_run(TransformSystem *sys, ECS *ecs)
         if (parent)
         {
             ECS_GET_COMPONENT_DECL(Transform, p, ecs, parent);
-            vec_push_copy(&p->children_, &transform_entities[i]);
+            vec_push_copy(&p->children, &transform_entities[i]);
         }
 
         while (parent)
@@ -56,7 +56,7 @@ void transform_sys_run(TransformSystem *sys, ECS *ecs)
             mat4 parent_matrix;
             Transform_to_matrix(p, parent_matrix);
 
-            glm_mat4_mul(parent_matrix, t->worldMatrix_, t->worldMatrix_);
+            glm_mat4_mul(parent_matrix, t->world_matrix, t->world_matrix);
 
             parent = p->parent;
         }

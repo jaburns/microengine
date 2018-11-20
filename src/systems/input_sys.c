@@ -49,26 +49,54 @@ static void shell_event_callback( float window_width, float window_height, SDL_E
 InputSystem *input_sys_new( ShellContext *shell )
 {
     s_latest_inputs.keys = vec_empty( sizeof( SDL_Keycode ) );
+    s_latest_inputs.has_gamepad = false;
+    s_latest_inputs.gamepad.buttons = vec_empty( sizeof( SDL_GameControllerButton ) );
+
     shell_bind_event_handler( shell, shell_event_callback );
+
     return NULL;
 }
 
-void input_sys_run( InputSystem *sys, ECS *ecs )
+static float read_axis( int16_t val )
 {
+    return (float)val / 32767.f;
+}
+
+static void read_gamepad( SDL_GameController *controller, GamepadInputFrame *result )
+{
+    vec_clear( &result->buttons );
+
+    for( int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; ++i )
+        if( SDL_GameControllerGetButton( controller, i ) )
+            vec_push_copy( &result->buttons, &i );
+
+    result-> left_stick[0] = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_LEFTX ) );
+    result-> left_stick[1] = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_LEFTY ) );
+    result->right_stick[0] = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_RIGHTX ) );
+    result->right_stick[1] = read_axis( SDL_GameControllerGetAxis( controller, SDL_CONTROLLER_AXIS_RIGHTY ) );
+}
+
+void input_sys_run( InputSystem *sys, ECS *ecs, SDL_GameController *controller )
+{
+    if( controller )
+    {
+        s_latest_inputs.has_gamepad = true;
+        read_gamepad( controller, &s_latest_inputs.gamepad );
+    }
+    else 
+    {
+        s_latest_inputs.has_gamepad = false;
+    }
+
     ECS_ENSURE_SINGLETON_DECL( InputState, ecs, inputs );
 
-    inputs->prev.left_mouse   = inputs->cur.left_mouse;
-    inputs->prev.right_mouse  = inputs->cur.right_mouse;
-    inputs->prev.mouse_pos[0] = inputs->cur.mouse_pos[0];
-    inputs->prev.mouse_pos[1] = inputs->cur.mouse_pos[1];
     vec_clear( &inputs->prev.keys );
-    inputs->prev.keys = inputs->cur.keys;
-
-    inputs->cur.left_mouse   = s_latest_inputs.left_mouse;
-    inputs->cur.right_mouse  = s_latest_inputs.right_mouse;
-    inputs->cur.mouse_pos[0] = s_latest_inputs.mouse_pos[0];
-    inputs->cur.mouse_pos[1] = s_latest_inputs.mouse_pos[1];
+    vec_clear( &inputs->prev.gamepad.buttons );
+    inputs->prev = inputs->cur;
+    
+    inputs->cur = s_latest_inputs;
     inputs->cur.keys = vec_clone( &s_latest_inputs.keys );
+    inputs->cur.gamepad.buttons = vec_clone( &s_latest_inputs.gamepad.buttons );
 }
 
 void input_sys_delete( InputSystem *sys )

@@ -57,7 +57,7 @@ int main( int argc, char **argv )
     do
     {
         clock_sys_run( clock_system, ecs, switching_mode );
-        input_sys_run( input_system, ecs );
+        input_sys_run( input_system, ecs, shell_get_controller( ctx ) );
         collision_sys_run( collision_system, ecs, resources );
 
         if( play_mode )
@@ -71,8 +71,8 @@ int main( int argc, char **argv )
             game = NULL;
         }
 
-        transform_sys_run( transform_system, ecs );
         EditorSystemUpdateResult editor_update = editor_sys_run( editor_system, ecs );
+        transform_sys_run( transform_system, ecs );
         render_sys_run( render_system, ecs, resources, shell_get_aspect( ctx ), editor_update.in_game_view );
 
         if( editor_update.new_ecs )

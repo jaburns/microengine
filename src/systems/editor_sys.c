@@ -48,7 +48,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     if( sys->selected_entity == entity )
         node_flags |= ImGuiTreeNodeFlags_Selected;
 
-    if( !transform || transform->children_.item_count == 0 )
+    if( !transform || transform->children.item_count == 0 )
         node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
     bool name_from_transform;
@@ -62,9 +62,9 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     if( igIsItemClicked( 0 ) )
         sys->selected_entity = entity;
 
-    if( transform && transform->children_.item_count > 0 && node_open )
+    if( transform && transform->children.item_count > 0 && node_open )
     {
-        VEC_FOREACH( Entity, &transform->children_ )
+        VEC_FOREACH( Entity, &transform->children )
         {
             ECS_GET_COMPONENT_DECL( Transform, t, ecs, *iter.item );
             inspect_transform_tree( sys, ecs, *iter.item, t );

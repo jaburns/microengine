@@ -112,7 +112,7 @@ static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, floa
     projection[2][3] *= -1.f;
 
     mat4 view;
-    glm_mat4_inv( camera_transform->worldMatrix_, view );
+    glm_mat4_inv( camera_transform->world_matrix, view );
 
     size_t num_renderers;
     Entity *renderers = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( MeshRenderer, ecs, &num_renderers );
@@ -162,7 +162,7 @@ static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, floa
 
             glUniformMatrix4fv( glGetUniformLocation( shader_handle, "view" ), 1, GL_FALSE, (GLfloat*)view );
             glUniformMatrix4fv( glGetUniformLocation( shader_handle, "projection" ), 1, GL_FALSE, (GLfloat*)projection );
-            glUniformMatrix4fv( glGetUniformLocation( shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)renderer_transform->worldMatrix_ );
+            glUniformMatrix4fv( glGetUniformLocation( shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)renderer_transform->world_matrix );
 
             if( props )
             {
@@ -203,7 +203,7 @@ static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, floa
         glUniform3f( glGetUniformLocation( wire_shader_handle, "line_color" ), 1.f, 1.f, 1.f );
         glUniformMatrix4fv( glGetUniformLocation( wire_shader_handle, "view" ), 1, GL_FALSE, (GLfloat*)view );
         glUniformMatrix4fv( glGetUniformLocation( wire_shader_handle, "projection" ), 1, GL_FALSE, (GLfloat*)projection );
-        glUniformMatrix4fv( glGetUniformLocation( wire_shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)collider_transform->worldMatrix_ );
+        glUniformMatrix4fv( glGetUniformLocation( wire_shader_handle, "model" ), 1, GL_FALSE, (GLfloat*)collider_transform->world_matrix );
 
         glDrawElements( GL_LINES, (GLsizei)vao->wireframe_lines.item_count, GL_UNSIGNED_SHORT, vao->wireframe_lines.data );
     }

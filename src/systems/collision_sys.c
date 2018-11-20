@@ -82,7 +82,7 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
 
         mat4 world_matrix;
         if( transform )
-            glm_mat4_copy( transform->worldMatrix_, world_matrix );
+            glm_mat4_copy( transform->world_matrix, world_matrix );
         else
             glm_mat4_identity( world_matrix );
         

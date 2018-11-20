@@ -6,8 +6,16 @@
         { "name": "rotation",     "type": "versor" },
         { "name": "scale",        "type": "vec3",   "default": "{1.f, 1.f, 1.f}" },
         { "name": "parent",       "type": "Entity",              "hide": true },
-        { "name": "children_",    "type": "Entity", "vec": true, "hide": true, "serialize": false },
-        { "name": "worldMatrix_", "type": "mat4",                "hide": true, "serialize": false }
+        { "name": "children",     "type": "Entity", "vec": true, "hide": true, "serialize": false },
+        { "name": "world_matrix", "type": "mat4",                "hide": true, "serialize": false }
+    ]
+},{
+    "name": "GamepadInputFrame",
+    "hide": true,
+    "fields": [
+        { "name": "buttons",     "type": "int", "vec": true },
+        { "name": "left_stick",  "type": "vec2" },
+        { "name": "right_stick", "type": "vec2" }
     ]
 },{
     "name": "InputFrame",
@@ -16,7 +24,9 @@
         { "name": "mouse_pos",   "type": "vec2" },
         { "name": "left_mouse",  "type": "bool" },
         { "name": "right_mouse", "type": "bool" },
-        { "name": "keys",        "type": "int", "vec": true }
+        { "name": "keys",        "type": "int", "vec": true },
+        { "name": "has_gamepad", "type": "bool" },
+        { "name": "gamepad",     "type": "GamepadInputFrame" }
     ]
 },{
     "name": "InputState",
