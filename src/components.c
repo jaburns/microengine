@@ -268,7 +268,7 @@ void components_inspect_entity( ECS *ecs, Entity e )
     }
 }
 
-static void serialize_component( cJSON *obj, void *component, const ComponentInfo *info, bool nested );
+static void serialize_component( cJSON *obj, const void *component, const ComponentInfo *info, bool nested );
 
 static cJSON *serialize_field( void *field, const ComponentField *field_def )
 {
