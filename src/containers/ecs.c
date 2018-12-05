@@ -238,7 +238,7 @@ EventListenerEntry;
 typedef struct BorrowedComponent
 {
     Entity entity;
-    const char *type; // Assumed to be a string with a static lifetime. TODO don't assume anything
+    const char *type; // This should always be a string with a static lifetime.
     const void *component;
     const char *debug_file;
     int debug_line;
@@ -248,9 +248,9 @@ BorrowedComponent;
 struct ECS
 {
     GenerationalIndexAllocator allocator;
-    HashTable components; // of ECSComponent keyed by component types
+    HashTable components; // of ECSComponent keyed by component type
     Vec borrowed_components; // of BorrowedComponent
-    HashTable event_listeners; // of Vec of EventListenerEntry keyed by component types
+    HashTable event_listeners; // of Vec of EventListenerEntry keyed by component type
 };
 
 static GenerationalIndex entity_to_gi(Entity entity)
@@ -355,7 +355,7 @@ void *ecs_borrow_component(ECS *ecs, Entity entity, const char *component_type, 
     BorrowedComponent new_borrow = { 
         .component = result,
         .entity = entity,
-        .type = component_type, // TODO don't assume that this string has a static lifetime
+        .type = component_type,
         .debug_file = debug_file,
         .debug_line = debug_line,
     };
@@ -405,7 +405,7 @@ void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_ty
     BorrowedComponent new_borrow = { 
         .component = result,
         .entity = entity,
-        .type = component_type, // TODO don't assume that this string has a static lifetime
+        .type = component_type,
         .debug_file = debug_file,
         .debug_line = debug_line,
     };
@@ -464,7 +464,7 @@ static bool check_event_listeners_entries_match(EventListenerEntry *a, const Eve
     return a->listener == b->listener && a->type == b->type;
 }
 
-void ecs_add_component_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener)
+void ecs_register_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener)
 {
     Vec *entries = hashtable_at(&ecs->event_listeners, component_type);
 
@@ -485,7 +485,7 @@ void ecs_add_component_event_listener(ECS *ecs, ECSComponentEventType event_type
         vec_push_copy(entries, &entry);
 }
 
-void ecs_remove_component_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener)
+void ecs_remove_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener)
 {
     Vec *entries = hashtable_at(&ecs->event_listeners, component_type);
     if (!entries) return;
@@ -503,10 +503,16 @@ void ecs_remove_component_event_listener(ECS *ecs, ECSComponentEventType event_t
 
 
 #ifdef RUN_TESTS
-static int test_destructor_call_count = 0;
+static int test_destructor_call_count;
 static void test_destructor(void *value)
 {
     test_destructor_call_count++;
+}
+
+static float test_change_event_listener_sum;
+static void test_change_event_listener(Entity e, const float *component)
+{
+    test_change_event_listener_sum += *component;
 }
 
 TestResult ecs_test()
@@ -767,10 +773,35 @@ TestResult ecs_test()
         ecs_delete(ecs);
 
     TEST_END();
-    
-    // TODO write tests for the borrow/return mutable pointer api
-    // TODO event listener tests
+    TEST_BEGIN("ECS component change event listeners can be added/removed");
 
+        ECS *ecs = ecs_new();
+        Entity e0 = ecs_create_entity(ecs);
+
+        ECS_REGISTER_COMPONENT(float, ecs, NULL);
+        ECS_REGISTER_EVENT_LISTENER(float, ecs, ECS_EVENT_COMPONENT_CHANGED, test_change_event_listener);
+
+        test_change_event_listener_sum = 1.f;
+
+        ECS_ADD_COMPONENT_ZEROED_DECL(float, floaty_set, ecs, e0);
+
+        *floaty_set = 2.f;
+
+        TEST_ASSERT(test_change_event_listener_sum == 1.f);
+        ECS_RETURN_COMPONENT(ecs, floaty_set);
+        TEST_ASSERT(test_change_event_listener_sum == 3.f);
+        ECS_REMOVE_EVENT_LISTENER(float, ecs, ECS_EVENT_COMPONENT_CHANGED, test_change_event_listener);
+        ECS_BORROW_COMPONENT_DECL(float, floaty_again, ecs, e0);
+        
+        *floaty_again = 100.f;
+
+        ECS_RETURN_COMPONENT(ecs, floaty_again);
+        TEST_ASSERT(test_change_event_listener_sum == 3.f);
+
+        ecs_delete(ecs);
+
+    TEST_END();
+    // TODO Figure out how to write tests that assert that PANIC is called, and test the BORROW/RETURN component API
     return 0;
 }
 #endif

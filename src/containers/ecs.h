@@ -34,8 +34,8 @@ extern bool ecs_find_first_entity_with_component(const ECS *ecs, const char *com
 extern Entity *ecs_find_all_entities_with_component_alloc(const ECS *ecs, const char *component_type, size_t *result_length);
 extern Entity *ecs_find_all_entities_alloc(const ECS *ecs, size_t *result_length);
 
-extern void ecs_add_component_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener);
-extern void ecs_remove_component_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener);
+extern void ecs_register_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener);
+extern void ecs_remove_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener);
 
 #define ECS_REGISTER_COMPONENT(T, ecs_ptr, destructor) \
     ecs_register_component((ecs_ptr), #T, sizeof(T), destructor)
@@ -52,9 +52,11 @@ extern void ecs_remove_component_event_listener(ECS *ecs, ECSComponentEventType 
 #define ECS_ADD_COMPONENT_ZEROED_DECL(T, var_name, ecs_ptr, entity) \
     T *var_name = ecs_add_component_zeroed((ecs_ptr), (entity), #T, __FILE__, __LINE__)
 
-#define ECS_ADD_COMPONENT_DEFAULT_DECL(T, var_name, ecs_ptr, entity) \
-    T *var_name = ecs_add_component_zeroed((ecs_ptr), (entity), #T, __FILE__, __LINE__); \
-    *var_name = T##_default;
+#define ECS_ADD_COMPONENT_DEFAULT(T, ecs_ptr, entity) do { \
+    T *comp_ = ecs_add_component_zeroed((ecs_ptr), (entity), #T, __FILE__, __LINE__); \
+    *comp_ = T##_default; \
+    ecs_return_component((ecs_ptr), comp_, __FILE__, __LINE__); \
+} while (0)
 
 #define ECS_REMOVE_COMPONENT(T, ecs_ptr, entity) \
     ecs_remove_component((ecs_ptr), (entity), #T)
@@ -64,6 +66,12 @@ extern void ecs_remove_component_event_listener(ECS *ecs, ECSComponentEventType 
 
 #define ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(T, ecs_ptr, result_length) \
     ecs_find_all_entities_with_component_alloc((ecs_ptr), #T, (result_length))
+
+#define ECS_REGISTER_EVENT_LISTENER(T, ecs_ptr, event_type, listener) \
+    ecs_register_event_listener((ecs_ptr), (event_type), #T, (listener))
+
+#define ECS_REMOVE_EVENT_LISTENER(T, ecs_ptr, event_type, listener) \
+    ecs_remove_event_listener((ecs_ptr), (event_type), #T, (listener))
 
 #define ECS_ENSURE_AND_BORROW_SINGLETON_DECL(T, ecs_ptr, var_name) \
     T *var_name; \
