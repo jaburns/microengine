@@ -66,7 +66,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     {
         VEC_FOREACH( Entity, &transform->children )
         {
-            ECS_GET_COMPONENT_DECL( Transform, t, ecs, *iter.item );
+            ECS_BORROW_COMPONENT_DECL( Transform, t, ecs, *iter.item );
             inspect_transform_tree( sys, ecs, *iter.item, t );
         }
 
@@ -74,7 +74,7 @@ static void inspect_transform_tree( EditorSystem *sys, ECS *ecs, Entity entity, 
     }
 }
 
-static void update_view_drag( EditorSystem *sys, InputState *inputs, Camera *cam, Transform *transform, float delta_secs )
+static void update_view_drag( EditorSystem *sys, const InputState *inputs, Camera *cam, Transform *transform, float delta_secs )
 {
 // Camera rotation
 
@@ -128,7 +128,7 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
 {
     if( !this_entity || this_entity == to_entity ) return;
 
-    ECS_GET_COMPONENT_DECL( Transform, this_t, ecs, this_entity );
+    ECS_BORROW_COMPONENT_DECL( Transform, this_t, ecs, this_entity );
     if( !this_t ) return;
 
     if( !to_entity )
@@ -137,14 +137,14 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
         return;
     }
 
-    ECS_GET_COMPONENT_DECL( Transform, to_t, ecs, to_entity );
+    ECS_BORROW_COMPONENT_DECL( Transform, to_t, ecs, to_entity );
     if( !to_t ) return;
 
     Entity parent = to_t->parent;
     while( parent )
     {
         if( parent == this_entity ) return;
-        ECS_GET_COMPONENT_DECL( Transform, parent_t, ecs, parent );
+        ECS_BORROW_COMPONENT_DECL( Transform, parent_t, ecs, parent );
         parent = parent_t->parent;
     }
 
@@ -161,8 +161,8 @@ static bool find_editor_camera( ECS *ecs, Camera **out_camera, Transform **out_t
 
     for( int i = 0; i < num_cameras; ++i )
     {
-        ECS_GET_COMPONENT_DECL( Camera, camera, ecs, camera_entities[i] );
-        ECS_GET_COMPONENT_DECL( Transform, transform, ecs, camera_entities[i] );
+        ECS_BORROW_COMPONENT_DECL( Camera, camera, ecs, camera_entities[i] );
+        ECS_BORROW_COMPONENT_DECL( Transform, transform, ecs, camera_entities[i] );
 
         if( transform && camera->is_editor )
         {
@@ -259,7 +259,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
     Entity clock_entity;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( ClockInfo, ecs, &clock_entity );
-    ECS_GET_COMPONENT_DECL( ClockInfo, clock, ecs, clock_entity );
+    ECS_BORROW_COMPONENT_DECL( ClockInfo, clock, ecs, clock_entity );
     size_t num_entities;
     Entity *entities = ecs_find_all_entities_alloc( ecs, &num_entities );
 
@@ -339,7 +339,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
         for( int i = 0; i < num_entities; ++i )
         {
-            ECS_GET_COMPONENT_DECL( Transform, t, ecs, entities[i] );
+            ECS_BORROW_COMPONENT_DECL( Transform, t, ecs, entities[i] );
             if( t && t->parent ) continue;
             inspect_transform_tree( sys, ecs, entities[i], t );
         }
@@ -362,16 +362,21 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
     {
         Camera *camera;
         Transform *camera_transform;
+
         if( find_editor_camera( ecs, &camera, &camera_transform ) )
         {
             Entity inputs_entity;
             ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( InputState, ecs, &inputs_entity );
-            ECS_GET_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
-
+            ECS_VIEW_COMPONENT_DECL( InputState, inputs, ecs, inputs_entity );
             if( inputs )
                 update_view_drag( sys, inputs, camera, camera_transform, clock->delta_secs );
+
+            ECS_RETURN_COMPONENT( ecs, camera );
+            ECS_RETURN_COMPONENT( ecs, camera_transform );
         }
     }
+
+    ECS_RETURN_COMPONENT( ecs, clock );
 
     return (EditorSystemUpdateResult) {
         .new_ecs = maybe_new_ecs,

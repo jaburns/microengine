@@ -25,9 +25,10 @@ void clock_sys_run( ClockSystem *sys, ECS *ecs, bool reset_clock )
 
     if( reset_clock ) sys->first_clock = now;
 
-    ECS_ENSURE_SINGLETON_DECL( ClockInfo, ecs, clock );
+    ECS_ENSURE_AND_BORROW_SINGLETON_DECL( ClockInfo, ecs, clock );
     clock->delta_secs = delta_secs;
     clock->secs_since_start = (float)(now - sys->first_clock) * 1e-9f;
+    ECS_RETURN_COMPONENT( ecs, clock );
 }
 
 void clock_sys_delete( ClockSystem *sys )

@@ -33,25 +33,27 @@ void transform_sys_run(TransformSystem *sys, ECS *ecs)
 
     for (int i = 0; i < num_transforms; ++i)
     {
-        ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
+        ECS_BORROW_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
         Transform_to_matrix(t, t->world_matrix);
         vec_clear(&t->children);
+        ECS_RETURN_COMPONENT(ecs, t);
     }
 
     for (int i = 0; i < num_transforms; ++i)
     {
-        ECS_GET_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
+        ECS_BORROW_COMPONENT_DECL(Transform, t, ecs, transform_entities[i]);
         Entity parent = t->parent;
 
         if (parent)
         {
-            ECS_GET_COMPONENT_DECL(Transform, p, ecs, parent);
+            ECS_BORROW_COMPONENT_DECL(Transform, p, ecs, parent);
             vec_push_copy(&p->children, &transform_entities[i]);
+            ECS_RETURN_COMPONENT(ecs, p);
         }
 
         while (parent)
         {
-            ECS_GET_COMPONENT_DECL(Transform, p, ecs, parent);
+            ECS_BORROW_COMPONENT_DECL(Transform, p, ecs, parent);
 
             mat4 parent_matrix;
             Transform_to_matrix(p, parent_matrix);
@@ -59,7 +61,11 @@ void transform_sys_run(TransformSystem *sys, ECS *ecs)
             glm_mat4_mul(parent_matrix, t->world_matrix, t->world_matrix);
 
             parent = p->parent;
+
+            ECS_RETURN_COMPONENT(ecs, p);
         }
+
+        ECS_RETURN_COMPONENT(ecs, t);
     }
 
     free(transform_entities);

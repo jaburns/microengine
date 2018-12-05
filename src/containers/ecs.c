@@ -101,8 +101,6 @@ void giallocator_clear(GenerationalIndexAllocator *gia)
     vec_clear(&gia->free_indices);
 }
 
-
-
 typedef struct GenerationalIndexArrayEntry
 {
     bool has_value;
@@ -114,12 +112,12 @@ GenerationalIndexArrayEntry;
 typedef struct GenerationalIndexArray
 {
     size_t item_size;
-    ComponentDestructor destructor;
+    ECSComponentDestructor destructor;
     Vec entries; // Vec of (GenerationalIndexArrayEntry + item)
 }
 GenerationalIndexArray;
 
-GenerationalIndexArray giarray_empty(size_t item_size, ComponentDestructor destructor)
+GenerationalIndexArray giarray_empty(size_t item_size, ECSComponentDestructor destructor)
 {
     return (GenerationalIndexArray) { item_size, destructor, vec_empty(sizeof(GenerationalIndexArrayEntry) + item_size) };
 }
@@ -222,19 +220,37 @@ bool giarray_get_first_valid_index(
     return false;
 }
 
-
 typedef struct ECSComponent
 {
     size_t size;
-    ComponentDestructor destructor;
+    ECSComponentDestructor destructor;
     GenerationalIndexArray components;
 }
 ECSComponent;
 
+typedef struct EventListenerEntry
+{
+    ECSComponentEventType type;
+    ECSComponentEventListener listener;
+}
+EventListenerEntry;
+
+typedef struct BorrowedComponent
+{
+    Entity entity;
+    const char *type; // Assumed to be a string with a static lifetime. TODO don't assume anything
+    const void *component;
+    const char *debug_file;
+    int debug_line;
+}
+BorrowedComponent;
+
 struct ECS
 {
     GenerationalIndexAllocator allocator;
-    HashTable components; // of ECSComponent
+    HashTable components; // of ECSComponent keyed by component types
+    Vec borrowed_components; // of BorrowedComponent
+    HashTable event_listeners; // of Vec of EventListenerEntry keyed by component types
 };
 
 static GenerationalIndex entity_to_gi(Entity entity)
@@ -260,13 +276,20 @@ ECS *ecs_new(void)
 {
     ECS *ecs = malloc(sizeof(ECS));
     ecs->allocator = giallocator_empty();
-    ecs->components = hashtable_empty(1024, sizeof(ECSComponent));
+    ecs->components = hashtable_empty(256, sizeof(ECSComponent));
+    ecs->borrowed_components = vec_empty(sizeof(BorrowedComponent));
+    ecs->event_listeners = hashtable_empty(256, sizeof(Vec));
     return ecs;
 }
 
-static void ecs_delete_hashtable_cb(void *context, ECSComponent *comp)
+static void delete_components_hashtable_cb(void *context, ECSComponent *comp)
 {
     giarray_clear(&comp->components);
+}
+
+static void delete_event_listeners_hashtable_cb(void *context, Vec *listeners)
+{
+    vec_clear(listeners);
 }
 
 void ecs_delete(ECS *ecs)
@@ -274,10 +297,12 @@ void ecs_delete(ECS *ecs)
     if (!ecs) return;
 
     giallocator_clear(&ecs->allocator);
-    hashtable_clear_with_callback(&ecs->components, NULL, ecs_delete_hashtable_cb);
+    hashtable_clear_with_callback(&ecs->components, NULL, delete_components_hashtable_cb);
+    vec_clear(&ecs->borrowed_components);
+    hashtable_clear_with_callback(&ecs->event_listeners, NULL, delete_event_listeners_hashtable_cb);
+
     free(ecs);
 }
-
 
 Entity ecs_create_entity(ECS *ecs)
 {
@@ -295,8 +320,7 @@ bool ecs_is_entity_valid(const ECS *ecs, Entity entity)
     return giallocator_is_index_live(&ecs->allocator, entity_to_gi(entity));
 }
 
-
-void ecs_register_component(ECS *ecs, const char *component_type, size_t component_size, ComponentDestructor destructor)
+void ecs_register_component(ECS *ecs, const char *component_type, size_t component_size, ECSComponentDestructor destructor)
 {
     if (hashtable_at(&ecs->components, component_type))
         PANIC("Tried to register the same component twice: '%s'\n", component_type);
@@ -305,24 +329,90 @@ void ecs_register_component(ECS *ecs, const char *component_type, size_t compone
     hashtable_set_copy(&ecs->components, component_type, &new_component);
 }
 
-void *ecs_get_component(ECS *ecs, Entity entity, const char *component_type)
+static bool check_borrowed_component_matches_ptr(const void *component, const BorrowedComponent *borrow_entry)
+{
+    return component == borrow_entry->component;
+}
+
+void *ecs_borrow_component(ECS *ecs, Entity entity, const char *component_type, const char *debug_file, int debug_line)
 {
     ECSComponent *comp = hashtable_at(&ecs->components, component_type);
-    return comp ? giarray_at(&comp->components, entity_to_gi(entity)) : NULL;
+    void *result = comp ? giarray_at(&comp->components, entity_to_gi(entity)) : NULL;
+
+    if (!result) return NULL;
+
+    int found_index = vec_find_index(&ecs->borrowed_components, result, check_borrowed_component_matches_ptr);
+
+    if (found_index >= 0)
+    {
+        BorrowedComponent *prev_borrow = vec_at(&ecs->borrowed_components, found_index);
+        PANIC("A component of type '%s' was borrowed twice without being returned.\n"
+            "Original borrow occurred at %s : %d\n" 
+            "    This borrow occurred at %s : %d",
+            component_type, prev_borrow->debug_file, prev_borrow->debug_line, debug_file, debug_line);
+    }
+
+    BorrowedComponent new_borrow = { 
+        .component = result,
+        .entity = entity,
+        .type = component_type, // TODO don't assume that this string has a static lifetime
+        .debug_file = debug_file,
+        .debug_line = debug_line,
+    };
+
+    vec_push_copy(&ecs->borrowed_components, &new_borrow);
+
+    return result;
 }
 
-const void *ecs_get_component_const(const ECS *ecs, Entity entity, const char *component_type)
+void ecs_return_component(ECS *ecs, void *component, const char *debug_file, int debug_line)
 {
-    return ecs_get_component((ECS*)ecs, entity, component_type);
+    int found_index = vec_find_index(&ecs->borrowed_components, component, check_borrowed_component_matches_ptr);
+
+    if (found_index < 0)
+        PANIC("Attempted to return a component that was not borrowed.\n%s : %d", debug_file, debug_line);
+
+    BorrowedComponent *borrowed = vec_at(&ecs->borrowed_components, found_index);
+
+    Vec *listeners = hashtable_at(&ecs->event_listeners, borrowed->type);
+
+    if (listeners) 
+    for (int i = 0; i < listeners->item_count; ++i)
+    {
+        EventListenerEntry *entry = vec_at(listeners, i);
+        if (entry->type == ECS_EVENT_COMPONENT_CHANGED)
+            entry->listener(borrowed->entity, component);
+    }
+
+    vec_remove(&ecs->borrowed_components, found_index);
 }
 
-void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type)
+const void *ecs_view_component(const ECS *ecs, Entity entity, const char *component_type)
+{
+    const ECSComponent *comp = hashtable_at_const(&ecs->components, component_type);
+    ECSComponent *comp_mut = (ECSComponent*)comp;
+    return comp ? giarray_at(&comp_mut->components, entity_to_gi(entity)) : NULL;
+}
+
+void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_type, const char *debug_file, int debug_line)
 {
     ECSComponent *comp = hashtable_at(&ecs->components, component_type);
     if (!comp)
         PANIC("Tried to add unregistered component: '%s'\n", component_type);
 
-    return giarray_set_copy_or_zeroed(&comp->components, entity_to_gi(entity), 0);
+    void *result = giarray_set_copy_or_zeroed(&comp->components, entity_to_gi(entity), 0);
+
+    BorrowedComponent new_borrow = { 
+        .component = result,
+        .entity = entity,
+        .type = component_type, // TODO don't assume that this string has a static lifetime
+        .debug_file = debug_file,
+        .debug_line = debug_line,
+    };
+
+    vec_push_copy(&ecs->borrowed_components, &new_borrow);
+
+    return result;
 }
 
 void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
@@ -332,7 +422,6 @@ void ecs_remove_component(ECS *ecs, Entity entity, const char *component_type)
 
     giarray_remove(&comp->components, entity_to_gi(entity));
 }
-
 
 bool ecs_find_first_entity_with_component(const ECS *ecs, const char *component_type, Entity *out_entity)
 {
@@ -370,6 +459,47 @@ Entity *ecs_find_all_entities_alloc(const ECS *ecs, size_t *result_length)
     return (Entity*)result;
 }
 
+static bool check_event_listeners_entries_match(EventListenerEntry *a, const EventListenerEntry *b)
+{
+    return a->listener == b->listener && a->type == b->type;
+}
+
+void ecs_add_component_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener)
+{
+    Vec *entries = hashtable_at(&ecs->event_listeners, component_type);
+
+    if (!entries)
+    {
+        Vec new_entries = vec_empty(sizeof(EventListenerEntry));
+        entries = hashtable_set_copy(&ecs->event_listeners, component_type, &new_entries);
+    }
+
+    EventListenerEntry entry = { 
+        .type = event_type,
+        .listener = listener
+    };
+
+    int found_index = vec_find_index(entries, &entry, check_event_listeners_entries_match);
+
+    if (found_index < 0)
+        vec_push_copy(entries, &entry);
+}
+
+void ecs_remove_component_event_listener(ECS *ecs, ECSComponentEventType event_type, const char *component_type, ECSComponentEventListener listener)
+{
+    Vec *entries = hashtable_at(&ecs->event_listeners, component_type);
+    if (!entries) return;
+
+    EventListenerEntry entry = { 
+        .type = event_type,
+        .listener = listener
+    };
+
+    int found_index = vec_find_index(entries, &entry, check_event_listeners_entries_match);
+
+    if (found_index >= 0)
+        vec_remove(entries, found_index);
+}
 
 
 #ifdef RUN_TESTS
@@ -549,7 +679,7 @@ TestResult ecs_test()
         ECS_ADD_COMPONENT_ZEROED_DECL(float, set_float0, ecs, e0);
         ECS_ADD_COMPONENT_ZEROED_DECL(float, set_float1, ecs, e1);
 
-        ECS_GET_COMPONENT_DECL(float, get_float, ecs, e1);
+        ECS_VIEW_COMPONENT_DECL(float, get_float, ecs, e1);
         TEST_ASSERT(set_float1 == get_float);
 
         ecs_delete(ecs);
@@ -572,16 +702,16 @@ TestResult ecs_test()
         ECS_ADD_COMPONENT_ZEROED_DECL(uint32_t, _3, ecs, e1);
         ECS_ADD_COMPONENT_ZEROED_DECL(uint32_t, _4, ecs, e2);
 
-        ECS_GET_COMPONENT_DECL(float, floaty0, ecs, e0);
-        ECS_GET_COMPONENT_DECL(float, floaty2, ecs, e2);
+        ECS_VIEW_COMPONENT_DECL(float, floaty0, ecs, e0);
+        ECS_VIEW_COMPONENT_DECL(float, floaty2, ecs, e2);
 
         size_t result_count;
         Entity *entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC(float, ecs, &result_count);
 
         TEST_ASSERT(result_count == 2);
 
-        ECS_GET_COMPONENT_DECL(float, get0, ecs, entities[0]);
-        ECS_GET_COMPONENT_DECL(float, get1, ecs, entities[1]);
+        ECS_VIEW_COMPONENT_DECL(float, get0, ecs, entities[0]);
+        ECS_VIEW_COMPONENT_DECL(float, get1, ecs, entities[1]);
 
         TEST_ASSERT(entities[0] == e0 && get0 == floaty0);
         TEST_ASSERT(entities[1] == e2 && get1 == floaty2);
@@ -627,16 +757,20 @@ TestResult ecs_test()
         ECS_REGISTER_COMPONENT(float, ecs, NULL);
 
         ECS_ADD_COMPONENT_ZEROED_DECL(float, floaty_set, ecs, e0);
-        ECS_GET_COMPONENT_DECL(float, floaty_get, ecs, e0);
+        ECS_VIEW_COMPONENT_DECL(float, floaty_get, ecs, e0);
         TEST_ASSERT(floaty_get == floaty_set);
 
         ECS_REMOVE_COMPONENT(float, ecs, e0);
-        ECS_GET_COMPONENT_DECL(float, floaty_get_again, ecs, e0);
+        ECS_VIEW_COMPONENT_DECL(float, floaty_get_again, ecs, e0);
         TEST_ASSERT(!floaty_get_again);
 
         ecs_delete(ecs);
 
     TEST_END();
+    
+    // TODO write tests for the borrow/return mutable pointer api
+    // TODO event listener tests
+
     return 0;
 }
 #endif

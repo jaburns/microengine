@@ -12,6 +12,7 @@
 #include "../resources/mesh.h"
 #include "../resources/texture.h"
 #include "../gl.h"
+#include "../utils.h"
 
 
 typedef struct MeshVAO
@@ -104,7 +105,7 @@ RenderSystem *render_sys_new( HashCache *resources )
     return sys;
 }
 
-static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, Transform *camera_transform, Camera *camera, bool show_editor_layer )
+static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, float aspect_ratio, const Transform *camera_transform, const Camera *camera, bool show_editor_layer )
 {
     mat4 projection;
     glm_perspective( camera->fov, aspect_ratio, camera->near_clip, camera->far_clip, projection );
@@ -112,15 +113,15 @@ static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, floa
     projection[2][3] *= -1.f;
 
     mat4 view;
-    glm_mat4_inv( camera_transform->world_matrix, view );
+    glm_mat4_inv( UTILS_UNCONST_MAT( camera_transform->world_matrix ), view );
 
     size_t num_renderers;
     Entity *renderers = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( MeshRenderer, ecs, &num_renderers );
 
     for( int i = 0; i < num_renderers; ++i )
     {
-        ECS_GET_COMPONENT_DECL( Transform, renderer_transform, ecs, renderers[i] );
-        ECS_GET_COMPONENT_DECL( MeshRenderer, renderer_comp, ecs, renderers[i] );
+        ECS_VIEW_COMPONENT_DECL( Transform, renderer_transform, ecs, renderers[i] );
+        ECS_VIEW_COMPONENT_DECL( MeshRenderer, renderer_comp, ecs, renderers[i] );
 
         MeshVAO *vao = get_vao( &sys->vaos_for_meshes, resources, renderer_comp->mesh );
         Mesh *mesh = hashcache_load( resources, renderer_comp->mesh );
@@ -191,8 +192,8 @@ static void draw_camera( RenderSystem *sys, ECS *ecs, HashCache *resources, floa
 
     for( int i = 0; i < num_colliders; ++i )
     {
-        ECS_GET_COMPONENT_DECL( Transform, collider_transform, ecs, colliders[i] );
-        ECS_GET_COMPONENT_DECL( MeshCollider, collider, ecs, colliders[i] );
+        ECS_VIEW_COMPONENT_DECL( Transform, collider_transform, ecs, colliders[i] );
+        ECS_VIEW_COMPONENT_DECL( MeshCollider, collider, ecs, colliders[i] );
 
         MeshVAO *vao = get_vao( &sys->vaos_for_meshes, resources, collider->mesh );
 
@@ -223,8 +224,8 @@ void render_sys_run( RenderSystem *sys, ECS *ecs, HashCache *resources, float as
 
     for( int i = 0; i < num_cameras; ++i )
     {
-        ECS_GET_COMPONENT_DECL( Camera, camera, ecs, camera_entities[i] );
-        ECS_GET_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entities[i] );
+        ECS_VIEW_COMPONENT_DECL( Camera, camera, ecs, camera_entities[i] );
+        ECS_VIEW_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entities[i] );
 
         if( !camera_transform ) continue;
 

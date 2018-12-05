@@ -163,7 +163,7 @@ const char *components_name_entity( const ECS *ecs, Entity e, bool *name_from_tr
 {
     if( !e ) return "empty";
 
-    ECS_GET_COMPONENT_CONST_DECL( Transform, t, ecs, e );
+    ECS_VIEW_COMPONENT_DECL( Transform, t, ecs, e );
     if( t && t->name && strlen( t->name ) ) 
     {
         *name_from_transform = true;
@@ -173,7 +173,7 @@ const char *components_name_entity( const ECS *ecs, Entity e, bool *name_from_tr
     *name_from_transform = false;
 
     for( int i = 0; i < COMPONENTS_TOTAL_COUNT; ++i )
-        if( ecs_get_component_const( ecs, e, COMPONENTS_ALL_INFOS[i]->name ) )
+        if( ecs_view_component( ecs, e, COMPONENTS_ALL_INFOS[i]->name ) )
             return COMPONENTS_ALL_INFOS[i]->name;
 
     return "empty";
@@ -218,11 +218,11 @@ void components_generic_destruct( const ComponentInfo *info, void *component )
 
 static void *add_component_if_missing( ECS *ecs, Entity e, const char *type_name )
 {
-    void *comp =  ecs_get_component( ecs, e, type_name );
+    void *comp =  ecs_borrow_component( ecs, e, type_name, __FILE__, __LINE__ );
 
     if( !comp )
     {
-        comp = ecs_add_component_zeroed( ecs, e, type_name );
+        comp = ecs_add_component_zeroed( ecs, e, type_name, __FILE__, __LINE__ );
         const ComponentInfo *comp_info = get_info_for_component_type( type_name );
         memcpy( comp, comp_info->prototype, comp_info->size );
     }
@@ -258,7 +258,7 @@ void components_inspect_entity( ECS *ecs, Entity e )
         const ComponentInfo *info = COMPONENTS_ALL_INFOS[i];
 
         bool keep_alive = true;
-        void *component = ecs_get_component( ecs, e, info->name );
+        void *component = ecs_borrow_component( ecs, e, info->name, __FILE__, __LINE__ );
 
         if( component && igCollapsingHeaderBoolPtr( info->name, &keep_alive, ImGuiTreeNodeFlags_DefaultOpen ) )
             inspect_component( ecs, component, NULL, info );
@@ -376,6 +376,7 @@ static void deserialize_component( ECS *ecs, cJSON *component_obj, Entity entity
 {
     void *comp = add_component_if_missing( ecs, entity, info->name );
     deserialize_nested_component( component_obj, comp, info, entities_for_ids );
+    ecs_return_component( ecs, comp, __FILE__, __LINE__ );
 }
 
 char *components_serialize_scene_alloc( const ECS *ecs )
@@ -394,7 +395,7 @@ char *components_serialize_scene_alloc( const ECS *ecs )
         {
             if( COMPONENTS_ALL_INFOS[j]->flags & COMPONENT_FLAG_DONT_SERIALIZE ) continue;
 
-            const void *component = ecs_get_component_const( ecs, entities[i], COMPONENTS_ALL_INFOS[j]->name );
+            const void *component = ecs_view_component( ecs, entities[i], COMPONENTS_ALL_INFOS[j]->name );
             if( component )
             {
                 serialize_component( obj, component, COMPONENTS_ALL_INFOS[j], false );

@@ -19,7 +19,7 @@ Game *game_new( ECS *ecs )
 
     Entity player_entity = 0;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Player, ecs, &player_entity );
-    ECS_GET_COMPONENT_DECL( Transform, player_transform, ecs, player_entity );
+    ECS_VIEW_COMPONENT_DECL( Transform, player_transform, ecs, player_entity );
 
     game->start_pos = player_transform->position[1];
 
@@ -106,22 +106,27 @@ static void update_game_camera( const vec3 target, Transform *camera_transform, 
 
 void game_update( Game *game, ECS *ecs )
 {
-    ECS_GET_SINGLETON_DECL( ClockInfo, ecs, clock_info );
-    ECS_GET_SINGLETON_DECL( InputState, ecs, input_state );
-    ECS_GET_SINGLETON_DECL( WorldCollisionInfo, ecs, collision );
+    ECS_VIEW_SINGLETON_DECL( ClockInfo, ecs, clock_info );
+    ECS_VIEW_SINGLETON_DECL( InputState, ecs, input_state );
+    ECS_VIEW_SINGLETON_DECL( WorldCollisionInfo, ecs, collision );
 
     Entity player_entity, camera_entity;
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( Player, ecs, &player_entity );
-    ECS_GET_COMPONENT_DECL( Transform, player_transform, ecs, player_entity );
-    ECS_GET_COMPONENT_DECL( Player, player, ecs, player_entity );
+    ECS_BORROW_COMPONENT_DECL( Transform, player_transform, ecs, player_entity );
+    ECS_BORROW_COMPONENT_DECL( Player, player, ecs, player_entity );
 
     ECS_FIND_FIRST_ENTITY_WITH_COMPONENT( GameCamera, ecs, &camera_entity );
-    ECS_GET_COMPONENT_DECL( GameCamera, game_camera, ecs, camera_entity );
-    ECS_GET_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entity );
-    ECS_GET_COMPONENT_DECL( Transform, camera_target_transform, ecs, game_camera->target );
+    ECS_BORROW_COMPONENT_DECL( GameCamera, game_camera, ecs, camera_entity );
+    ECS_BORROW_COMPONENT_DECL( Transform, camera_transform, ecs, camera_entity );
+    ECS_VIEW_COMPONENT_DECL( Transform, camera_target_transform, ecs, game_camera->target );
 
     update_player_position( clock_info->delta_secs, input_state, camera_transform, collision, player_transform, player );
     update_game_camera( camera_target_transform->position, camera_transform, game_camera );
+
+    ECS_RETURN_COMPONENT( ecs, player_transform );
+    ECS_RETURN_COMPONENT( ecs, player );
+    ECS_RETURN_COMPONENT( ecs, game_camera );
+    ECS_RETURN_COMPONENT( ecs, camera_transform );
 }
 
 void game_delete( Game *game )

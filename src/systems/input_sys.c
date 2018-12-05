@@ -88,7 +88,7 @@ void input_sys_run( InputSystem *sys, ECS *ecs, SDL_GameController *controller )
         s_latest_inputs.has_gamepad = false;
     }
 
-    ECS_ENSURE_SINGLETON_DECL( InputState, ecs, inputs );
+    ECS_ENSURE_AND_BORROW_SINGLETON_DECL( InputState, ecs, inputs );
 
     vec_clear( &inputs->prev.keys );
     vec_clear( &inputs->prev.gamepad.buttons );
@@ -97,6 +97,8 @@ void input_sys_run( InputSystem *sys, ECS *ecs, SDL_GameController *controller )
     inputs->cur = s_latest_inputs;
     inputs->cur.keys = vec_clone( &s_latest_inputs.keys );
     inputs->cur.gamepad.buttons = vec_clone( &s_latest_inputs.gamepad.buttons );
+
+    ECS_RETURN_COMPONENT( ecs, inputs );
 }
 
 void input_sys_delete( InputSystem *sys )

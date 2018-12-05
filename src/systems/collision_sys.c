@@ -70,8 +70,8 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
     
     for( int i = 0; i < collider_count; ++i )
     {
-        ECS_GET_COMPONENT_CONST_DECL( MeshCollider, collider, ecs, collider_entities[i] );
-        ECS_GET_COMPONENT_DECL( Transform, transform, ecs, collider_entities[i] );
+        ECS_VIEW_COMPONENT_DECL( MeshCollider, collider, ecs, collider_entities[i] );
+        ECS_VIEW_COMPONENT_DECL( Transform, transform, ecs, collider_entities[i] );
 
         bool cache_stale;
         CachedCollider *cached = find_or_add_cached( &sys->cached_colliders, collider_entities[i], transform, collider, &cache_stale );
@@ -82,7 +82,7 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
 
         mat4 world_matrix;
         if( transform )
-            glm_mat4_copy( transform->world_matrix, world_matrix );
+            glm_mat4_copy( UTILS_UNCONST_MAT( transform->world_matrix ), world_matrix );
         else
             glm_mat4_identity( world_matrix );
         
@@ -101,8 +101,9 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
 
     free( collider_entities );
 
-    ECS_ENSURE_SINGLETON_DECL( WorldCollisionInfo, ecs, info );
+    ECS_ENSURE_AND_BORROW_SINGLETON_DECL( WorldCollisionInfo, ecs, info );
     info->info = &sys->cached_colliders;
+    ECS_RETURN_COMPONENT( ecs, info );
 }
 
 static void clear_cached_collider( void *x, CachedCollider *c )
