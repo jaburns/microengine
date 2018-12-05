@@ -135,21 +135,24 @@ static void reparent_entity( ECS *ecs, Entity this_entity, Entity to_entity )
     if( !to_entity )
     {
         this_t->parent = 0;
-        return;
+        goto end;
     }
 
-    ECS_BORROW_COMPONENT_DECL( Transform, to_t, ecs, to_entity );
-    if( !to_t ) return;
+    ECS_VIEW_COMPONENT_DECL( Transform, to_t, ecs, to_entity );
+    if( !to_t ) goto end;
 
     Entity parent = to_t->parent;
     while( parent )
     {
-        if( parent == this_entity ) return;
-        ECS_BORROW_COMPONENT_DECL( Transform, parent_t, ecs, parent );
+        if( parent == this_entity ) goto end;
+        ECS_VIEW_COMPONENT_DECL( Transform, parent_t, ecs, parent );
         parent = parent_t->parent;
     }
 
     this_t->parent = to_entity;
+
+end:
+    ECS_RETURN_COMPONENT( ecs, this_t );
 }
 
 static bool find_editor_camera( ECS *ecs, Camera **out_camera, Transform **out_transform )
@@ -299,7 +302,7 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
 
         if( sys->reparenting_entity )
         {
-            if( igButton( "[Reparent]", (ImVec2){ 0, 0 } ) ) 
+            if( igButton( "[Reparent]", (ImVec2){ 0, 0 } ) )
             {
                 reparent_entity( ecs, sys->reparenting_entity, sys->selected_entity );
                 sys->reparenting_entity = 0;
@@ -339,8 +342,11 @@ EditorSystemUpdateResult editor_sys_run( EditorSystem *sys, ECS *ecs )
         for( int i = 0; i < num_entities; ++i )
         {
             ECS_BORROW_COMPONENT_DECL( Transform, t, ecs, entities[i] );
-            if( t && t->parent ) continue;
-            inspect_transform_tree( sys, ecs, entities[i], t );
+
+            if( !t || t && !t->parent )
+                inspect_transform_tree( sys, ecs, entities[i], t );
+
+            ECS_RETURN_COMPONENT( ecs, t );
         }
 
         igEnd();

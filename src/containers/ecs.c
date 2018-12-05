@@ -347,12 +347,12 @@ void *ecs_borrow_component(ECS *ecs, Entity entity, const char *component_type, 
     {
         BorrowedComponent *prev_borrow = vec_at(&ecs->borrowed_components, found_index);
         PANIC("A component of type '%s' was borrowed twice without being returned.\n"
-            "Original borrow occurred at %s : %d\n" 
+            "Original borrow occurred at %s : %d\n"
             "    This borrow occurred at %s : %d",
             component_type, prev_borrow->debug_file, prev_borrow->debug_line, debug_file, debug_line);
     }
 
-    BorrowedComponent new_borrow = { 
+    BorrowedComponent new_borrow = {
         .component = result,
         .entity = entity,
         .type = component_type,
@@ -367,6 +367,8 @@ void *ecs_borrow_component(ECS *ecs, Entity entity, const char *component_type, 
 
 void ecs_return_component(ECS *ecs, void *component, const char *debug_file, int debug_line)
 {
+    if (!component) return;
+
     int found_index = vec_find_index(&ecs->borrowed_components, component, check_borrowed_component_matches_ptr);
 
     if (found_index < 0)
@@ -376,7 +378,7 @@ void ecs_return_component(ECS *ecs, void *component, const char *debug_file, int
 
     Vec *listeners = hashtable_at(&ecs->event_listeners, borrowed->type);
 
-    if (listeners) 
+    if (listeners)
     for (int i = 0; i < listeners->item_count; ++i)
     {
         EventListenerEntry *entry = vec_at(listeners, i);
@@ -402,7 +404,7 @@ void *ecs_add_component_zeroed(ECS *ecs, Entity entity, const char *component_ty
 
     void *result = giarray_set_copy_or_zeroed(&comp->components, entity_to_gi(entity), 0);
 
-    BorrowedComponent new_borrow = { 
+    BorrowedComponent new_borrow = {
         .component = result,
         .entity = entity,
         .type = component_type,
@@ -474,7 +476,7 @@ void ecs_register_event_listener(ECS *ecs, ECSComponentEventType event_type, con
         entries = hashtable_set_copy(&ecs->event_listeners, component_type, &new_entries);
     }
 
-    EventListenerEntry entry = { 
+    EventListenerEntry entry = {
         .type = event_type,
         .listener = listener
     };
@@ -490,7 +492,7 @@ void ecs_remove_event_listener(ECS *ecs, ECSComponentEventType event_type, const
     Vec *entries = hashtable_at(&ecs->event_listeners, component_type);
     if (!entries) return;
 
-    EventListenerEntry entry = { 
+    EventListenerEntry entry = {
         .type = event_type,
         .listener = listener
     };
@@ -792,7 +794,7 @@ TestResult ecs_test()
         TEST_ASSERT(test_change_event_listener_sum == 3.f);
         ECS_REMOVE_EVENT_LISTENER(float, ecs, ECS_EVENT_COMPONENT_CHANGED, test_change_event_listener);
         ECS_BORROW_COMPONENT_DECL(float, floaty_again, ecs, e0);
-        
+
         *floaty_again = 100.f;
 
         ECS_RETURN_COMPONENT(ecs, floaty_again);

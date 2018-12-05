@@ -67,7 +67,7 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
 {
     size_t collider_count;
     Entity *collider_entities = ECS_FIND_ALL_ENTITIES_WITH_COMPONENT_ALLOC( MeshCollider, ecs, &collider_count );
-    
+
     for( int i = 0; i < collider_count; ++i )
     {
         ECS_VIEW_COMPONENT_DECL( MeshCollider, collider, ecs, collider_entities[i] );
@@ -81,11 +81,11 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
         if( !mesh ) continue;
 
         mat4 world_matrix;
-        if( transform )
-            glm_mat4_copy( UTILS_UNCONST_MAT( transform->world_matrix ), world_matrix );
-        else
+     // if( transform )
+     //     glm_mat4_copy( UTILS_UNCONST_MAT( transform->world_matrix ), world_matrix );
+     // else
             glm_mat4_identity( world_matrix );
-        
+
         for( int j = 0; j < mesh->num_submeshes; ++j )
         for( int k = 0; k < mesh->submeshes[j].num_indices; k += 3 )
         {
@@ -94,7 +94,7 @@ void collision_sys_run( CollisionSystem *sys, ECS *ecs, HashCache *resources )
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 0]], 1.f, t.a );
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 1]], 1.f, t.b );
             glm_mat4_mulv3( world_matrix, mesh->vertices[mesh->submeshes[j].indices[k + 2]], 1.f, t.c );
-        
+
             vec_push_copy( &cached->triangles, &t );
         }
     }
@@ -134,7 +134,7 @@ bool world_collision_info_raycast( const WorldCollisionInfo *info, const vec3 or
         {
             const Triangle *t = vec_at_const( &collider->triangles, j );
 
-            if( geometry_line_seg_intersects_triangle( origin, end_pt, t->a, t->b, t->c, out_intersection ) ) 
+            if( geometry_line_seg_intersects_triangle( origin, end_pt, t->a, t->b, t->c, out_intersection ) )
                 return true;
         }
     }

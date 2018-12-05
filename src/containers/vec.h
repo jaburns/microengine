@@ -13,7 +13,7 @@ typedef struct Vec
 Vec;
 
 // First arg is arbitrary context, second arg is the element operated on
-typedef void (*VecCallback)(void*, void*); 
+typedef void (*VecCallback)(void*, void*);
 typedef bool (*VecItemChecker)(void*, const void*);
 
 extern Vec vec_empty(size_t item_size);

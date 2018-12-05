@@ -50,7 +50,7 @@ static void inspect_versor( const char *label, versor *v ) { igDragFloat4(label,
 static void inspect_mat4  ( const char *label, mat4   *v ) { igText("%s {Matrix}", label); }
 static void inspect_Vec_T ( const char *label, void   *v ) { igText("%s {Vec<T>}", label); }
 
-static void inspect_Entity( ECS *ecs, const char *label, Entity *v ) 
+static void inspect_Entity( ECS *ecs, const char *label, Entity *v )
 {
     bool name_from_transform;
     const char *entity_name = components_name_entity( ecs, *v, &name_from_transform );
@@ -69,7 +69,7 @@ static void inspect_string( const char *label, char **v )
 {
     if( !*v )
     {
-        *v = malloc(1); 
+        *v = malloc(1);
         (*v)[0] = 0;
     }
 
@@ -122,11 +122,11 @@ static void inspect_field( ECS *ecs, void *field, const ComponentField *field_de
 
 static void inspect_component( ECS *ecs, void *component, const char *label, const ComponentInfo *info )
 {
-    if (label) 
-    { 
-        igSeparator(); 
-        igText( label ); 
-        igSeparator(); 
+    if (label)
+    {
+        igSeparator();
+        igText( label );
+        igSeparator();
     }
 
     igPushIDPtr( component );
@@ -135,7 +135,7 @@ static void inspect_component( ECS *ecs, void *component, const char *label, con
     {
         const ComponentField *field = &info->fields[i];
 
-        if( ( field->flags & COMPONENT_FLAG_HIDDEN ) == 0 ) 
+        if( ( field->flags & COMPONENT_FLAG_HIDDEN ) == 0 )
         {
             igPushIDInt( i );
             inspect_field( ecs, (uint8_t*)component + field->offset, field );
@@ -164,7 +164,7 @@ const char *components_name_entity( const ECS *ecs, Entity e, bool *name_from_tr
     if( !e ) return "empty";
 
     ECS_VIEW_COMPONENT_DECL( Transform, t, ecs, e );
-    if( t && t->name && strlen( t->name ) ) 
+    if( t && t->name && strlen( t->name ) )
     {
         *name_from_transform = true;
         return t->name;
@@ -263,6 +263,8 @@ void components_inspect_entity( ECS *ecs, Entity e )
         if( component && igCollapsingHeaderBoolPtr( info->name, &keep_alive, ImGuiTreeNodeFlags_DefaultOpen ) )
             inspect_component( ecs, component, NULL, info );
 
+        ecs_return_component( ecs, component, __FILE__, __LINE__ );
+
         if (! keep_alive)
             ecs_remove_component( ecs, e, info->name );
     }
@@ -276,7 +278,7 @@ static cJSON *serialize_field( void *field, const ComponentField *field_def )
     {
     case COMPONENT_FIELD_TYPE_INT:    return cJSON_CreateNumber(*(int*)field);
     case COMPONENT_FIELD_TYPE_FLOAT:  return cJSON_CreateNumber(*(float*)field);
-    case COMPONENT_FIELD_TYPE_BOOL:   return cJSON_CreateBool  (*(bool*)field); 
+    case COMPONENT_FIELD_TYPE_BOOL:   return cJSON_CreateBool  (*(bool*)field);
     case COMPONENT_FIELD_TYPE_VEC2:   return cJSON_CreateFloatArray((float*)(*(vec2*)field), 2);
     case COMPONENT_FIELD_TYPE_VEC3:   return cJSON_CreateFloatArray((float*)(*(vec3*)field), 3);
     case COMPONENT_FIELD_TYPE_VEC4:   return cJSON_CreateFloatArray((float*)(*(vec4*)field), 4);
@@ -339,9 +341,9 @@ static void deserialize_field( cJSON *item, void *out, HashTable *entities_for_i
         return;
 
     case COMPONENT_FIELD_TYPE_SUBCOMPONENT:
-        deserialize_nested_component( 
-            cJSON_GetObjectItem( item, field_def->name ), 
-            out, 
+        deserialize_nested_component(
+            cJSON_GetObjectItem( item, field_def->name ),
+            out,
             get_info_for_component_type( field_def->subcomponent_name ),
             entities_for_ids
         );
@@ -385,12 +387,12 @@ char *components_serialize_scene_alloc( const ECS *ecs )
     size_t num_entities;
     Entity *entities = ecs_find_all_entities_alloc( ecs, &num_entities );
 
-    for( int i = 0; i < num_entities; ++i ) 
+    for( int i = 0; i < num_entities; ++i )
     {
         bool empty = true;
         cJSON *obj = cJSON_CreateObject();
         cJSON_AddNumberToObject( obj, "_id", (double)entities[i] );
-    
+
         for( int j = 0; j < COMPONENTS_TOTAL_COUNT; ++j )
         {
             if( COMPONENTS_ALL_INFOS[j]->flags & COMPONENT_FLAG_DONT_SERIALIZE ) continue;
@@ -445,12 +447,12 @@ ECS *components_deserialize_scene_alloc( const char *json_scene )
             char *type_name = component_obj->string;
             if( strcmp( "_id", type_name ) == 0 ) continue;
 
-            for( int i = 0; i < COMPONENTS_TOTAL_COUNT; ++i ) 
+            for( int i = 0; i < COMPONENTS_TOTAL_COUNT; ++i )
                 if( strcmp( type_name, COMPONENTS_ALL_INFOS[i]->name ) == 0 )
                     deserialize_component( result, component_obj, e, COMPONENTS_ALL_INFOS[i], &entities_for_ids );
         }
     }
-    
+
     hashtable_clear( &entities_for_ids );
     cJSON_Delete( json );
     return result;
